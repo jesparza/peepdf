@@ -2119,7 +2119,7 @@ class PDFConsole(cmd.Cmd):
                     
     def help_offsets(self):
         print newLine + 'Usage: offsets [num_version]'
-        print newLine + 'Shows the physical map of the file or the specified version od the document' + newLine
+        print newLine + 'Shows the physical map of the file or the specified version of the document' + newLine
 
     def do_open(self, argv):
         forceMode = False
