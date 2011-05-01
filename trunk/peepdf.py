@@ -150,6 +150,6 @@ if options.scriptFile != None:
 		scriptFileObject.close()
 elif options.isInteractive:
 	console = PDFConsole(pdf)
-	console.cmdloop(stats + '\n')
+	console.cmdloop(stats + newLine)
 elif fileName != None:
 	print stats
