@@ -3577,16 +3577,24 @@ class PDFBody :
             for key in keys:
                 ref = elementsToUpdate[key]
                 refId = ref[0]
-                refObject = self.objects[refId].getObject()
-                if refObject == None:
-                    errorMessage = 'Referenced object is None'
+                if refId in self.objects:
+                    refObject = self.objects[refId].getObject()
+                    if refObject == None:
+                        errorMessage = 'Referenced object is None'
+                        if isForceMode:
+                            pdfFile.addError(errorMessage)
+                            continue
+                        else:
+                            return (-1,errorMessage)
+                    ref[1] = refObject.getValue()
+                    updatedElements[key] = ref
+                else:
+                    errorMessage = 'Referenced object not found'
                     if isForceMode:
                         pdfFile.addError(errorMessage)
                         continue
                     else:
                         return (-1,errorMessage)
-                ref[1] = refObject.getValue()
-                updatedElements[key] = ref
             object.setReferencesInElements(updatedElements)
             object.resolveReferences()
             if object.getType() == 'stream':
@@ -3607,7 +3615,7 @@ class PDFBody :
                     if object.isFaultyDecoding():
                         self.numDecodingErrors += 1
         if errorMessage != '':
-            return (-1,typeObject)
+            return (-1,errorMessage)
         return (0,'')
     
     def updateOffsets (self) :
@@ -6234,7 +6242,11 @@ class PDFParser :
                     else:
                         #TODO: comments in line or spaces/\n\r...?
                         if isForceMode:
-                            pdfCrossRefSubSection.addError('Bad format for cross reference entry: '+line)
+                            if pdfCrossRefSubSection != None:
+                                pdfCrossRefSubSection.addError('Bad format for cross reference entry: '+line)
+                            else:
+                                pdfCrossRefSubSection = PDFCrossRefSubSection(0, offset = -1)
+                                pdfFile.addError('Bad xref section')
                         else:
                             return (-1,'Bad format for cross reference entry')
                 auxOffset += len(line)
