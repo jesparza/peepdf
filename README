@@ -1,17 +1,28 @@
+** Home page **
+
+http://peepdf.eternal-todo.com
+
+
+
 ** Dependencies **
 
-In order to analyse Javascript code "python-spidermonkey" is needed:
+- In order to analyse Javascript code "python-spidermonkey" is needed:
 
 http://code.google.com/p/python-spidermonkey
 
 
-The "sctest" command is a wrapper of "sctest" (libemu):
+- The "sctest" command is a wrapper of "sctest" (libemu):
 
 http://libemu.carnivore.it
 
 The "sctest" executable must be placed in the root directory or specify the "sctest" path through the "set" command:
 
 > set sctest "/opt/libemu/bin/sctest"
+
+
+- Included modules:
+
+lzw, colorama
 
 
 
@@ -95,5 +106,3 @@ Shows the (raw) content of the stream.
 Send me bugs and comments, please!! ;) You can do it via mail (jesparza AT eternal-todo.com) or through Google Code (http://peepdf.googlecode.com).
 
 Thanks!!
-
-
