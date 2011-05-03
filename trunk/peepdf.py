@@ -133,7 +133,7 @@ if fileName != None:
 						stats += '\t\t' + vuln + ': ' + str(vulns[vuln]) + newLine
 			if elements != None:
 				for element in elements:
-					stats += '\t\t' + element + ': ' + str(elements[element])
+					stats += '\t\t' + element + ': ' + str(elements[element]) + newLine
 		urls = statsVersion['URLs']
 		if urls != None:
 			newLine + '\tFound URLs:' + newLine
