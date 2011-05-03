@@ -34,6 +34,11 @@ from PDFCore import *
 from base64 import b64encode,b64decode
 from PDFFilters import decodeStream,encodeStream
 try:
+    from colorama import init, Fore, Back, Style
+    COLORIZED_OUTPUT = True
+except:
+    COLORIZED_OUTPUT = False
+try:
     from spidermonkey import Runtime
     JS_MODULE = True
 except ImportError, e:
@@ -41,12 +46,20 @@ except ImportError, e:
     
 newLine = os.linesep
 filter2RealFilterDict = {'b64':'base64','base64':'base64','asciihex':'/ASCIIHexDecode','ahx':'/ASCIIHexDecode','ascii85':'/ASCII85Decode','a85':'/ASCII85Decode','lzw':'/LZWDecode','flatedecode':'/FlateDecode','fl':'/FlateDecode','runlength':'/RunLengthDecode','rl':'/RunLengthDecode','ccittfax':'/CCITTFaxDecode','ccf':'/CCITTFaxDecode','jbig2':'/JBIG2Decode','dct':'/DCTDecode','jpx':'/JPXDecode'}
+try:
+    init()
+    COLORIZED_OUTPUT = True
+except:
+    COLORIZED_OUTPUT = False
 
 class PDFConsole(cmd.Cmd):
     
     def __init__(self, pdfFile, stdin = None):
         cmd.Cmd.__init__(self, stdin = stdin)
-        self.prompt = 'PPDF> '
+        if COLORIZED_OUTPUT:
+            self.prompt = Fore.GREEN + 'PPDF> ' + Style.RESET_ALL
+        else:
+            self.prompt = 'PPDF> '
         self.use_rawinput = True
         if stdin != None:
             self.use_rawinput = False
@@ -3062,7 +3075,7 @@ class PDFConsole(cmd.Cmd):
         niceOutput = niceOutput.replace('\r','\n')
         longOutput = command + newLine * 2 + niceOutput + newLine * 2
         if self.loggingFile != None:
-            open(self.loggingFile,'a').write(self.prompt+longOutput)
+            open(self.loggingFile,'a').write('PPDF>'+longOutput)
         if storeOutput:
             if bytes != None:
                 output = bytes
