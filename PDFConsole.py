@@ -3075,7 +3075,7 @@ class PDFConsole(cmd.Cmd):
         niceOutput = niceOutput.replace('\r','\n')
         longOutput = command + newLine * 2 + niceOutput + newLine * 2
         if self.loggingFile != None:
-            open(self.loggingFile,'a').write('PPDF>'+longOutput)
+            open(self.loggingFile,'a').write('PPDF> '+longOutput)
         if storeOutput:
             if bytes != None:
                 output = bytes
