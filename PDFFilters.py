@@ -181,7 +181,7 @@ def asciiHexDecode(stream):
 	while index < len(stream):
 		c = stream[index]
 		if c == eod:
-			if decodedStream % 2 != 0:
+			if len(decodedStream) % 2 != 0:
 				char += '0'
 				try:
 					decodedStream += chr(int(char, base=16))
