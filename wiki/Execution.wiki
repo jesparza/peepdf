@@ -1,0 +1,191 @@
+#summary Different ways of execution of peepdf.
+#labels Phase-Support,Featured
+
+= Execution =
+<br/>
+{{{
+Usage: peepdf.py [options] PDF_file
+
+Options:
+  -h, --help            show this help message and exit
+  -i, --interactive     Sets console mode.
+  -f, --force-mode      Sets force parsing mode to ignore errors.
+  -l, --loose-mode      Sets loose parsing mode to catch malformed objects.
+  -s SCRIPTFILE, --load-script=SCRIPTFILE
+                        Load the commands stored in the specified file and
+                        execute them.
+
+}}}
+<br/>
+There are three possible ways of execution:
+
+  * [Basic_execution Basic execution]
+  * [Interactive_console Interactive console]
+  * [Batch_mode Batch mode]
+<br/>
+All of them accept two parameters to ignore errors and continue with the analysis and deal with malformed objects:
+
+  * _-f_: ignores errors and continues with the analysis of the document. It's useful to analyse malicious documents.
+  * _-l_: does not search for the _endobj_ tag during the parsing process, so it can be useful when the analysed document is malformed.
+<br/>
+
+===Basic execution===
+If we only want to know the information about objects, streams, vulnerabilities, etc, without executing any commands the correct way of execution would be the following:
+
+{{{
+$ ./peepdf.py sample.pdf
+
+File: sample.pdf
+MD5: f77cca021c686f1ebe5c98cbfaa8c53a
+Size: 1312 bytes
+Version: 1.1
+Binary: False
+Linearized: False
+Encrypted: False
+Updates: 0
+Objects: 8
+Streams: 2
+Comments: 0
+Errors: 0
+
+Version 0:
+	Catalog: 2
+	Info: 8
+	Objects (8): [1, 2, 3, 4, 5, 6, 7, 8]
+	Streams (2): [1, 5]
+		Encoded (0): []
+	Suspicious elements:
+		/OpenAction: [2]
+		/JS: [6]
+		/JavaScript: [6]
+}}}
+<br/>
+===Interactive console===
+The normal way of execution of the interactive console is giving a PDF file to analyse:
+
+{{{
+$ ./peepdf.py -i sample.pdf
+
+File: sample.pdf
+MD5: f77cca021c686f1ebe5c98cbfaa8c53a
+Size: 1312 bytes
+Version: 1.1
+Binary: False
+Linearized: False
+Encrypted: False
+Updates: 0
+Objects: 8
+Streams: 2
+Comments: 0
+Errors: 0
+
+Version 0:
+	Catalog: 2
+	Info: 8
+	Objects (8): [1, 2, 3, 4, 5, 6, 7, 8]
+	Streams (2): [1, 5]
+		Encoded (0): []
+	Suspicious elements:
+		/OpenAction: [2]
+		/JS: [6]
+		/JavaScript: [6]
+
+
+
+
+PPDF> 
+
+}}}
+<br/>
+When we see the _PPDF>_ prompt we can launch the different commands (commands documentation [Commands here]):
+{{{
+PPDF> help
+
+Documented commands (type help <topic>):
+========================================
+bytes           encrypt  js_analyse        modify     references    set   
+changelog       errors   js_code           object     replace       show  
+create          exit     js_join           offsets    reset         stream
+decode          filters  js_unescape       open       save          tree  
+embed           help     log               quit       save_version
+encode          info     malformed_output  rawobject  sctest      
+encode_strings  js       metadata          rawstream  search  
+}}}
+<br/>
+Also, it's possible to launch the interactive console wihout specifying any PDF file:
+{{{
+$ peepdf.py -i                        
+
+
+PPDF> 
+}}}
+<br/>
+But now we cannot launch all the commands until one PDF file has been opened, but we can execute Javascript and shellcodes, encode/decode contents, etc. The available commands will be the following:
+{{{
+create              js_analyse          quit
+decode              js_join             replace
+encode              js_unescape         reset
+exit                log                 sctest
+help                malformed_output    set
+js                  open                show 
+}}} 
+<br/>
+===Batch mode===
+Instead of executing peepdf as an interactive console it is also possible to execute it in batch mode in order to perform automatic analysis. So after creating a file with the commands we want to execute:
+
+{{{
+$ cat command_file.txt
+tree
+offsets
+}}}
+
+we should execute the tool this way:
+ 
+{{{
+$ ./peepdf.py -s command_file.txt sample.pdf
+
+/Catalog (2)
+	/Pages (3)
+		/Page (4)
+			/Pages (3)
+			stream (5)
+			/Annot (7)
+				stream (1)
+	/Action /JavaScript (6)
+/Info (8)
+	stream (1)
+
+
+       0 Header
+      10
+        Object  1 (58)
+      67
+      70
+        Object  2 (67)
+     136
+     139
+        Object  3 (57)
+     195
+     198
+        Object  4 (264)
+     461
+     464
+        Object  5 (139)
+     602
+     605
+        Object  6 (180)
+     784
+     787
+        Object  7 (227)
+    1013
+    1016
+        Object  8 (35)
+    1050
+    1053
+        Xref Section (188)
+    1240
+    1242
+        Trailer (64)
+    1305
+    1306 EOF
+}}}
