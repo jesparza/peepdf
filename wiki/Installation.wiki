@@ -2,14 +2,14 @@
 #labels Phase-Deploy,Featured
 
 =Installation=
-
+<br/>
 It's not necessary to install anything to execute the tool, just executing the Python interpreter with peepdf.py. However, to use all its functionalities it's recommended the installation of some external packages.
 
 The packages and libraries needed to have a full installation of peepdf are the following:
 
-  * lzw (included in the package): library to encode/decode streams with the filter _/LZWDecode_.
-  * python-spidermonkey (external): execution of Javascript code.
-  * sctest (external): binary of the package Libemu to emulate the shellcode execution.
+  * _lzw_ (included in the package): library to encode/decode streams with the filter _/LZWDecode_.
+  * _python-spidermonkey_ (external): execution of Javascript code.
+  * _sctest_ (external): binary of the package Libemu to emulate the shellcode execution.
 <br>
 === python-spidermonkey ===
 
