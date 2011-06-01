@@ -1,1 +1,374 @@
+#summary Documentation of the console commands to use all the functionalities of the tool.
 #labels Phase-Support
+
+= Console commands =
+<br/>
+There are a lot of commands that can be used in the interactive console of peepdf and here there is an explanation of all of them:
+  * [#bytes bytes]
+  * [#changelog changelog]
+  * [#create create]
+  * [#decode decode]
+  * [#embed embed]
+  * [#encode encode]
+  * [#encode_strings encode_strings]
+  * [#encrypt encrypt]
+  * [#errors errors]
+  * [#exit exit]
+  * [#filters filters]
+  * [#help help]
+  * [#info info]
+  * [#js js]
+  * [#js_analyse js_analyse]
+  * [#js_code js_code]
+  * [#js_join js_join]
+  * [#js_unescape js_unescape]
+  * [#log log]
+  * [#malformed_output malformed_output]
+  * [#metadata metadata]
+  * [#modify modify]
+  * [#object object]
+  * [#offsets offsets]
+  * [#open open]
+  * [#quit quit]
+  * [#rawobject rawobject]
+  * [#rawstream rawstream]
+  * [#references references]
+  * [#replace replace]
+  * [#reset reset]
+  * [#save save]
+  * [#save_version save_version]
+  * [#sctest sctest]
+  * [#search search]
+  * [#set set]
+  * [#show show]
+  * [#stream stream]
+  * [#tree tree]
+
+<br/>
+===bytes===
+{{{
+Usage: bytes offset num_bytes [file]
+
+Show or store in the specified file "num_bytes" of the file beginning from "offset"
+}}}
+<br/>
+{{{
+PPDF> bytes 0 100
+
+%PDF-1.1
+
+1 0 obj
+<</Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<</Type /Pages
+/Kids [ 3 0 R ]
+/C
+}}}
+</br>
+===changelog===
+{{{
+Usage: changelog [version]
+
+Show the changelog of the document or version of the document
+}}}
+{{{
+PPDF> changelog
+
+Changes in version 1:
+	Producer: Acrobat Web Capture 8.0
+	Modification date: 2009-03-05T21:46:22+08:00
+	Added objects: [48]
+	Modified objects: [27, 29, 31]
+}}}
+<br/>
+===create===
+{{{
+Usage: create pdf simple|(open_action_js [js_file])
+
+Create a new simple PDF file or one with Javascript code to be executed when opening the file. It's possible to specify
+the file where the Javascript code is stored or do it manually.
+}}}
+{{{
+PPDF> create pdf open_action_js
+
+Please, specify the Javascript code you want to include in the file (if the code includes EOL characters use a
+js_file instead):
+
+app.alert("Hello World!!",3);
+
+PDF structure created successfully!!
+}}}
+The Javascript code specified here will be executed when the document is opened.
+{{{
+Usage: create object_stream [version]
+
+Create an object stream choosing the objects to be compressed.
+}}}
+{{{
+PPDF> create object_stream
+Warning: stream objects cannot be compressed. If the Catalog object is compressed could lead to corrupted
+files for Adobe Reader!!
+Which objects do you want to compress? (Valid respones: all | 1-5 | 1,2,5,7,8) all
+
+*** Warning: Stream objects cannot be compressed!!
+
+The object stream has been created successfully
+}}}
+Here it's important to highlight that despite the warnings the objects are compressed successfully, but the PDF
+specification says that stream objects cannot be compressed.
+<br/>
+===decode===
+{{{
+Usage: decode variable var_name filter1 [filter2 ...]
+Usage: decode file file_name filter1 [filter2 ...]
+Usage: decode raw offset num_bytes filter1 [filter2 ...]
+
+Decode the content of the specified variable, file or raw bytes using the following filters or algorithms:
+	base64,b64: Base64
+	asciihex,ahx: /ASCIIHexDecode
+	ascii85,a85: /ASCII85Decode
+	lzw: /LZWDecode
+	flatedecode,fl: /FlateDecode
+	runlength,rl: /RunLengthDecode
+	ccittfax,ccf: /CCITTFaxDecode (Not implemented)
+	jbig2: /JBIG2Decode (Not implemented)
+	dct: /DCTDecode (Not implemented)
+	jpx: /JPXDecode (Not implemented)
+}}}
+{{{
+PPDF> bytes 70 37
+
+78 9c 4b 2c 28 d0 4b cc 49 2d 2a d1 50 f2 48 cd   |x.K,(.K.I-*.P.H.|
+c9 c9 57 08 cf 2f ca 49 51 54 54 d2 31 d6 b4 06   |..W../.IQTT.1...|
+00 96 69 09 15                                    |..i..|
+
+PPDF> decode raw 70 37 fl
+
+app.alert("Hello World!!",3);
+}}}
+<br/>
+===embed===
+{{{
+Usage: embed [-x] filename [file_type]
+
+Embed the specified file in the actual PDF file. The default type is "application/pdf".
+
+Options:
+	-x: The file is executed when the actual PDF file is opened
+}}}
+<br/>
+===encode===
+{{{
+Usage: encode variable var_name filter1 [filter2 ...]
+Usage: encode file file_name filter1 [filter2 ...]
+Usage: encode raw offset num_bytes filter1 [filter2 ...]
+
+Encode the content of the specified variable, file or raw bytes using the following filters or algorithms:
+	base64,b64: Base64
+	asciihex,ahx: /ASCIIHexDecode
+	ascii85,a85: /ASCII85Decode (Not implemented)
+	lzw: /LZWDecode
+	flatedecode,fl: /FlateDecode
+	runlength,rl: /RunLengthDecode (Not implemented)
+	ccittfax,ccf: /CCITTFaxDecode (Not implemented)
+	jbig2: /JBIG2Decode (Not implemented)
+	dct: /DCTDecode (Not implemented)
+	jpx: /JPXDecode (Not implemented)
+}}}
+{{{
+PPDF> bytes 49 29
+
+app.alert("Hello World!!",3);
+
+PPDF> encode raw 49 29 fl
+
+78 9c 4b 2c 28 d0 4b cc 49 2d 2a d1 50 f2 48 cd   |x.K,(.K.I-*.P.H.|
+c9 c9 57 08 cf 2f ca 49 51 54 54 d2 31 d6 b4 06   |..W../.IQTT.1...|
+00 96 69 09 15                                    |..i..|
+}}}
+===encode_strings===
+{{{
+Usage: encode_strings [id|trailer [version]]
+
+Encode the strings and names included in the file, object or trailer
+}}}
+{{{
+PPDF> rawobject 2
+
+<< /Kids [ 3 0 R ]
+/Type /Pages
+/Count 1 >>
+
+PPDF> encode_strings 2
+
+Object encoded successfully
+
+PPDF> rawobject 2
+
+<< /#4b#69#64#73 [ 3 0 R ]
+/#54#79#70#65 /#50#61#67#65#73
+/#43#6f#75#6e#74 1 >>
+}}}
+{{{
+PPDF> rawobject 4
+
+(This is a test string object!!)
+
+PPDF> encode_strings 4
+
+Object encoded successfully
+
+PPDF> rawobject 4
+
+(\124\150\151\163\040\151\163\040\141\040\164\145\163\164\040\163\164\162\151\156\147\040\157\142\152\145\143\164\041\041)
+}}}
+<br/>
+===encrypt===
+{{{
+Usage: encrypt [password]
+
+Encrypt the file with the default or specified password
+}}}
+<br/>
+===errors===
+{{{
+Usage: errors [object_id|xref|trailer [version]]
+
+Shows the errors of the file or object (object_id, xref, trailer)
+}}}
+{{{
+PPDF> errors
+
+No closing delimiter found (1) 
+}}}
+<br/>
+===exit===
+{{{
+Usage: exit
+
+Exits from the console
+}}}
+<br/>
+===filters===
+{{{
+Usage: filters object_id [version] [filter1 [filter2 ...]]
+
+Shows the filters found in the stream object or set the filters in the object (first filter is used first). The valid values for filters are the following:
+	none: No filters
+	asciihex,ahx: /ASCIIHexDecode
+	ascii85,a85: /ASCII85Decode (Not implemented)
+	lzw: /LZWDecode
+	flatedecode,fl: /FlateDecode
+	runlength,rl: /RunLengthDecode (Not implemented)
+	ccittfax,ccf: /CCITTFaxDecode (Not implemented)
+	jbig2: /JBIG2Decode (Not implemented)
+	dct: /DCTDecode (Not implemented)
+	jpx: /JPXDecode (Not implemented)
+}}}
+{{{
+PPDF> rawobject 5
+
+<< /Length 37
+/Filter /FlateDecode >>
+stream
+x�K,(�K�I-*�P�H����/�IQTT�1ִ�i	
+endstream
+
+PPDF> filters 5
+
+/FlateDecode
+
+PPDF> filters 5 none
+
+<< /Length 29 >>
+stream
+app.alert("Hello World!!",3);
+endstream
+}}}
+{{{
+PPDF> rawobject 5
+
+<< /Length 29 >>
+stream
+app.alert("Hello World!!",3);
+endstream
+
+PPDF> filters 5
+
+*** Warning: No filters found in the object!!
+
+PPDF> filters 5 fl ahx
+
+<< /Length 74
+/Filter [ /ASCIIHexDecode /FlateDecode ] >>
+stream
+789c4b2c28d04bcc492d2ad150f248cdc9c95708cf2fca49515454d231d6b4060096690915
+endstream
+}}}
+<br/>
+===help===
+{{{
+Usage: help [command]
+
+Show the available commands or the usage of the specified command
+}}}
+<br/>
+===info===
+{{{
+Usage: info [object_id|xref|trailer [version]]
+
+Shows information of the file or object (object_id, xref, trailer)
+}}}
+{{{
+PPDF> info
+
+File: js_stream.pdf
+MD5: 46f01049fb8f87c535cc96185fe9d702
+Size: 458 bytes
+Version: 1.6
+Binary: True
+Linearized: False
+Encrypted: False
+Updates: 0
+Objects: 5
+Streams: 1
+Comments: 0
+Errors: 0
+
+Version 0:
+	Catalog: 1
+	Info: No
+	Objects (5): [1, 2, 3, 4, 5]
+	Streams (1): [5]
+		Encoded (1): [5]
+	Suspicious elements:
+		/OpenAction: [1]
+		/JS: [4]
+		/JavaScript: [4]
+}}}
+{{{
+PPDF> info 1
+
+Offset: 17
+Size: 66
+Object: dictionary
+Type: /Catalog
+References: ['2 0 R', '4 0 R']
+}}}
+{{{
+PPDF> info trailer
+
+Offset: 406
+Size: 46
+Stream: No
+Objects: 6
+Root Object: 1
+Info Object: No
+Encrypted: No
+}}}
+<br/>
+===Updating this documentation, please, be patient ;)===
