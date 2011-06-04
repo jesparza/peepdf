@@ -2532,35 +2532,54 @@ class PDFObjectStream (PDFStream) :
             return self.indexes.index(id)
                     
     def replace(self, string1, string2):
+        stringFound = False
         # Dictionary
-        errorMessage = ''
         newElements = {}
-        modifiedObjects = False
+        errorMessage = ''
         for key in self.elements:
             if key == '/F' and self.elements[key] != None:
                 externalFile = self.elements[key].getValue()
                 if externalFile != self.file:
                     self.modifiedRawStream = True
                     self.decodedStream = ''
-            newKey = key.replace(string1, string2)
+            if key.find(string1) != -1:
+                newKey = key.replace(string1, string2)
+                stringFound = True
+                if errorMessage == 'String not found':
+                    errorMessage = ''
+            else:
+                newKey = key
             newObject = self.elements[key]
             ret = newObject.replace(string1, string2)
             if ret[0] == -1:
-                errorMessage = ret[1]
-                self.addError(errorMessage)
+                if ret[1] != 'String not found' or not stringFound:
+                    errorMessage = ret[1]
+            else:
+                stringFound = True
+                if errorMessage == 'String not found':
+                    errorMessage = ''
             newElements[newKey] = newObject
-        self.elements = newElements
         # Stream
         if not self.modifiedRawStream:
-            modifiedObjects = True
+            if self.decodedStream.find(string1) != -1:
+                modifiedObjects = True
+                stringFound = True
+                if errorMessage == 'String not found':
+                    errorMessage = ''
             for compressedObjectId in self.compressedObjectsDict:
                 object = self.compressedObjectsDict[compressedObjectId][1]
                 object.replace(string1,string2)
                 self.compressedObjectsDict[compressedObjectId][1] = object
+        if not stringFound:
+            return (-1,'String not found')
+        self.elements = newElements
         ret = self.update(modifiedObjects)
         if ret[0] == 0 and errorMessage != '':
             return (-1,errorMessage)
         return ret
+    
+
+
                     
     def resolveReferences(self):
         errorMessage = ''
@@ -5324,7 +5343,7 @@ class PDFFile :
                 object = self.getObject(id, i)
                 if object != None:
                     ret = object.replace(string1, string2)
-                    if ret[0] == -1:
+                    if ret[0] == -1 and not stringFound:
                         errorMessage = ret[1]
                     else:
                         stringFound = True
