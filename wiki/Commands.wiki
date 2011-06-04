@@ -56,7 +56,6 @@ Usage: bytes offset num_bytes [file]
 
 Show or store in the specified file "num_bytes" of the file beginning from "offset"
 }}}
-<br/>
 {{{
 PPDF> bytes 0 100
 
@@ -73,6 +72,7 @@ endobj
 /Kids [ 3 0 R ]
 /C
 }}}
+[#Console_commands Index]
 <br/>
 ===changelog===
 {{{
@@ -89,6 +89,7 @@ Changes in version 1:
 	Added objects: [48]
 	Modified objects: [27, 29, 31]
 }}}
+[#Console_commands Index]
 <br/>
 ===create===
 {{{
@@ -155,6 +156,7 @@ PPDF> decode raw 70 37 fl
 
 app.alert("Hello World!!",3);
 }}}
+[#Console_commands Index]
 <br/>
 ===embed===
 {{{
@@ -165,6 +167,7 @@ Embed the specified file in the actual PDF file. The default type is "applicatio
 Options:
 	-x: The file is executed when the actual PDF file is opened
 }}}
+[#Console_commands Index]
 <br/>
 ===encode===
 {{{
@@ -195,6 +198,8 @@ PPDF> encode raw 49 29 fl
 c9 c9 57 08 cf 2f ca 49 51 54 54 d2 31 d6 b4 06   |..W../.IQTT.1...|
 00 96 69 09 15                                    |..i..|
 }}}
+[#Console_commands Index]
+<br/>
 ===encode_strings===
 {{{
 Usage: encode_strings [id|trailer [version]]
@@ -231,6 +236,7 @@ PPDF> rawobject 4
 
 (\124\150\151\163\040\151\163\040\141\040\164\145\163\164\040\163\164\162\151\156\147\040\157\142\152\145\143\164\041\041)
 }}}
+[#Console_commands Index]
 <br/>
 ===encrypt===
 {{{
@@ -238,6 +244,7 @@ Usage: encrypt [password]
 
 Encrypt the file with the default or specified password
 }}}
+[#Console_commands Index]
 <br/>
 ===errors===
 {{{
@@ -251,6 +258,7 @@ PPDF> errors
 Bad object for /XObject key (1) 
 No entries in xref section (1) 
 }}}
+[#Console_commands Index]
 <br/>
 ===exit===
 {{{
@@ -258,6 +266,7 @@ Usage: exit
 
 Exits from the console
 }}}
+[#Console_commands Index]
 <br/>
 ===filters===
 {{{
@@ -316,6 +325,7 @@ stream
 789c4b2c28d04bcc492d2ad150f248cdc9c95708cf2fca49515454d231d6b4060096690915
 endstream
 }}}
+[#Console_commands Index]
 <br/>
 ===help===
 {{{
@@ -323,6 +333,7 @@ Usage: help [command]
 
 Show the available commands or the usage of the specified command
 }}}
+[#Console_commands Index]
 <br/>
 ===info===
 {{{
@@ -377,6 +388,7 @@ Root Object: 1
 Info Object: No
 Encrypted: No
 }}}
+[#Console_commands Index]
 <br/>
 ===js===
 {{{
@@ -466,6 +478,7 @@ b5 f3 ec 32 64 eb 64 ec 2a b1 b2 2d e7 ef 07 1b   |...2d.d.*..-....|
 URLs in shellcode:
 	http://bikpakoc.cn/nuc/exe.php
 }}}
+[#Console_commands Index]
 <br/>
 ===js_code===
 {{{
@@ -517,6 +530,7 @@ if (bBeUHg == 1){NTLv7BP = 0x30303030;}
 ...
 ===================================================================
 }}}
+[#Console_commands Index]
 <br/>
 ===js_join===
 {{{
@@ -533,6 +547,7 @@ aux = "%u65"+"54"+"%u74"+"73"
 
 %u6554%u7473
 }}}
+[#Console_commands Index]
 <br/>
 ===js_unescape===
 {{{
@@ -549,6 +564,7 @@ aux = "%u6554%u7473"
 
 54 65 73 74                                       |Test|
 }}}
+[#Console_commands Index]
 <br/>
 ===log===
 {{{
@@ -564,6 +580,7 @@ Usage: log log_file
 
 Starts logging in the specified file
 }}}
+[#Console_commands Index]
 <br/>
 ===malformed_output===
 {{{
@@ -579,6 +596,7 @@ Enable malformed output when saving the file:
 	5: Removes the "xref" section.
 	6: Bad header: %PDF-1
 }}}
+[#Console_commands Index]
 <br/>
 ===metadata===
 {{{
@@ -600,6 +618,7 @@ Info Object in version 0:
 /Keywords 
 /Author  >>
 }}}
+[#Console_commands Index]
 <br/>
 ===modify===
 {{{
@@ -666,6 +685,7 @@ PPDF> object 4
 /Resources 1 0 R
 /Type /Pages >>
 }}}
+[#Console_commands Index]
 <br/>
 ===object===
 {{{
@@ -688,6 +708,7 @@ PPDF> object 1 0
 /Dests 6 0 R
 /ViewerPreferences << /PageDirection /L2R >> >>
 }}}
+[#Console_commands Index]
 <br/>
 ===offsets===
 {{{
@@ -751,6 +772,7 @@ PPDF> offsets
     7488
     7489 EOF
 }}}
+[#Console_commands Index]
 <br/>
 ===open===
 {{{
@@ -762,6 +784,7 @@ Options:
 	-f: Sets force parsing mode to ignore errors
 	-l: Sets loose parsing mode for problematic files
 }}}
+[#Console_commands Index]
 <br/>
 ===quit===
 {{{
@@ -769,6 +792,7 @@ Usage: quit
 
 Exits from the console
 }}}
+[#Console_commands Index]
 <br/>
 ===rawobject===
 {{{
@@ -816,6 +840,7 @@ PPDF> rawobject 4
 /Resources 1 0 R
 /Type /Pages >>
 }}}
+[#Console_commands Index]
 <br/>
 ===rawstream===
 {{{
@@ -851,6 +876,7 @@ PPDF> stream 1
 /S /JavaScript
 /JS 5 0 R >>
 }}}
+[#Console_commands Index]
 <br/>
 ===references===
 {{{
@@ -881,6 +907,7 @@ PPDF> object 3
 /Resources << >>
 /MediaBox [ 0 0 600 800 ] >>
 }}}
+[#Console_commands Index]
 <br/>
 ===replace===
 {{{
@@ -934,6 +961,7 @@ PPDF> show myvar
 
 Bye World
 }}}
+[#Console_commands Index]
 <br/>
 ===reset===
 {{{
@@ -952,6 +980,7 @@ PPDF> reset output
 
 output = "stdout"
 }}}
+[#Console_commands Index]
 <br/>
 ===save===
 {{{
@@ -970,6 +999,7 @@ Usage: save_version num_version filename
 
 Saves the selected file version to disk
 }}}
+[#Console_commands Index]
 <br/>
 ===sctest===
 {{{
@@ -1049,6 +1079,7 @@ void ExitThread (
 ) =  0;
 
 }}}
+[#Console_commands Index]
 <br/>
 ===search===
 {{{
@@ -1068,6 +1099,7 @@ PPDF> search hex \x4a\x61\x76\x61
 
 [4]
 }}}
+[#Console_commands Index]
 <br/>
 ===set===
 {{{
@@ -1191,6 +1223,7 @@ a9 21 74 6c 93 15 44 b9 05 5a 63 e7 66 d4 a8 48   |.!tl..D..Zc.f..H|
 8a ab 6b 2f e5 eb 24 3c 6c f5 8a d8 ca 68 51 3c   |..k/..$<l....hQ<|
 9e cb 89 f3 3b fb 0f 6c d4 7d d7 0d 0a            |....;..l.}...|
 }}}
+[#Console_commands Index]
 <br/>
 ===show===
 {{{
@@ -1212,6 +1245,7 @@ PPDF> show sctest
 
 /opt/libemu/bin/sctest
 }}}
+[#Console_commands Index]
 <br/>
 ===stream===
 {{{
@@ -1247,6 +1281,7 @@ PPDF> stream 1
 /S /JavaScript
 /JS 5 0 R >>
 }}}
+[#Console_commands Index]
 <br/>
 ===tree===
 {{{
@@ -1275,4 +1310,5 @@ PPDF> tree
 	dictionary (6)
 /Info (14)
 }}}
+[#Console_commands Index]
 <br/>
