@@ -417,7 +417,7 @@ class PDFConsole(cmd.Cmd):
         print newLine + 'Usage: decode variable var_name filter1 [filter2 ...]'
         print 'Usage: decode file file_name filter1 [filter2 ...]'
         print 'Usage: decode raw offset num_bytes filter1 [filter2 ...]' + newLine
-        print 'Decode the content of the specified variable, file or object using the following filters or algorithms:'
+        print 'Decode the content of the specified variable, file or raw bytes using the following filters or algorithms:'
         print '\tbase64,b64: Base64'
         print '\tasciihex,ahx: /ASCIIHexDecode'
         print '\tascii85,a85: /ASCII85Decode'
@@ -784,7 +784,7 @@ class PDFConsole(cmd.Cmd):
         print newLine + 'Usage: encode variable var_name filter1 [filter2 ...]'
         print 'Usage: encode file file_name filter1 [filter2 ...]'
         print 'Usage: encode raw offset num_bytes filter1 [filter2 ...]' + newLine
-        print 'Encode the content of the specified variable, file or object using the following filters or algorithms:'
+        print 'Encode the content of the specified variable, file or raw bytes using the following filters or algorithms:'
         print '\tbase64,b64: Base64'
         print '\tasciihex,ahx: /ASCIIHexDecode'
         print '\tascii85,a85: /ASCII85Decode (Not implemented)'
@@ -2464,8 +2464,8 @@ class PDFConsole(cmd.Cmd):
     
     def help_reset(self):
         print newLine + 'Usage: reset'
-        print 'Cleans the console' + newLine
-        print 'Usage: reset var_name'
+        print newLine + 'Cleans the console'
+        print newLine + 'Usage: reset var_name'
         print newLine + 'Resets the variable value to the default value if applicable' + newLine
         
     def do_save(self, argv):
@@ -2617,7 +2617,7 @@ class PDFConsole(cmd.Cmd):
         print newLine + 'Usage: sctest variable var_name'
         print 'Usage: sctest file file_name'
         print 'Usage: sctest raw offset num_bytes'
-        print newLine + 'Wrapper of the sctest tool (libemu) to emule shellcodes' + newLine
+        print newLine + 'Wrapper of the sctest tool (libemu) to emulate shellcodes' + newLine
 
     def do_search(self, argv):
         if self.pdfFile == None:
