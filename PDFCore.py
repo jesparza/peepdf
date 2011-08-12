@@ -3617,22 +3617,37 @@ class PDFBody :
             object.setReferencesInElements(updatedElements)
             object.resolveReferences()
             if object.getType() == 'stream':
+                self.numStreams += 1
+                self.streams.append(id)
+                if object.isEncoded():
+                    self.encodedStreams.append(id)
+                    self.numEncodedStreams += 1
+                    if object.isFaultyDecoding():
+                        self.faultyStreams.append(id)
+                        self.numDecodingErrors += 1
                 if object.hasElement('/Type'):
                     typeObject = object.getElementByName('/Type')
                     if typeObject == None:
-                        errorMessage = 'Referenced object is None'
+                        errorMessage = 'Referenced element is None'
                         if isForceMode:
                             pdfFile.addError(errorMessage)
                             continue
                         else:
                             return (-1,errorMessage)
-                    type = typeObject.getValue()
-                    if type == '/ObjStm':
-                        object.setCompressedObjectId(id)
-                if object.isEncoded():
-                    self.numEncodedStreams += 1
-                    if object.isFaultyDecoding():
-                        self.numDecodingErrors += 1
+                    else: 
+                        type = typeObject.getValue()
+                        if type == '/XRef':
+                            self.addXrefStream(id)
+                        elif type == '/ObjStm':
+                            self.addObjectStream(id)
+                            object.setCompressedObjectId(id)
+                            compressedObjectsDict = object.getCompressedObjects()
+                            for compressedId in compressedObjectsDict:
+                                self.addCompressedObject(compressedId)
+                                offset = compressedObjectsDict[compressedId][0]
+                                compressedObject = compressedObjectsDict[compressedId][1]
+                                self.setObject(compressedId, compressedObject, offset)
+                            del(compressedObjectsDict)
         if errorMessage != '':
             return (-1,errorMessage)
         return (0,'')
@@ -5809,10 +5824,10 @@ class PDFParser :
                             break
                         relativeOffset += index
                         checkHeader = bodyContent[relativeOffset-1:relativeOffset+len(objectHeader)]
-                        if re.match('\D'+objectHeader,checkHeader):
+                        if not re.match('\d{1,10}'+objectHeader,checkHeader):
                             break
                         else:
-                            auxContent = auxContent[relativeOffset+len(objectHeader):]
+                            auxContent = auxContent[index+len(objectHeader):]
                             relativeOffset += len(objectHeader)
                     ret = self.createPDFIndirectObject(rawObject, forceMode, looseMode)
                     if ret[0] != -1:
