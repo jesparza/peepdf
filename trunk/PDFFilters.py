@@ -56,8 +56,7 @@
 	Module to manage encoding/decoding in PDF files
 '''
 
-import sys, zlib, lzw
-
+import sys, zlib, lzw, struct
 
 def decodeStream(stream, filter, parameters = {}):
 	'''
@@ -119,55 +118,57 @@ def encodeStream(stream, filter, parameters = {}):
 		ret = crypt(stream, parameters)
 	return ret
 
+'''
+The ascii85Decode code is part of pdfminer (http://pypi.python.org/pypi/pdfminer/)
+
+Copyright (c) 2004-2010 Yusuke Shinyama <yusuke at cs dot nyu dot edu>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+'''
 def ascii85Decode(stream):
-	decodedStream = ''
-	group = []
-	x = 0
-	hitEod = False
-	# remove all whitespace from data
-	try:
-		data = [y for y in stream if not (y in ' \n\r\t')]
-		while not hitEod and x < len(data):
-		    c = data[x]
-		    if len(decodedStream) == 0 and c == '<' and data[x+1] == '~':
-		        x += 2
-		        continue
-		    #elif c.isspace():
-		    #    x += 1
-		    #    continue
-		    elif c == 'z':
-		        assert len(group) == 0
-		        decodedStream += '\x00\x00\x00\x00'
-		        continue
-		    elif c == "~" and data[x+1] == '>':
-		        if len(group) != 0:
-		            # cannot have a final group of just 1 char
-		            cnt = len(group) - 1
-		            group += [ 85, 85, 85 ]
-		            hitEod = cnt
-		        else:
-		            break
-		    else:
-		        c = ord(c) - 33
-		        group += [ c ]
-		    if len(group) >= 5:
-		        b = group[0] * (85**4) + \
-		            group[1] * (85**3) + \
-		            group[2] * (85**2) + \
-		            group[3] * 85 + \
-		            group[4]
-		        c4 = chr((b >> 0) % 256)
-		        c3 = chr((b >> 8) % 256)
-		        c2 = chr((b >> 16) % 256)
-		        c1 = chr(b >> 24)
-		        decodedStream += (c1 + c2 + c3 + c4)
-		        if hitEod:
-		            decodedStream = decodedStream[:-4+hitEod]
-		        group = []
-		    x += 1
-	except:
-	    return (-1,'Unspecified error')
-	return (0,decodedStream)
+    """
+    In ASCII85 encoding, every four bytes are encoded with five ASCII
+    letters, using 85 different types of characters (as 256**4 < 85**5).
+    When the length of the original bytes is not a multiple of 4, a special
+    rule is used for round up.
+    
+    The Adobe's ASCII85 implementation is slightly different from
+    its original in handling the last characters.
+    
+    The sample string is taken from:
+      http://en.wikipedia.org/w/index.php?title=Ascii85
+    
+    >>> ascii85decode('9jqo^BlbD-BleB1DJ+*+F(f,q')
+    'Man is distinguished'
+    >>> ascii85decode('E,9)oF*2M7/c~>')
+    'pleasure.'
+    """
+    n = b = 0 
+    decodedStream = ''
+    try:
+	    for c in stream:
+	        if '!' <= c and c <= 'u':
+	            n += 1
+	            b = b*85+(ord(c)-33)
+	            if n == 5:
+	                decodedStream += struct.pack('>L',b)
+	                n = b = 0
+	        elif c == 'z':
+	            assert n == 0
+	            decodedStream += '\0\0\0\0'
+	        elif c == '~':
+	            if n:
+	                for _ in range(5-n):
+	                    b = b*85+84
+	                decodedStream += struct.pack('>L',b)[:n-1]
+	            break
+    except:
+		return (-1,'Unspecified error')
+    return (0,decodedStream)
 
 def ascii85Encode(stream):
 	encodedStream = ''
@@ -328,9 +329,7 @@ def flateEncode(stream, parameters):
 def lzwDecode(stream, parameters):
 	decodedStream = ''
 	try:
-		generator = lzw.decompress(stream)
-		for c in generator:
-			decodedStream += c
+		decodedStream = lzw.lzwdecode(stream)
 	except:
 		return (-1,'Error decompressing string')
 	
