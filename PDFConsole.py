@@ -2455,7 +2455,17 @@ class PDFConsole(cmd.Cmd):
             var = args[0]
             if self.variables.has_key(var):
                 self.variables[var][0] = self.variables[var][1]
-                message = var + ' = "' + self.variables[var][0] + '"'
+                if var == 'output' and (self.variables[var][0] == 'file' or self.variables[var][0] == 'variable'):
+                    message = var + ' = "' + self.output + '" ('+ str(self.variables[var][0]) +')'
+                else:
+                    varContent = self.printResult(str(self.variables[var][0]))
+                    if varContent == str(self.variables[var][0]):
+                        if varContent != 'None' and not re.match('\[.*\]',varContent):
+                            message = var + ' = "' + varContent + '"'
+                        else:
+                            message = var + ' = ' + varContent
+                    else:
+                        message = var + ' = ' + newLine + varContent
             else:
                 message = '*** Error: the variable does not exist!!'
             self.log_output('reset ' + argv, message)
