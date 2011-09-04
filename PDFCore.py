@@ -1240,7 +1240,7 @@ class PDFStream (PDFDictionary) :
                 self.filterParams = self.elements['/DecodeParms']
             elif self.elements.has_key('/FDecodeParms'):
                 self.filterParams = self.elements['/FDecodeParms']
-            if self.elements.has_key('/DP'):
+            elif self.elements.has_key('/DP'):
                 self.filterParams = self.elements['/DP']
             else:
                 self.filterParams = None
@@ -2230,6 +2230,8 @@ class PDFObjectStream (PDFStream) :
                 self.filterParams = self.elements['/DecodeParms']
             elif self.elements.has_key('/FDecodeParms'):
                 self.filterParams = self.elements['/FDecodeParms']
+            elif self.elements.has_key('/DP'):
+                self.filterParams = self.elements['/DP']
             else:
                 self.filterParams = None
                 
