@@ -1791,6 +1791,10 @@ class PDFConsole(cmd.Cmd):
                 for url in urlsFound:
                     unescapedOutput += '\t'+url
                 unescapedOutput += newLine
+        else:
+            message = '*** Error: '+ret[1]
+            self.log_output('js_unescape ' + argv, message)
+            return False
         self.log_output('js_unescape ' + argv, unescapedOutput, bytes, storeOutput = True, bytesOutput = True)
         
     def help_js_unescape(self):
