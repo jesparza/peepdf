@@ -5329,7 +5329,7 @@ class PDFFile :
         self.addNumDecodingErrors(body.getNumDecodingErrors())
         
         # xref table
-        subsection = PDFCrossRefSubSection(0,numObjects,xrefEntries)
+        subsection = PDFCrossRefSubSection(0,numObjects+1,xrefEntries)
         xrefSection = PDFCrossRefSection()
         xrefSection.addSubsection(subsection)
         xrefSection.setOffset(offset)
