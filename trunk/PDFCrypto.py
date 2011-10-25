@@ -49,7 +49,7 @@ def computeEncryptionKey(password, ownerPass, fileID, pElement, keyLength = 128,
 		password = password[:32]
 	elif lenPass < 32:
 		password += paddingString[:32-lenPass]
-	md5input = password + ownerPass + struct.pack('<I',int(pElement)) + fileID
+	md5input = password + ownerPass + struct.pack('<i',int(pElement)) + fileID
 	if revision > 3:
 		md5input += '\xFF'*4
 	key = hashlib.md5(md5input).digest()
@@ -69,7 +69,7 @@ def computeObjectKey(id, generationNum, encryptionKey, keyLengthBytes):
 		@param keyLengthBytes The length of the encryption key in bytes
 		@return The computed key in string format
 	'''	
-	key = encryptionKey + struct.pack('<I',id)[:3] + struct.pack('<I',generationNum)[:2]
+	key = encryptionKey + struct.pack('<i',id)[:3] + struct.pack('<i',generationNum)[:2]
 	# AES: key += '\x73\x41\x6C\x54'
 	key = hashlib.md5(key).digest()
 	if keyLengthBytes+5 < 16:
