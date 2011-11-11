@@ -233,7 +233,6 @@ class BitPacker(object):
             # size of the upstream codebook, right now we're just trusting
             # that everybody intends to follow the TIFF spec.
             codesize = codesize + 1
-
             if pt == END_OF_INFO_CODE:
                while len(tailbits) % 8:
                   tailbits.append(0)
@@ -502,8 +501,10 @@ class Encoder(object):
         >>> enc = lzw.Encoder()
         >>> [ cp for cp in enc.encode("gabba gabba yo gabba") ]
         [103, 97, 98, 98, 97, 32, 258, 260, 262, 121, 111, 263, 259, 261, 256]
-
+        
+        Modified by Jose Miguel Esparza to add support for PDF files encoding
         """
+        yield CLEAR_CODE
         for b in bytesource:
             for point in self._encode_byte(b):
                 yield point
@@ -511,9 +512,9 @@ class Encoder(object):
             if self.code_size() >= self._max_code_size:
                 for pt in self.flush():
                     yield pt
-        
-        for point in self.flush():
-            yield point
+
+        yield self._prefixes[self._buffer]
+        yield END_OF_INFO_CODE
 
 
     def _encode_byte(self, byte):
