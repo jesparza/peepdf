@@ -22,7 +22,6 @@
 #
 
 '''
-    PDFConsole.py
     Implementation of the interactive console of peepdf
 '''
 
@@ -53,7 +52,9 @@ except:
     COLORIZED_OUTPUT = False
 
 class PDFConsole(cmd.Cmd):
-    
+    '''
+        Class of the peepdf interactive console. To see details about commands: http://code.google.com/p/peepdf/wiki/Commands
+    '''
     def __init__(self, pdfFile, stdin = None):
         cmd.Cmd.__init__(self, stdin = stdin)
         if COLORIZED_OUTPUT:
@@ -2914,9 +2915,10 @@ class PDFConsole(cmd.Cmd):
         
     def additionRequest(self, dict = False):
         '''
-            Method to ask the user if he want to add more entries to the object or not
-            @param dict Boolean to specify if the added object is a dictionary or not. Default value: False.
-            @return The response chosen by the user
+            Method to ask the user if he wants to add more entries to the object or not
+            
+            @param dict: Boolean to specify if the added object is a dictionary or not. Default value: False.
+            @return: The response chosen by the user
         '''
         if not dict:
             message = newLine + 'Do you want to add more objects? (y/n) '
@@ -2931,9 +2933,10 @@ class PDFConsole(cmd.Cmd):
     def addObject(self, iteration, maxDepth = 10):
         '''
             Method to add a new object to an array or dictionary
-            @param iteration Integer which specifies the depth of the recursion in the same object
-            @param maxDepth The maximum depth for nested objects. Default value: 10.
-            @return The new object
+            
+            @param iteration: Integer which specifies the depth of the recursion in the same object
+            @param maxDepth: The maximum depth for nested objects. Default value: 10.
+            @return: The new object
         '''
         dictNumType = {'1':'boolean','2':'number','3':'string','4':'hexstring','5':'name','6':'reference','7':'null','8':'array','9':'dictionary'}
         if iteration > maxDepth:
@@ -3011,9 +3014,10 @@ class PDFConsole(cmd.Cmd):
     def checkInputContent(self, objectType, objectContent):
         '''
             Check if the specified content is valid for the specified object type and modify it\'s possible
-            @param objectType The type of object: number, string, hexstring, name, reference, null
-            @param objectContent The object content
-            @return The content of the object or None if any problems occur
+            
+            @param objectType: The type of object: number, string, hexstring, name, reference, null
+            @param objectContent: The object content
+            @return: The content of the object or None if any problems occur
         '''
         spacesChars = ['\x00','\x09','\x0a','\x0c','\x0d','\x20']
         demilimiterChars = ['<<','(','<','[','{','/','%']
@@ -3072,13 +3076,13 @@ class PDFConsole(cmd.Cmd):
     def log_output(self, command, output, bytes = None, printOutput = True, storeOutput = False, bytesOutput = False):
         '''
             Method to check the commands output and write it to the console and/or files
-            @param command The command launched
-            @param output The output of the command
-            @param bytes The raw bytes of the command
-            @param printOutput Boolean to specify if the output will be written to the console or not. Default value: True.
-            @param storeOutput Boolean to specify if the output will be stored in a variable or file. Default value: False.
-            @param bytesOutput Boolean to specify if the raw bytes of output will be stored or not. Default value: False.
-            @return 
+            
+            @param command: The command launched
+            @param output: The output of the command
+            @param bytes: The raw bytes of the command
+            @param printOutput: Boolean to specify if the output will be written to the console or not. Default value: True.
+            @param storeOutput: Boolean to specify if the output will be stored in a variable or file. Default value: False.
+            @param bytesOutput: Boolean to specify if the raw bytes of output will be stored or not. Default value: False. 
         '''
         if bytesOutput and output != '':
             niceOutput = self.printResult(output)
@@ -3112,17 +3116,20 @@ class PDFConsole(cmd.Cmd):
                     lines = lines[limit:]
                     for line in outputStepLines:
                         print line
-                    raw_input('( Press <intro> to continue )')
+                    ch = raw_input('( Press <intro> to continue or <q><intro> to quit )')
+                    if ch == 'q' or ch == 'Q':
+                        break
             
 
     def modifyObject(self, object, iteration = 0, contentFile = None, maxDepth = 10):
         '''
-            Method to modify an existen object
-            @param object The object to be modified
-            @param iteration Integer which specifies the depth of the recursion in the same object
-            @param contentFile The content of the file storing the stream
-            @param maxDepth The maximum depth for nested objects. Default value: 10.
-            @return The new object
+            Method to modify an existent object
+            
+            @param object: The object to be modified
+            @param iteration: Integer which specifies the depth of the recursion in the same object
+            @param contentFile: The content of the file storing the stream
+            @param maxDepth: The maximum depth for nested objects. Default value: 10.
+            @return: The new object
         '''
         if iteration > maxDepth:
             return (-1,'Object too nested!!')
@@ -3241,11 +3248,12 @@ class PDFConsole(cmd.Cmd):
     def modifyRequest(self, value, rawValue, key = None, stream = False):
         '''
             Method to ask the user what he wants to do with the object: modify, delete or nothing.
-            @param value The value of the object.
-            @param rawValue The raw value of the object.
-            @param key The key of a dictionary entry.
-            @param stream Boolean to specify if the object contains a stream or not.
-            @return The response chosen by the user
+            
+            @param value: The value of the object.
+            @param rawValue: The raw value of the object.
+            @param key: The key of a dictionary entry.
+            @param stream: Boolean to specify if the object contains a stream or not.
+            @return: The response chosen by the user
         '''
         message = ''
         if not stream:
@@ -3270,8 +3278,9 @@ class PDFConsole(cmd.Cmd):
     def parseArgs(self,args):
         '''
             Method to split up the command arguments by quotes: \'\'\', " or \'
-            @param args The command arguments
-            @return An array with the separated arguments
+            
+            @param args: The command arguments
+            @return: An array with the separated arguments
         '''
         argsArray = []
         while len(args) > 0:
@@ -3328,8 +3337,9 @@ class PDFConsole(cmd.Cmd):
     def printBytes(self, bytes):
         '''
             Given a byte string shows the hexadecimal and ascii output in a nice way
-            @param unescapedBytes
-            @return String with mixed hexadecimal and ascii strings, like the 'hexdump -C' output
+            
+            @param bytes: A string
+            @return: String with mixed hexadecimal and ascii strings, like the 'hexdump -C' output
         '''
         output = ''
         row = 16
@@ -3361,8 +3371,9 @@ class PDFConsole(cmd.Cmd):
     def printResult(self, result):
         '''
             Given an string returns a mixed hexadecimal-ascci output if there are many non printable characters or the same string in other case
-            @param result (string)
-            @return A mixed hexadecimal-ascii output if there are many non printable characters or the input string in other case
+            
+            @param result: A string
+            @return: A mixed hexadecimal-ascii output if there are many non printable characters or the input string in other case
         '''
         size = len(result)
         num = countNonPrintableChars(result)
@@ -3374,12 +3385,13 @@ class PDFConsole(cmd.Cmd):
     def printTreeNode(self, node, nodesInfo, expandedNodes = [], depth = 0, recursive = True):
         '''
             Given a tree prints the whole tree and its dependencies
-            @param node Root
-            @param nodesInfo
-            @param expandedNodes
-            @param depth
-            @param recurisve
-            @return A tuple (expandedNodes,output), where expandedNodes is a list with the distinct nodes and output is the string representation of the tree
+            
+            @param node: Root of the tree
+            @param nodesInfo: Information abour the nodes of the tree
+            @param expandedNodes: Already expanded nodes
+            @param depth: Actual depth of the tree
+            @param recursive: Boolean to specify if it's a recursive call or not
+            @return: A tuple (expandedNodes,output), where expandedNodes is a list with the distinct nodes and output is the string representation of the tree
         '''
         output = ''
         if nodesInfo.has_key(node):
