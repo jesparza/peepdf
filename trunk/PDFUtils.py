@@ -22,7 +22,6 @@
 #
 
 '''
-    PDFUtils.py
     Module with some misc functions
 '''
 
@@ -42,9 +41,10 @@ def clearScreen():
 def countArrayElements(array):
     '''
         Simple method to count the repetitions of elements in an array
-		@param array (list)
-		@return A tuple (elements,counters), where elements is a list with the distinct elements and counters is the list with the number of times they appear in the array
-		'''
+        
+		@param array: An array of elements
+		@return: A tuple (elements,counters), where elements is a list with the distinct elements and counters is the list with the number of times they appear in the array
+	'''
     elements = []
     counters = []
     for element in array:
@@ -59,8 +59,9 @@ def countArrayElements(array):
 def countNonPrintableChars(string):
     '''
         Simple method to return the non printable characters found in an string
-		@param string
-		@return Number of non printable characters in the string
+        
+		@param string: A string
+		@return: Number of non printable characters in the string
 	'''
     counter = 0
     for i in range(len(string)):
@@ -71,8 +72,9 @@ def countNonPrintableChars(string):
 def decodeName(name):
 	'''
         Decode the given PDF name
-		@param name (string)
-		@return A tuple (status,statusContent), where statusContent is the decoded PDF name in case status = 0 or an error in case status = -1
+        
+		@param name: A PDFName string to decode
+		@return: A tuple (status,statusContent), where statusContent is the decoded PDF name in case status = 0 or an error in case status = -1
 	'''
 	decodedName = name
 	hexNumbers = re.findall('#([0-9a-f]{2})', name, re.DOTALL | re.IGNORECASE)
@@ -86,7 +88,8 @@ def decodeName(name):
 def decodeString(string):
 	'''
         Decode the given PDF string
-		@param string
+        
+		@param string: A PDFString to decode
 		@return A tuple (status,statusContent), where statusContent is the decoded PDF string in case status = 0 or an error in case status = -1
 	'''
 	decodedString = string
@@ -101,8 +104,9 @@ def decodeString(string):
 def encodeName(name):
 	'''
         Encode the given PDF name
-		@param name (string)
-		@return A tuple (status,statusContent), where statusContent is the encoded PDF name in case status = 0 or an error in case status = -1
+        
+		@param name: A PDFName string to encode
+		@return: A tuple (status,statusContent), where statusContent is the encoded PDF name in case status = 0 or an error in case status = -1
 	'''
 	encodedName = ''
 	if name[0] == '/':
@@ -121,8 +125,9 @@ def encodeName(name):
 def encodeString(string):
 	'''
         Encode the given PDF string
-		@param string
-		@return A tuple (status,statusContent), where statusContent is the encoded PDF string in case status = 0 or an error in case status = -1
+        
+		@param string: A PDFString to encode
+		@return: A tuple (status,statusContent), where statusContent is the encoded PDF string in case status = 0 or an error in case status = -1
 	'''
 	encodedString = ''
 	try:
@@ -135,9 +140,10 @@ def encodeString(string):
 
 def escapeRegExpString(string):
     '''
-        Escape the given string to include it as a reg expression
-        @param string
-        @return Escaped string
+        Escape the given string to include it as a regular expression
+        
+        @param string: A regular expression to be escaped
+        @return: Escaped string
     '''
     toEscapeChars = ['\\','(',')','.','|','^','$','*','+','?','[',']']
     escapedValue = ''
@@ -151,8 +157,9 @@ def escapeRegExpString(string):
 def escapeString(string):
 	'''
         Escape the given string
-		@param string
-		@return Escaped string
+        
+		@param string: A string to be escaped
+		@return: Escaped string
 	'''
 	toEscapeChars = ['\\','(',')']
 	escapedValue = ''
@@ -181,11 +188,12 @@ def escapeString(string):
 
 def getBytesFromFile(filename, offset, numBytes):
     '''
-        Returns the num of bytes specified from a file, starting from the offset specified
-		@param filename
-		@param offset
-		@param numBytes
-		@return A tuple (status,statusContent), where statusContent is the bytes read in case status = 0 or an error in case status = -1
+        Returns the number of bytes specified from a file, starting from the offset specified
+        
+		@param filename: Name of the file
+		@param offset: Bytes offset
+		@param numBytes: Number of bytes to retrieve
+		@return: A tuple (status,statusContent), where statusContent is the bytes read in case status = 0 or an error in case status = -1
 	'''
     if not isinstance(offset,int) or not isinstance(numBytes,int):
         return (-1,'The offset and the number of bytes mus be integers')
@@ -205,8 +213,9 @@ def getBytesFromFile(filename, offset, numBytes):
 def hexToString(hexString):
 	'''
 		Simple method to convert an hexadecimal string to ascii string
-		@param hexString
-		@return A tuple (status,statusContent), where statusContent is an ascii string in case status = 0 or an error in case status = -1
+		
+		@param hexString: A string in hexadecimal format
+		@return: A tuple (status,statusContent), where statusContent is an ascii string in case status = 0 or an error in case status = -1
 	'''
 	string = ''
 	if len(hexString) % 2 != 0:
@@ -221,9 +230,10 @@ def hexToString(hexString):
 def numToHex(num, numBytes):
     '''
         Given a number returns its hexadecimal format with the specified length, adding '\0' if necessary
-		@param num Number (int)
-		@param numBytes Length of the output (int)
-		@return A tuple (status,statusContent), where statusContent is a number in hexadecimal format in case status = 0 or an error in case status = -1
+		
+		@param num: A number (int)
+		@param numBytes: Length of the output (int)
+		@return: A tuple (status,statusContent), where statusContent is a number in hexadecimal format in case status = 0 or an error in case status = -1
 	'''
     hexString = ''
     if not isinstance(num,int):
@@ -242,9 +252,10 @@ def numToHex(num, numBytes):
 def numToString(num, numDigits):
 	'''
         Given a number returns its string format with the specified length, adding '0' if necessary
-		@param num Number (int)
-		@param numDigits Length of the string output (int)
-		@return A tuple (status,statusContent), where statusContent is a number in string format in case status = 0 or an error in case status = -1
+		
+		@param num: A number (int)
+		@param numDigits: Length of the output string (int)
+		@return: A tuple (status,statusContent), where statusContent is a number in string format in case status = 0 or an error in case status = -1
 	'''
 	if not isinstance(num,int):
 		return (-1,'Bad number')
@@ -258,8 +269,9 @@ def numToString(num, numDigits):
 def unescapeString(string):
 	'''
         Unescape the given string
-		@param string
-		@return Unescaped string
+        
+		@param string: An escaped string
+		@return: Unescaped string
 	'''
 	toUnescapeChars = ['\\','(',')']
 	unescapedValue = ''

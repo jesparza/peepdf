@@ -21,10 +21,8 @@
 #		along with peepdf.	If not, see <http://www.gnu.org/licenses/>.
 #
 
-'''
-	PDFCrypto.py
-	
-	Module to manage cryptographuc operations with PDF files
+'''	
+	Module to manage cryptographic operations with PDF files
 '''	
 
 import hashlib,struct,random,warnings
@@ -34,13 +32,14 @@ warnings.filterwarnings("ignore")
 def computeEncryptionKey(password, ownerPass, fileID, pElement, keyLength = 128, revision = 3):
 	'''
 		Compute an encryption key to encrypt/decrypt the PDF file
-		@param password The password entered by the user
-		@param ownerPass The computed owner password
-		@param fileID The /ID element in the trailer dictionary of the PDF file
-		@param pElement The /P element of the Encryption dictionary
-		@param keyLength The lenght of the key
-		@param revision The algorithm revision
-		@return The computed encryption key in string format
+		
+		@param password: The password entered by the user
+		@param ownerPass: The computed owner password
+		@param fileID: The /ID element in the trailer dictionary of the PDF file
+		@param pElement: The /P element of the Encryption dictionary
+		@param keyLength: The length of the key
+		@param revision: The algorithm revision
+		@return: The computed encryption key in string format
 	'''
 	paddingString = '\x28\xBF\x4E\x5E\x4E\x75\x8A\x41\x64\x00\x4E\x56\xFF\xFA\x01\x08\x2E\x2E\x00\xB6\xD0\x68\x3E\x80\x2F\x0C\xA9\xFE\x64\x53\x69\x7A'
 	keyLength = keyLength/8
@@ -63,11 +62,12 @@ def computeEncryptionKey(password, ownerPass, fileID, pElement, keyLength = 128,
 def computeObjectKey(id, generationNum, encryptionKey, keyLengthBytes):
 	'''
 		Compute the key necessary to encrypt each object, depending on the id and generation number
-		@param id The object id
-		@param generationNum The generation number of the object
-		@param encryptionKey The encryption key
-		@param keyLengthBytes The length of the encryption key in bytes
-		@return The computed key in string format
+		
+		@param id: The object id
+		@param generationNum: The generation number of the object
+		@param encryptionKey: The encryption key
+		@param keyLengthBytes: The length of the encryption key in bytes
+		@return: The computed key in string format
 	'''	
 	key = encryptionKey + struct.pack('<i',id)[:3] + struct.pack('<i',generationNum)[:2]
 	# AES: key += '\x73\x41\x6C\x54'
@@ -80,11 +80,12 @@ def computeObjectKey(id, generationNum, encryptionKey, keyLengthBytes):
 def computeOwnerPass(ownerPassString, userPassString, keyLength = 128, revision = 3):
 	'''
 		Compute the owner password necessary to compute the encryption key of the PDF file
-		@param ownerPassString The owner password entered by the user
-		@param userPassString The user password entered by the user
-		@param keyLength The lenght of the key
-		@param revision The algorithm revision
-		@return The computed password in string format
+		
+		@param ownerPassString: The owner password entered by the user
+		@param userPassString: The user password entered by the user
+		@param keyLength: The length of the key
+		@param revision: The algorithm revision
+		@return: The computed password in string format
 	'''	
 	paddingString = '\x28\xBF\x4E\x5E\x4E\x75\x8A\x41\x64\x00\x4E\x56\xFF\xFA\x01\x08\x2E\x2E\x00\xB6\xD0\x68\x3E\x80\x2F\x0C\xA9\xFE\x64\x53\x69\x7A'
 	keyLength = keyLength/8
@@ -119,13 +120,14 @@ def computeOwnerPass(ownerPassString, userPassString, keyLength = 128, revision 
 def computeUserPass(userPassString, ownerPass, fileID, pElement, keyLength = 128, revision = 3):
 	'''
 		Compute the user password of the PDF file
-		@param userPassString The user password entered by the user
-		@param ownerPass The computed owner password
-		@param fileID The /ID element in the trailer dictionary of the PDF file
-		@param pElement The /P element of the Encryption dictionary
-		@param keyLength The lenght of the key
-		@param revision The algorithm revision
-		@return The computed password in string format
+		
+		@param userPassString: The user password entered by the user
+		@param ownerPass: The computed owner password
+		@param fileID: The /ID element in the trailer dictionary of the PDF file
+		@param pElement: The /P element of the /Encryption dictionary
+		@param keyLength: The length of the key
+		@param revision: The algorithm revision
+		@return: The computed password in string format
 	'''
 	userPass = ''
 	paddingString = '\x28\xBF\x4E\x5E\x4E\x75\x8A\x41\x64\x00\x4E\x56\xFF\xFA\x01\x08\x2E\x2E\x00\xB6\xD0\x68\x3E\x80\x2F\x0C\xA9\xFE\x64\x53\x69\x7A'
@@ -152,9 +154,10 @@ def computeUserPass(userPassString, ownerPass, fileID, pElement, keyLength = 128
 def RC4(data, key):
 	'''
 		RC4 implementation
-		@param data Bytes to be encrypyed/decrypted
-		@param key Key used for the algorithm
-		@return The encrypted/decrypted bytes
+		
+		@param data: Bytes to be encrypyed/decrypted
+		@param key: Key used for the algorithm
+		@return: The encrypted/decrypted bytes
 	'''	
 	y = 0
 	hash = {}
