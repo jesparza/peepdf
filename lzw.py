@@ -1,3 +1,29 @@
+#
+#    peepdf is a tool to analyse and modify PDF files
+#    http://peepdf.eternal-todo.com
+#    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
+#
+#    Copyright (C) 2011 Jose Miguel Esparza
+#
+#    This file is part of peepdf.
+#
+#        peepdf is free software: you can redistribute it and/or modify
+#        it under the terms of the GNU General Public License as published by
+#        the Free Software Foundation, either version 3 of the License, or
+#        (at your option) any later version.
+#
+#        peepdf is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
+#        GNU General Public License for more details.
+#
+#        You should have received a copy of the GNU General Public License
+#        along with peepdf.    If not, see <http://www.gnu.org/licenses/>.
+#
+
+'''
+    Library to encode/decode streams using the LZW algorithm. Mix of third party libraries (python-lzw and pdfminer) with some modifications.
+'''
 
 """
 A stream friendly, simple compression library, built around
@@ -49,15 +75,15 @@ The Details
 >>> oldbytes == newbytes
 True
 
-
-"""
-
 __author__ = "Joe Bowers"
 __license__ = "MIT License"
 __version__ = "0.01.01"
 __status__ = "Development"
 __email__ = "joerbowers@gmail.com"
 __url__ = "http://www.joe-bowers.com/static/lzw"
+
+"""
+
 
 import struct
 import itertools
