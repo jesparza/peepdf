@@ -634,7 +634,7 @@ class PDFConsole(cmd.Cmd):
                                         contentsStreamId = ret[1][0]
                                         firstPageObject.setElement('/Contents',PDFReference(str(contentsStreamId)))
                                     # Adding GoToE action
-                                    if option != None:
+                                    if execute:
                                         targetDict = PDFDictionary(elements = {'/N': hexFileNameObject, '/R': PDFName('C')})
                                         actionGoToEDict = PDFDictionary(elements = {'/S':PDFName('GoToE'),'/NewWindow':PDFBool('false'),'/T':targetDict})
                                         ret = self.pdfFile.setObject(None,actionGoToEDict,version)
@@ -679,10 +679,7 @@ class PDFConsole(cmd.Cmd):
             self.log_output('embed ' + argv, message)
             return False
             
-        if option != None:
-            pass
-            
-        message = 'File embedded succesfully!!'
+        message = 'File embedded successfully!!'
         self.log_output('open ' + argv, message)
 
     def help_embed(self):
