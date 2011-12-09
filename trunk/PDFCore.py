@@ -22,7 +22,6 @@
 #
 
 '''
-    PDFCore.py
     This module contains classes and methods to analyse and modify PDF files
 '''
 
@@ -43,9 +42,9 @@ newLine = os.linesep
 isForceMode = False
 monitorizedEvents = ['/OpenAction','/AA','/Names','/AcroForm']
 monitorizedActions = ['/JS','/JavaScript','/Launch','/SubmitForm','/ImportData']
-monitorizedElements = ['/JBIG2Decode','/EmbeddedFiles','/EmbeddedFile','getPageNthWord','arguments.callee']
-jsVulns = ['mailto','Collab.collectEmailInfo','util.printf','getAnnots','getIcon','spell.customDictionaryOpen','media.newPlayer']
-vulnsDict = {'/JBIG2Decode':'CVE-2009-0658','mailto':'CVE-2007-5020','Collab.collectEmailInfo':'CVE-2007-5659','util.printf':'CVE-2008-2992','getAnnots':'CVE-2009-1492','getIcon':'CVE-2009-0927','spell.customDictionaryOpen':'CVE-2009-1493','media.newPlayer':'CVE-2009-4324'}
+monitorizedElements = ['/JBIG2Decode','/EmbeddedFiles','/EmbeddedFile','getPageNthWord','arguments.callee','/U3D']
+jsVulns = ['mailto','Collab.collectEmailInfo','util.printf','getAnnots','getIcon','spell.customDictionaryOpen','media.newPlayer','doc.printSeps']
+vulnsDict = {'/JBIG2Decode':'CVE-2009-0658','mailto':'CVE-2007-5020','Collab.collectEmailInfo':'CVE-2007-5659','util.printf':'CVE-2008-2992','getAnnots':'CVE-2009-1492','getIcon':'CVE-2009-0927','spell.customDictionaryOpen':'CVE-2009-1493','media.newPlayer':'CVE-2009-4324','doc.printSeps':'CVE-2010-4091','/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462']}
 
 
 class PDFObject :
@@ -53,6 +52,11 @@ class PDFObject :
         Base class for all the PDF objects
     '''
     def __init__(self, raw = None):
+        '''
+            Constructor of a PDFObject
+            
+            @param raw: The raw value of the PDF object
+        '''
         self.references = []
         self.type = ''
         self.value = ''
@@ -68,10 +72,21 @@ class PDFObject :
         self.compressedIn = None
     
     def addError(self, errorMessage):
+        '''
+            Add an error to the object
+            
+            @param errorMessage: The error message to be added (string)
+        '''
         if errorMessage not in self.errors:
             self.errors.append(errorMessage)
             
     def contains(self, string):
+        '''
+            Look for the string inside the object content
+            
+            @param string: A string
+            @return: A boolean to specify if the string has been found or not
+        '''
         value = str(self.value)
         rawValue = str(self.rawValue)
         encValue = str(self.encryptedValue)
@@ -84,9 +99,19 @@ class PDFObject :
         return False
 
     def containsJS(self):
+        '''
+            Method to check if there are Javascript code inside the object
+            
+            @return: A boolean
+        '''
         return self.containsJScode
 
     def encodeChars(self):
+        '''
+            Encode the content of the object if possible (only for PDFName, PDFString, PDFArray and PDFStreams) 
+            
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         return (0,'')
     
     def encrypt(self, password):

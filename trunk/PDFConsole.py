@@ -1182,12 +1182,21 @@ class PDFConsole(cmd.Cmd):
                     if vulns != None:
                         for vuln in vulns:
                             if vulnsDict.has_key(vuln):
-                                stats += '\t\t' + vuln + ' (' + vulnsDict[vuln] +'): ' + str(vulns[vuln]) + newLine
+                                vulnString = str(vulnsDict[vuln])
+                                if vulnString.find('[') != -1:
+                                    vulnString = vulnString[1:-1] 
+                                stats += '\t\t' + vuln + ' (' + vulnString +'): ' + str(vulns[vuln]) + newLine
                             else:
                                 stats += '\t\t' + vuln + ': ' + str(vulns[vuln]) + newLine
                     if elements != None:
                         for element in elements:
-                            stats += '\t\t' + element + ': ' + str(elements[element]) + newLine
+                            if vulnsDict.has_key(element):
+                                vulnString = str(vulnsDict[element])
+                                if vulnString.find('[') != -1:
+                                    vulnString = vulnString[1:-1] 
+                                stats += '\t\t' + element + ' (' + vulnString +'): ' + str(elements[element]) + newLine
+                            else:
+                                stats += '\t\t' + element + ': ' + str(elements[element]) + newLine
                 urls = statsVersion['URLs']
                 if urls != None:
                     newLine + '\tFound URLs:' + newLine
