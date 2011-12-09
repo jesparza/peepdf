@@ -5,9 +5,9 @@
 <br/>
 There are a lot of commands that can be used in the interactive console of peepdf and here there is an explanation of all of them:
 ===Showing information===
+  * [#bytes bytes]
   * [#changelog changelog]
   * [#errors errors]
-  * [#bytes bytes]
   * [#info info]
   * [#metadata metadata]
   * [#object object]
@@ -15,9 +15,9 @@ There are a lot of commands that can be used in the interactive console of peepd
   * [#rawobject rawobject]
   * [#rawstream rawstream]
   * [#references references]
+  * [#save_version save_version]
   * [#stream stream]
   * [#tree tree]
-  * [#save_version save_version]
 ===Creation/Modification===
   * [#create create]
   * [#decode decode]
