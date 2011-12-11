@@ -37,13 +37,25 @@ try:
 except:
 	JS_MODULE = False
 	
+author = 'Jose Miguel Esparza' 
+email = 'jesparza AT eternal-todo.com'
+url = 'http://peepdf.eternal-todo.com'
+twitter = '@eternaltodo'
+version = '0.1'
+revision = '52'   
 stats = ''
 pdf = None
 fileName = None
 newLine = os.linesep
 vulnsDict = {'/JBIG2Decode':'CVE-2009-0658','mailto':'CVE-2007-5020','Collab.collectEmailInfo':'CVE-2007-5659','util.printf':'CVE-2008-2992','getAnnots':'CVE-2009-1492','getIcon':'CVE-2009-0927','spell.customDictionaryOpen':'CVE-2009-1493','media.newPlayer':'CVE-2009-4324','doc.printSeps':'CVE-2010-4091','/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462']}
-
-argsParser = optparse.OptionParser('Usage: '+sys.argv[0]+' [options] PDF_file')
+versionHeader = 'Version: peepdf ' + version + ' r' + revision
+peepdfHeader =  versionHeader + newLine +\
+               'Author: ' + author + newLine +\
+               'E-mail: ' + email + newLine +\
+               'Twitter: ' + twitter + newLine +\
+               'URL: ' + url + newLine
+               
+argsParser = optparse.OptionParser(usage='Usage: '+sys.argv[0]+' [options] PDF_file',version=peepdfHeader,description=versionHeader)
 argsParser.add_option('-i', '--interactive', action='store_true', dest='isInteractive', default=False, help='Sets console mode.')
 argsParser.add_option('-f', '--force-mode', action='store_true', dest='isForceMode', default=False, help='Sets force parsing mode to ignore errors.')
 argsParser.add_option('-l', '--loose-mode', action='store_true', dest='isLooseMode', default=False, help='Sets loose parsing mode to catch malformed objects.')
