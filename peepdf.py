@@ -99,7 +99,7 @@ email = 'jesparza AT eternal-todo.com'
 url = 'http://peepdf.eternal-todo.com'
 twitter = '@eternaltodo'
 version = '0.1'
-revision = '53'   
+revision = '56'   
 stats = ''
 pdf = None
 fileName = None
@@ -112,15 +112,18 @@ peepdfHeader =  versionHeader + newLine +\
                'Twitter: ' + twitter + newLine +\
                'URL: ' + url + newLine
                
-argsParser = optparse.OptionParser(usage='Usage: '+sys.argv[0]+' [options] PDF_file',version=peepdfHeader,description=versionHeader)
+argsParser = optparse.OptionParser(usage='Usage: '+sys.argv[0]+' [options] PDF_file',description=versionHeader)
 argsParser.add_option('-i', '--interactive', action='store_true', dest='isInteractive', default=False, help='Sets console mode.')
-argsParser.add_option('-s', '--load-script', action='store', type='string', dest='scriptFile', help='Load the commands stored in the specified file and execute them.')
+argsParser.add_option('-s', '--load-script', action='store', type='string', dest='scriptFile', help='Loads the commands stored in the specified file and execute them.')
 argsParser.add_option('-f', '--force-mode', action='store_true', dest='isForceMode', default=False, help='Sets force parsing mode to ignore errors.')
 argsParser.add_option('-l', '--loose-mode', action='store_true', dest='isLooseMode', default=False, help='Sets loose parsing mode to catch malformed objects.')
 argsParser.add_option('-u', '--update', action='store_true', dest='update', default=False, help='Updates peepdf with the latest files from the repository.')
+argsParser.add_option('-v', '--version', action='store_true', dest='version', default=False, help='Shows program\'s version number.')
 (options, args) = argsParser.parse_args()
 
-if options.update:
+if options.version:
+	print peepdfHeader
+elif options.update:
 	updated = False
 	newVersion = ''
 	reVersion = 'version = \'(\d\.\d)\'\s*?revision = \'(\d+)\''
