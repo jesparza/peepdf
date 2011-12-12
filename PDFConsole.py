@@ -25,7 +25,7 @@
     Implementation of the interactive console of peepdf
 '''
 
-import cmd, sys, os, re, subprocess, optparse, hashlib
+import cmd, sys, os, re, subprocess, optparse, hashlib, jsbeautifier
 from PDFUtils import *
 from PDFCrypto import *
 from JSAnalysis import *
@@ -1629,6 +1629,118 @@ class PDFConsole(cmd.Cmd):
         print 'Usage: js_analyse file file_name'
         print 'Usage: js_analyse object object_id [version]'
         print newLine + 'Analyses the Javascript code stored in the specified variable, file or object' + newLine
+
+    def do_js_beautify(self, argv):
+        content = ''
+        bytes = ''
+        validTypes = ['variable','file','object']
+        args = self.parseArgs(argv)
+        if args == None:
+            message = '*** Error: parsing arguments!!'
+            self.log_output('js_beautify ' + argv, message)
+            return False
+        if len(args) == 2:
+            version = None
+        elif len(args) == 3 and args[0] == 'object':
+            version = args[2]
+        else:
+            self.help_js_beautify()
+            return False
+        type = args[0]
+        src = args[1]
+        if type not in validTypes:
+            self.help_js_beautify()
+            return False
+        if type == 'variable':
+            if not self.variables.has_key(src):
+                message = '*** Error: the variable does not exist!!'
+                self.log_output('js_beautify ' + argv, message)
+                return False
+            else:
+                content = self.variables[src][0]
+                if not isJavascript(content):
+                    if self.use_rawinput:
+                        res = raw_input('The variable may not contain Javascript code, do you want to continue? (y/n) ')
+                        if res.lower() == 'n':
+                            message = '*** Error: the variable does not contain Javascript code!!'
+                            self.log_output('js_beautify ' + argv, message)
+                            return False
+                    else:
+                        print 'Warning: the object may not contain Javascript code...' + newLine
+        elif type == 'file':
+            if not os.path.exists(src):
+                message = '*** Error: the file does not exist!!'
+                self.log_output('js_beautify ' + argv, message)
+                return False
+            else:
+                content = open(src,'r').read()
+                if not isJavascript(content):
+                    if self.use_rawinput:
+                        res = raw_input('The file may not contain Javascript code, do you want to continue? (y/n) ')
+                        if res.lower() == 'n':
+                            message = '*** Error: the file does not contain Javascript code!!'
+                            self.log_output('js_beautify ' + argv, message)
+                            return False                
+                    else:
+                        print 'Warning: the object may not contain Javascript code...' + newLine
+        else:
+            if self.pdfFile == None:
+                message = '*** Error: You must open a file!!'
+                self.log_output('js_beautify ' + argv, message)
+                return False
+            if not src.isdigit() or (version != None and not version.isdigit()):
+                self.help_js_beautify()
+                return False
+            src = int(src)
+            if version != None:
+                version = int(version)
+                if version > self.pdfFile.getNumUpdates():
+                    message = '*** Error: the version number is not valid'
+                    self.log_output('js_beautify ' + argv, message)
+                    return False
+            object = self.pdfFile.getObject(src, version)
+            if object != None:
+                if object.containsJS():
+                    content = object.getJSCode()[0]
+                else:
+                    if self.use_rawinput:
+                        res = raw_input('The object may not contain Javascript code, do you want to continue? (y/n) ')
+                        if res.lower() == 'n':
+                            message = '*** Error: the object does not contain Javascript code!!'
+                            self.log_output('js_beautify ' + argv, message)
+                            return False
+                    else:
+                        print 'Warning: the object may not contain Javascript code...' + newLine
+                    objectType = object.getType()
+                    if objectType == 'stream':
+                        content = object.getStream()
+                    elif type == 'dictionary' or type == 'array':
+                        element = object.getElementByName('/JS')
+                        if element != None:
+                            content = element.getValue()
+                        else:
+                            message = '*** Error: target not found!!'
+                            self.log_output('js_beautify ' + argv, message)
+                            return False
+                    elif type == 'string' or type == 'hexstring':
+                        content = object.getValue()
+                    else:
+                        message = '*** Error: target not found!!'
+                        self.log_output('js_beautify ' + argv, message)
+                        return False
+            else:
+                message = '*** Error: object not found!!'
+                self.log_output('js_beautify ' + argv, message)
+                return False
+            
+        beautyContent = jsbeautifier.beautify(content)
+        self.log_output('js_beautify ' + argv, beautyContent, storeOutput =  True)        
+        
+    def help_js_beautify(self):
+        print newLine + 'Usage: js_beautify variable var_name'
+        print 'Usage: js_beautify file file_name'
+        print 'Usage: js_beautify object object_id [version]'
+        print newLine + 'Beautify the Javascript code stored in the specified variable, file or object' + newLine
 
     def do_js_code(self, argv):
         if self.pdfFile == None:
