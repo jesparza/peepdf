@@ -46,7 +46,7 @@ def getRepFilesInfo(url, path = ''):
 	try:
 		browsingPage = urllib2.urlopen(url+path).read()
 	except:
-		sys.exit('[x] Connection error while getting browsing page "'+browsePath+'"')
+		sys.exit('[x] Connection error while getting browsing page "'+url+path+'"')
 	dirs = re.findall(dumbReDirs, browsingPage)
 	filesInfo = re.findall(dumbReFiles, browsingPage)
 	if filesInfo != [] and len(filesInfo) % 5 == 0:
@@ -99,7 +99,7 @@ email = 'jesparza AT eternal-todo.com'
 url = 'http://peepdf.eternal-todo.com'
 twitter = '@eternaltodo'
 version = '0.1'
-revision = '56'   
+revision = '57'   
 stats = ''
 pdf = None
 fileName = None
