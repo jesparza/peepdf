@@ -42,6 +42,11 @@ def getRepFilesInfo(url, path = ''):
 	dumbReDirs = '<a\s*?onclick="ret[^>]*?>(.*?)</a>'
 	dumbReFiles = '<a\s*?onclick="_[^>]*?>(.*?)</a>'
 	dumbReSize = '<div>Size: (\S*?) bytes[^<]*?</div>'
+	if path != '':
+		lastDir = path[path.rfind('/')+1:]
+		path += '/'
+	else:
+		lastDir = 'trunk'
 	print '[-] Getting repository files information from "'+url+path+'"...'
 	try:
 		browsingPage = urllib2.urlopen(url+path).read()
@@ -75,8 +80,8 @@ def getRepFilesInfo(url, path = ''):
 			filesInfoDic[pathFile] = [size, fileDate]
 	if dirs != [] and len(dirs) > 1:
 		for dir in dirs:
-			if dir != 'trunk':
-				dirFilesInfo = getRepFilesInfo(url+path, dir+'/')
+			if (path == '' and dir != 'trunk') or dir != lastDir:
+				dirFilesInfo = getRepFilesInfo(url, path+dir)
 				if dirFilesInfo != {}:
 					for dirFile in dirFilesInfo:
 						filesInfoDic[dirFile] = dirFilesInfo[dirFile]
@@ -99,7 +104,7 @@ email = 'jesparza AT eternal-todo.com'
 url = 'http://peepdf.eternal-todo.com'
 twitter = '@eternaltodo'
 version = '0.1'
-revision = '57'   
+revision = '58'   
 stats = ''
 pdf = None
 fileName = None
@@ -129,7 +134,7 @@ elif options.update:
 	reVersion = 'version = \'(\d\.\d)\'\s*?revision = \'(\d+)\''
 	rawURL = 'http://peepdf.googlecode.com/svn/trunk/'
 	browseURL = 'http://code.google.com/p/peepdf/source/browse/trunk/'
-	repFilesInfo = getRepFilesInfo(browseURL)
+	repFilesInfo = getRepFilesInfo(browseURL,'')
 	pathNames = repFilesInfo.keys()
 	localFilesInfo = getLocalFilesInfo(pathNames)
 	print '[-] Checking files...'
