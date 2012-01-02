@@ -1110,7 +1110,118 @@ class PDFConsole(cmd.Cmd):
         print '\tjbig2: /JBIG2Decode (Not implemented)'
         print '\tdct: /DCTDecode (Not implemented)'
         print '\tjpx: /JPXDecode (Not implemented)' + newLine
-    
+
+    def do_hash(self, argv):
+        error = ''
+        content = ''
+        validTypes = ['variable','file','raw','object','rawobject','stream','rawstream']
+        args = self.parseArgs(argv)
+        if args == None:
+            message = '*** Error: parsing arguments!!'
+            self.log_output('hash ' + argv, message)
+            return False
+        
+        if len(args) == 2:
+            if args[0] in ['object','rawobject','stream','rawstream']:
+                id = args[1]
+                version = None
+            elif args[0] == 'file' or args[0] == 'variable':
+                srcName = args[1]
+            else:
+                self.help_hash()
+                return False
+        elif len(args) == 3:
+            if args[0] in ['object','rawobject','stream','rawstream']:
+                id = args[1]
+                version = args[2]
+            elif args[0] == 'raw':
+                offset = args[1]
+                size = args[2]
+            else:
+                self.help_hash()
+                return False
+        else:
+            self.help_hash()
+            return False
+        
+        type = args[0]
+        if type not in validTypes:
+            self.help_hash()
+            return False
+        if type == 'variable':
+            if not self.variables.has_key(srcName):
+                message = '*** Error: the variable does not exist!!'
+                self.log_output('hash ' + argv, message)
+                return False
+            else:
+                content = self.variables[srcName][0]
+        elif type == 'file':
+            if not os.path.exists(srcName):
+                message = '*** Error: the file does not exist!!'
+                self.log_output('hash ' + argv, message)
+                return False
+            else:
+                content = open(srcName,'r').read()
+        else:
+            if self.pdfFile == None:
+                message = '*** Error: You must open a file!!'
+                self.log_output('hash ' + argv, message)
+                return False
+            if type == 'raw':
+                if not offset.isdigit() or not size.isdigit():
+                    self.help_hash()
+                    return False
+                offset = int(offset)
+                size = int(size)
+                ret = getBytesFromFile(self.pdfFile.getPath(),offset,size)
+                if ret[0] == -1:
+                    message = '*** Error: the file does not exist!!'
+                    self.log_output('hash ' + argv, message)
+                    return False
+                content = ret[1]
+            else:
+                if not id.isdigit() or (version != None and not version.isdigit()):
+                    self.help_hash()
+                    return False
+                id = int(id)
+                if version != None:
+                    version = int(version)
+                    if version > self.pdfFile.getNumUpdates():
+                        message = '*** Error: the version number is not valid'
+                        self.log_output('hash ' + argv, message)
+                        return False
+                object = self.pdfFile.getObject(id, version)
+                if object == None:
+                    message = '*** Error: object not found!!'
+                    self.log_output('hash ' + argv, message)
+                    return False
+                if type == 'stream' or type == 'rawstream':
+                    if object.getType() != 'stream':
+                        message = '*** Error: The object doesn\'t contain any stream!!'
+                        self.log_output('hash ' + argv, message)
+                        return False
+                    if type == 'stream':
+                        content = object.getStream()
+                    else:
+                        content = object.getRawStream()
+                elif type == 'object':
+                    content = object.getValue()
+                else:
+                    content = object.getRawValue()
+        content = str(content)
+        md5Hash = hashlib.md5(content).hexdigest()
+        sha1Hash = hashlib.sha1(content).hexdigest()
+        sha256Hash = hashlib.sha256(content).hexdigest()
+        output = 'MD5: ' + md5Hash + newLine + 'SHA1: ' + sha1Hash + newLine + 'SHA256: ' + sha256Hash + newLine
+        self.log_output('hash ' + argv, output, storeOutput = True)
+
+    def help_hash(self):
+        print newLine + 'Usage: hash object|rawobject|stream|rawstream object_id [version]'
+        print 'Usage: hash raw offset size'
+        print 'Usage: hash file fileName'
+        print 'Usage: hash variable varName'
+        print newLine + 'Generates the hash (MD5/SHA1/SHA256) of the specified source: raw bytes of the file, objects and streams, and the content of files or variables' + newLine
+            
     def help_help(self):
         print newLine + 'Usage: help [command]'
         print newLine + 'Show the available commands or the usage of the specified command' + newLine
