@@ -196,7 +196,7 @@ def getBytesFromFile(filename, offset, numBytes):
 		@return: A tuple (status,statusContent), where statusContent is the bytes read in case status = 0 or an error in case status = -1
 	'''
     if not isinstance(offset,int) or not isinstance(numBytes,int):
-        return (-1,'The offset and the number of bytes mus be integers')
+        return (-1,'The offset and the number of bytes must be integers')
     if os.path.exists(filename):
         fileSize = os.path.getsize(filename)
         bytesFile = open(filename,'r')
