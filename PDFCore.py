@@ -42,9 +42,9 @@ newLine = os.linesep
 isForceMode = False
 monitorizedEvents = ['/OpenAction','/AA','/Names','/AcroForm']
 monitorizedActions = ['/JS','/JavaScript','/Launch','/SubmitForm','/ImportData']
-monitorizedElements = ['/JBIG2Decode','/EmbeddedFiles','/EmbeddedFile','getPageNthWord','arguments.callee','/U3D']
+monitorizedElements = ['/JBIG2Decode','/EmbeddedFiles','/EmbeddedFile','getPageNthWord','arguments.callee','/U3D','/PRC']
 jsVulns = ['mailto','Collab.collectEmailInfo','util.printf','getAnnots','getIcon','spell.customDictionaryOpen','media.newPlayer','doc.printSeps']
-vulnsDict = {'/JBIG2Decode':'CVE-2009-0658','mailto':'CVE-2007-5020','Collab.collectEmailInfo':'CVE-2007-5659','util.printf':'CVE-2008-2992','getAnnots':'CVE-2009-1492','getIcon':'CVE-2009-0927','spell.customDictionaryOpen':'CVE-2009-1493','media.newPlayer':'CVE-2009-4324','doc.printSeps':'CVE-2010-4091','/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462']}
+vulnsDict = {'/JBIG2Decode':'CVE-2009-0658','mailto':'CVE-2007-5020','Collab.collectEmailInfo':'CVE-2007-5659','util.printf':'CVE-2008-2992','getAnnots':'CVE-2009-1492','getIcon':'CVE-2009-0927','spell.customDictionaryOpen':'CVE-2009-1493','media.newPlayer':'CVE-2009-4324','doc.printSeps':'CVE-2010-4091','/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462'],'/PRC':'CVE-2011-4369'}
 
 
 class PDFObject :
