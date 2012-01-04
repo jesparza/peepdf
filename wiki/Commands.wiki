@@ -8,6 +8,7 @@ There are a lot of commands that can be used in the interactive console of peepd
   * [#bytes bytes]
   * [#changelog changelog]
   * [#errors errors]
+  * [#hash hash]
   * [#info info]
   * [#metadata metadata]
   * [#object object]
@@ -32,6 +33,7 @@ There are a lot of commands that can be used in the interactive console of peepd
 ===Javascript analysis===
   * [#js js]
   * [#js_analyse js_analyse]
+  * [#js_beautify js_beautify]
   * [#js_code js_code]
   * [#js_join js_join]
   * [#js_unescape js_unescape]
@@ -327,6 +329,30 @@ endstream
 }}}
 [#Console_commands Index]
 <br/>
+===hash===
+{{{
+Usage: hash object|rawobject|stream|rawstream object_id [version]
+Usage: hash raw offset size
+Usage: hash file fileName
+Usage: hash variable varName
+
+Generates the hash (MD5/SHA1/SHA256) of the specified source: raw bytes of the file, objects and streams, and the content
+of files or variables
+}}}
+{{{
+PPDF> hash rawstream 10
+
+MD5: 9212aff46b662808a613f11b4d9d3673
+SHA1: 1fbf5269f10a36f4863cfa4e14188537efd23ca1
+SHA256: 7b2b2f2b33ec2531769bd457f20d13e177aee04ac59a06a02fad1a7abcfa4c14
+}}}
+{{{
+PPDF> hash variable myVar
+
+MD5: 852ce9336716bd31de5fca2587c2f156
+SHA1: 7632ca7738817cf66d8f772430be8db7b00aac96
+SHA256: b2a4305f1fa2d2d1a1bb363cbb1e6680161d78b89beb3aafe160ff1d694426b2
+}}}
 ===help===
 {{{
 Usage: help [command]
@@ -480,6 +506,45 @@ URLs in shellcode:
 }}}
 [#Console_commands Index]
 <br/>
+===js_beautify===
+{{{
+Usage: js_beautify variable var_name
+Usage: js_beautify file file_name
+Usage: js_beautify object object_id [version]
+
+Beautifies the Javascript code stored in the specified variable, file or object
+}}}
+{{{
+PPDF> stream 15
+
+function yyy(){while(1>2) ;}
+
+function datagood(a,b)
+{
+if (a>b)
+{datagood(a,b)}
+if (b>a)
+{datagood(a,b)}
+return a;
+}
+}}}
+{{{
+PPDF> js_beautify object 15
+
+function yyy() {
+    while (1 > 2);
+}
+
+function datagood(a, b) {
+    if (a > b) {
+        datagood(a, b)
+    }
+    if (b > a) {
+        datagood(a, b)
+    }
+    return a;
+}
+}}}
 ===js_code===
 {{{
 Usage: js_code object_id [version]
