@@ -115,30 +115,76 @@ class PDFObject :
         return (0,'')
     
     def encrypt(self, password):
+        '''
+            Encrypt the content of the object if possible 
+            
+            @param password: The password used to encrypt the object. It's dependent on the object.
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         return (0,'')
 
     def getCompressedIn(self):
+        '''
+            Gets the id of the object (object stream) where the actual object is compressed 
+            
+            @return: The id (int) of the object stream or None if it's not compressed
+        '''
         return self.compressedIn
                     
     def getEncryptedValue(self):
+        '''
+            Gets the encrypted value of the object 
+            
+            @return: The encrypted value or the raw value if the object is not encrypted
+        '''
         return self.encryptedValue    
 
     def getEncryptionKey(self):
+        '''
+            Gets the encryption key (password) used to encrypt the object 
+            
+            @return: The password (string) or an empty string if it's not encrypted
+        '''
         return self.encryptionKey
 
     def getErrors(self):
+        '''
+            Gets the error messages found while parsing and processing the object 
+            
+            @return: The array of errors of the object
+        '''
         return self.errors
 
     def getRawValue(self):
+        '''
+            Gets the raw value of the object 
+            
+            @return: The raw value of the object, this means without applying filters or decoding characters
+        '''
         return self.rawValue
 
     def getReferences(self):
+        '''
+            Gets the referenced objects in the actual object 
+            
+            @return: An array of references in the object (Ex. ['1 0 R','12 0 R'])
+        '''
         return self.references
     
     def getReferencesInElements(self):
+        '''
+            Gets the dependencies between elements in the object and objects in the rest of the document.
+            
+            @return: A dictionary of dependencies of the object (Ex. {'/Length':[5,'']} or {'/Length':[5,'354']})
+        '''
         return self.referencesInElements
 
     def getStats(self):
+        '''
+            Gets the statistics of the object 
+            
+            @return: An array of different statistics of the object (object type, compression, references, etc)
+        '''
         stats = {}
         stats['Object'] = self.type
         if self.isCompressed():
@@ -165,27 +211,57 @@ class PDFObject :
         return stats
         
     def getType(self):
+        '''
+            Gets the type of the object 
+            
+            @return: The object type (bool, null, real, integer, name, string, hexstring, reference, array, dictionary, stream)
+        '''
         return self.type
 
     def getValue(self):
+        '''
+            Gets the value of the object 
+            
+            @return: The value of the object, this means after applying filters and/or decoding characters and strings
+        '''
         return self.value    
 
     def isCompressed(self):
+        '''
+            Specifies if the object is compressed or not 
+            
+            @return: A boolean
+        '''
         if self.compressedIn != None:
             return True
         else:
             return False
                 
     def isEncrypted(self):
+        '''
+            Specifies if the object is encrypted or not 
+            
+            @return: A boolean
+        '''
         return self.encrypted
 
     def isFaulty(self):
+        '''
+            Specifies if the object has errors or not 
+            
+            @return: A boolean
+        '''
         if self.errors == []:
             return False
         else:
             return True
     
     def replace(self, string1, string2):
+        '''
+            Searches the object for the 'string1' and if it's found it's replaced by 'string2' 
+            
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         if self.value.find(string1) == -1 and self.rawValue.find(string1) == -1:
             return (-1,'String not found')
         self.value = self.value.replace(string1, string2)
@@ -194,36 +270,79 @@ class PDFObject :
         return ret
     
     def resolveReferences(self):
+        '''
+            Replaces the reference to an object by its value if there are references not resolved. Ex. /Length 3 0 R 
+            
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         pass
 
     def setCompressedIn(self, id):
+        '''
+            Sets the object id of the object stream containing the actual object
+            
+            @param id: The object id (int)
+        '''
         self.compressedIn = id
 
     def setEncryptedValue(self, value):
+        '''
+            Sets the encrypted value of the object
+            
+            @param value: The encrypted value (string) 
+        '''
         self.encryptedValue = value
         
     def setEncryptionKey(self, password):
+        '''
+            Sets the password to encrypt/decrypt the object
+            
+            @param password: The encryption key (string)  
+        '''
         self.encryptionKey = password
 
     def setRawValue(self, newRawValue):
+        '''
+            Sets the raw value of the object and updates the object if some modification is needed
+            
+            @param newRawValue: The new raw value (string)
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         self.rawValue = newRawValue
         ret = self.update()
         return ret
     
     def setReferencesInElements(self, resolvedReferencesDict):
+        '''
+            Sets the resolved references array
+            
+            @param resolvedReferencesDict: A dictionary with the resolved references  
+        '''
         self.referencesInElements = resolvedReferencesDict
 
     def setValue(self, newValue):
+        '''
+            Sets the value of the object
+            
+            @param newValue: The new value of the object (string)  
+        '''
         self.value = newValue
             
     def update(self):
+        '''
+            Updates the object after some modification has occurred
+            
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         self.encryptedValue = self.rawValue
         return (0,'')
-    
-    def updateReferences (self) : 
-        pass
 
     def toFile(self):
+        '''
+            Gets the raw or encrypted value of the object to write it to an output file 
+            
+            @return: The raw/encrypted value of the object (string)
+        '''
         if self.encrypted:
             return self.getEncryptedValue()
         else:
@@ -231,6 +350,9 @@ class PDFObject :
 
 
 class PDFBool (PDFObject) :
+    '''
+        Boolean object of a PDF document
+    '''
     def __init__(self, value) :
         self.type = 'bool'
         self.errors = []
@@ -245,6 +367,9 @@ class PDFBool (PDFObject) :
 
 
 class PDFNull (PDFObject) :
+    '''
+        Null object of a PDF document
+    '''
     def __init__(self, content) :
         self.type = 'null'
         self.errors = []
@@ -259,6 +384,9 @@ class PDFNull (PDFObject) :
 
 
 class PDFNum (PDFObject) :
+    '''
+        Number object of a PDF document: can be an integer or a real number.
+    '''
     def __init__(self, num) :
         self.errors = []
         self.JSCode = []
@@ -313,6 +441,9 @@ class PDFNum (PDFObject) :
 
 
 class PDFName (PDFObject) :
+    '''
+        Name object of a PDF document
+    '''
     def __init__(self, name) :
         self.type = 'name'
         self.errors = []
@@ -361,6 +492,9 @@ class PDFName (PDFObject) :
 
 
 class PDFString (PDFObject) :
+    '''
+        String object of a PDF document
+    '''
     def __init__(self, string) :
         self.type = 'string'
         self.errors = []
@@ -382,6 +516,12 @@ class PDFString (PDFObject) :
                 raise Exception(ret[1])
         
     def update(self, decrypt = False):
+        '''
+            Updates the object after some modification has occurred
+            
+            @param decrypt: A boolean indicating if a decryption has been performed. By default: False.
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         self.errors = []
         self.containsJScode = False
         self.JSCode = []
@@ -454,6 +594,12 @@ class PDFString (PDFObject) :
         return (0,'')
 
     def decrypt(self, password = None):
+        '''
+            Decrypt the content of the object if possible 
+            
+            @param password: The password used to decrypt the object. It's dependent on the object.
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         self.encrypted = True
         if password != None:
             self.encryptionKey = password
@@ -470,20 +616,37 @@ class PDFString (PDFObject) :
         return '('+escapeString(self.encryptedValue)+')'
     
     def getJSCode(self):
+        '''
+            Gets the Javascript code of the object 
+            
+            @return: An array of Javascript code sections
+        '''
         return self.JSCode    
     
     def getRawValue(self):
         return '('+escapeString(self.rawValue)+')'
     
     def getUnescapedBytes(self):
+        '''
+            Gets the escaped bytes of the object unescaped 
+            
+            @return: An array of unescaped bytes (string)
+        '''
         return self.unescapedBytes
     
     def getURLs(self):
+        '''
+            Gets the URLs of the object 
+            
+            @return: An array of URLs
+        '''
         return self.urlsFound
 
 
-
 class PDFHexString (PDFObject) :
+    '''
+        Hexadecimal string object of a PDF document
+    '''
     def __init__(self, hex) : 
         self.asciiValue = ''
         self.type = 'hexstring'
@@ -508,6 +671,12 @@ class PDFHexString (PDFObject) :
                 raise Exception(ret[1])        
             
     def update(self, decrypt = False):
+        '''
+            Updates the object after some modification has occurred
+            
+            @param decrypt: A boolean indicating if a decryption has been performed. By default: False.
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         self.errors = []
         self.value = ''
         self.containsJScode = False
@@ -564,6 +733,12 @@ class PDFHexString (PDFObject) :
         return (0,'')
     
     def decrypt(self, password = None):
+        '''
+            Decrypt the content of the object if possible 
+            
+            @param password: The password used to decrypt the object. It's dependent on the object.
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         self.encrypted = True
         if password != None:
             self.encryptionKey = password
@@ -580,19 +755,37 @@ class PDFHexString (PDFObject) :
         return '<'+self.encryptedValue+'>'
 
     def getJSCode(self):
+        '''
+            Gets the Javascript code of the object 
+            
+            @return: An array of Javascript code sections
+        '''
         return self.JSCode
 
     def getRawValue(self):
         return '<'+self.rawValue+'>'
 
     def getUnescapedBytes(self):
+        '''
+            Gets the escaped bytes of the object unescaped 
+            
+            @return: An array of unescaped bytes (string)
+        '''
         return self.unescapedBytes
     
     def getURLs(self):
+        '''
+            Gets the URLs of the object 
+            
+            @return: An array of URLs
+        '''
         return self.urlsFound
 
 
 class PDFReference (PDFObject) :
+    '''
+        Reference object of a PDF document
+    '''
     def __init__(self, id, genNumber = '0') :
         self.type = 'reference'
         self.errors = []
@@ -627,19 +820,42 @@ class PDFReference (PDFObject) :
         return (0,'')
     
     def getGenNumber(self):
+        '''
+            Gets the generation number of the reference
+            
+            @return: The generation number (int)
+        '''
         return self.genNumber
     
     def getId(self):
+        '''
+            Gets the object id of the reference
+            
+            @return: The object id (int)
+        '''
         return self.id
     
     def setGenNumber(self, newGenNumber):
+        '''
+            Sets the generation number of the reference
+            
+            @param newGenNumber: The new generation number (int)
+        '''
         self.genNumber = newGenNumber
 
     def setId(self, newId):
+        '''
+            Sets the object id of the reference
+            
+            @param newId: The new object id (int)
+        '''
         self.id = newId
 
 
 class PDFArray (PDFObject) :
+    '''
+        Array object of a PDF document
+    '''
     def __init__(self, rawContent = '', elements = []) :
         self.type = 'array'
         self.errors = []
@@ -661,7 +877,13 @@ class PDFArray (PDFObject) :
             else:
                 raise Exception(ret[1])
 
-    def update(self,decrypt = False):
+    def update(self, decrypt = False):
+        '''
+            Updates the object after some modification has occurred
+            
+            @param decrypt: A boolean indicating if a decryption has been performed. By default: False.
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         errorMessage = ''
         self.errors = []
         self.encryptedValue = '[ '
@@ -707,11 +929,22 @@ class PDFArray (PDFObject) :
             return (0,'')
         
     def addElement(self, element):
+        '''
+            Adds an element to the array
+            
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         self.elements.append(element)
         ret = self.update()
         return ret
         
     def decrypt(self, password = None):
+        '''
+            Decrypt the content of the object if possible 
+            
+            @param password: The password used to decrypt the object. It's dependent on the object.
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         errorMessage = ''
         self.encrypted = True
         if password != None:
@@ -758,6 +991,12 @@ class PDFArray (PDFObject) :
         return ret
         
     def getElementByName(self, name):
+        '''
+            Gets the dictionary elements with the given name
+            
+            @param name: The name
+            @return: An array of elements
+        '''
         retElements = []
         for element in self.elements:
             if element != None:
@@ -769,6 +1008,11 @@ class PDFArray (PDFObject) :
         return retElements
     
     def getElementRawValues(self):
+        '''
+            Gets the raw values of each element
+            
+            @return: An array of values
+        '''
         values = []
         for element in self.elements:
             if element != None:
@@ -780,6 +1024,11 @@ class PDFArray (PDFObject) :
         return values
 
     def getElementValues(self):
+        '''
+            Gets the values of each element
+            
+            @return: An array of values
+        '''
         values = []
         for element in self.elements:
             if element != None:
@@ -791,12 +1040,28 @@ class PDFArray (PDFObject) :
         return values
 
     def getElements(self):
+        '''
+            Gets the elements of the array object
+            
+            @return: An array of PDFObject elements
+        '''
         return self.elements
 
     def getNumElements(self):
+        '''
+            Gets the number of elements of the array
+            
+            @return: The number of elements (int)
+        '''
         return len(self.elements)
 
     def hasElement(self, name):
+        '''
+            Specifies if the array contains the element with the given name
+            
+            @param name: The element
+            @return: A boolean
+        '''
         for element in self.elements:
             if element != None:
                 if element.getType() == 'dictionary':
@@ -842,10 +1107,15 @@ class PDFArray (PDFObject) :
         return ret
     
     def setElements(self, newElements):
+        '''
+            Sets the array of elements
+            
+            @param newElements: The new array of elements
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         self.elements = newElements
         ret = self.update()
         return ret
-        
 
 
 class PDFDictionary (PDFObject):
@@ -876,6 +1146,12 @@ class PDFDictionary (PDFObject):
                 raise Exception(ret[1])
     
     def update(self, decrypt = False):
+        '''
+            Updates the object after some modification has occurred
+            
+            @param decrypt: A boolean indicating if a decryption has been performed. By default: False.
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         self.errors = []
         self.references = []
         self.value = ''
@@ -943,6 +1219,12 @@ class PDFDictionary (PDFObject):
         return (0,'')
                 
     def decrypt(self, password = None):
+        '''
+            Decrypt the content of the object if possible 
+            
+            @param password: The password used to decrypt the object. It's dependent on the object.
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         self.encrypted = True
         errorMessage = ''
         if password != None:
@@ -964,6 +1246,13 @@ class PDFDictionary (PDFObject):
         return ret
     
     def delElement(self, name, update = True):
+        '''
+            Removes the element from the dictionary
+            
+            @param name: The element to remove
+            @param update: A boolean indicating if it's necessary an update of the object. By default: True.
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         if self.elements.has_key(name):
             del(self.elements[name])
             if update:
@@ -1002,15 +1291,33 @@ class PDFDictionary (PDFObject):
         return ret
 
     def getDictType(self):
+        '''
+            Gets the type of dictionary
+            
+            @return: The dictionary type (string)
+        '''
         return self.dictType
 
     def getElement(self, name):
+        '''
+            Gets the element of the dictionary with the given name
+           
+            @param name: The name of element
+            @return: The PDFObject or None if it's not found
+        '''
         if self.elements.has_key(name):
             return self.elements[name]
         else:
             return None
 
     def getElementByName(self, name, recursive = False):
+        '''
+            Gets the elements with the given name
+            
+            @param name: The name
+            @param recursive: A boolean indicating if the search is recursive or not. By default: False.
+            @return: A PDFObject if recursive = False and an array of PDFObjects if recursive = True.
+        '''
         retElements = []
         if self.elements.has_key(name):
             if recursive:
@@ -1024,12 +1331,27 @@ class PDFDictionary (PDFObject):
         return retElements
     
     def getElements(self):
+        '''
+            Gets the elements of the array object
+            
+            @return: An array of PDFObject elements
+        '''
         return self.elements
         
     def getJSCode(self):
+        '''
+            Gets the Javascript code of the object 
+            
+            @return: An array of Javascript code sections
+        '''
         return self.JSCode
     
     def getNumElements(self):
+        '''
+            Gets the number of elements of the array
+            
+            @return: The number of elements (int)
+        '''
         return len(self.elements)    
 
     def getStats(self):
@@ -1071,12 +1393,28 @@ class PDFDictionary (PDFObject):
         return stats
             
     def getUnescapedBytes(self):
+        '''
+            Gets the escaped bytes of the object unescaped 
+            
+            @return: An array of unescaped bytes (string)
+        '''
         return self.unescapedBytes
     
     def getURLs(self):
+        '''
+            Gets the URLs of the object 
+            
+            @return: An array of URLs
+        '''
         return self.urlsFound
         
     def hasElement(self, name):
+        '''
+            Specifies if the dictionary contains the element with the given name
+            
+            @param name: The element
+            @return: A boolean
+        '''
         if self.elements.has_key(name):
             return True
         else:
@@ -1114,6 +1452,14 @@ class PDFDictionary (PDFObject):
         return ret
 
     def setElement(self, name, value, update = True):
+        '''
+            Sets the element with the given name to the given value. If it does not exist a new element is created.
+            
+            @param name: The element to add or modify
+            @param value: The new value of the element 
+            @param update: A boolean indicating if it's necessary an update of the object. By default: True.
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         self.elements[name] = value
         if update:
             ret = self.update()
@@ -1121,11 +1467,25 @@ class PDFDictionary (PDFObject):
         return (0,'')
 
     def setElements(self, newElements):
+        '''
+            Sets the dictionary of elements
+            
+            @param newElements: The new dictionary of elements
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         self.elements = newElements
         ret = self.update()
         return ret
 
     def setElementValue(self, name, value, update = True):
+        '''
+            Sets the value of the element with the given name.
+            
+            @param name: The element to modify
+            @param value: The new value of the element 
+            @param update: A boolean indicating if it's necessary an update of the object. By default: True.
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         if self.elements.has_key(name):
             self.elements[name].setValue(value)
             if update:
@@ -1136,9 +1496,10 @@ class PDFDictionary (PDFObject):
             return (-1,'Element not found')
 
 
-
-
 class PDFStream (PDFDictionary) :
+    '''
+        Stream object of a PDF document
+    '''
     def __init__(self, rawDict = '', rawStream = '', elements = {}, rawNames = {}) :
         global isForceMode
         self.type = 'stream'
@@ -1184,6 +1545,13 @@ class PDFStream (PDFDictionary) :
             self.addError('No dictionary in stream object')
 
     def update(self, onlyElements = False, decrypt = False):
+        '''
+            Updates the object after some modification has occurred
+            
+            @param onlyElements: A boolean indicating if it's only necessary to update the stream dictionary or also the stream itself. By default: False (stream included).
+            @param decrypt: A boolean indicating if a decryption has been performed. By default: False.
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         self.errors = []
         self.value = ''
         self.references = []
@@ -1547,6 +1915,9 @@ class PDFStream (PDFDictionary) :
             return (0,'')
 
     def cleanStream(self):
+        '''
+            Cleans the start and end of the stream
+        '''
         if self.isEncodedStream:
             stream = self.encodedStream
             tmpStream = self.encodedStream
@@ -1606,7 +1977,9 @@ class PDFStream (PDFDictionary) :
     
     def decode (self) :
         '''
-            Decode the stream and stores the result in decodedStream 
+            Decodes the stream and stores the result in decodedStream 
+            
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
         '''
         errorMessage = ''
         if len(self.rawStream) > 0:
@@ -1744,6 +2117,12 @@ class PDFStream (PDFDictionary) :
             return (-1,'Empty stream')            
 
     def decrypt(self, password = None):
+        '''
+            Decrypt the content of the object if possible 
+            
+            @param password: The password used to decrypt the object. It's dependent on the object.
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         errorMessage = ''
         self.encrypted = True
         if password != None:
@@ -1960,9 +2339,19 @@ class PDFStream (PDFDictionary) :
         return stats
     
     def getStream(self):
+        '''
+            Gets the stream of the object 
+            
+            @return: The stream of the object (string), this means applying filters or decoding characters
+        '''
         return self.decodedStream
     
     def getRawStream(self):
+        '''
+            Gets the raw value of the stream of the object 
+            
+            @return: The raw value of the stream (string), this means without applying filters or decoding characters
+        '''
         return self.rawStream
 
     def getRawValue(self):
@@ -1976,9 +2365,19 @@ class PDFStream (PDFDictionary) :
         return self.value + newLine +'stream' + newLine + self.decodedStream + newLine + 'endstream'
     
     def isEncoded(self):
+        '''
+            Specifies if the stream is encoded with some type of filter (/Filter) 
+            
+            @return: A boolean
+        '''
         return self.isEncodedStream
     
     def isFaultyDecoding(self):
+        '''
+            Specifies if there are any errors in the process of decoding the stream 
+            
+            @return: A boolean
+        '''
         return self.decodingError
     
     def replace(self, string1, string2):
@@ -2067,6 +2466,12 @@ class PDFStream (PDFDictionary) :
         return (0,'')
 
     def setDecodedStream(self, newStream):
+        '''
+            Sets the decoded value of the stream and updates the object if some modification is needed
+            
+            @param newStream: The new raw value (string)
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         self.decodedStream = newStream
         self.modifiedStream = True
         ret = self.update()
@@ -2103,6 +2508,12 @@ class PDFStream (PDFDictionary) :
         return ret
 
     def setRawStream(self, newStream):
+        '''
+            Sets the raw value of the stream and updates the object if some modification is needed
+            
+            @param newStream: The new raw value (string)
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         self.rawStream = newStream
         self.modifiedRawStream = True
         ret = self.update()
@@ -2159,6 +2570,14 @@ class PDFObjectStream (PDFStream) :
             self.addError('No dictionary in stream object')
 
     def update(self, modifiedCompressedObjects = False, onlyElements = False, decrypt = False):
+        '''
+            Updates the object after some modification has occurred
+            
+            @param modifiedCompressedObjects: A boolean indicating if the compressed objects hav been modified. By default: False.
+            @param onlyElements: A boolean indicating if it's only necessary to update the stream dictionary or also the stream itself. By default: False (stream included).
+            @param decrypt: A boolean indicating if a decryption has been performed. By default: False.
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         self.errors = []
         self.value = ''
         self.references = []
@@ -2550,9 +2969,20 @@ class PDFObjectStream (PDFStream) :
             return (0,'')
 
     def getCompressedObjects(self):
+        '''
+            Gets the information of the compressed objects: offset and content. 
+            
+            @return: A dictionary with this information: {id: [offset,PDFObject]}
+        '''
         return self.compressedObjectsDict
 
     def getObjectIndex(self, id):
+        '''
+            Gets the index of the object in the dictionary of compressed objects 
+            
+            @param id: The object id
+            @return: The index (int) or None if the object hasn't been found
+        '''
         if id not in self.indexes:
             return None
         else:
@@ -2604,9 +3034,6 @@ class PDFObjectStream (PDFStream) :
         if ret[0] == 0 and errorMessage != '':
             return (-1,errorMessage)
         return ret
-    
-
-
                     
     def resolveReferences(self):
         errorMessage = ''
@@ -2654,6 +3081,12 @@ class PDFObjectStream (PDFStream) :
             return (0,'')
     
     def setCompressedObjectId(self,id):
+        '''
+            Sets the compressedIn attribute of the compressed object defined by its id
+            
+            @param id: The object id
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         for compressedId in self.compressedObjectsDict:
             if self.compressedObjectsDict[compressedId] != None:
                 object = self.compressedObjectsDict[compressedId][1]
