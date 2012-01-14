@@ -26,6 +26,7 @@
 '''	
 
 import hashlib,struct,random,warnings
+from itertools import cycle, izip
 warnings.filterwarnings("ignore")
 
 
@@ -186,3 +187,17 @@ def RC4(data, key):
 		k	= box[((box[z] + box[y]) % 256)]
 		ret	+= chr(ord(data[x]) ^ k)
 	return ret
+
+'''
+	Author: Evan Fosmark (http://www.evanfosmark.com/2008/06/xor-encryption-with-python/)
+'''
+def xor(bytes, key):
+	'''
+		Simple XOR implementation
+		
+		@param bytes: Bytes to be xored
+		@param key: Key used for the operation, it's cycled.
+		@return: The xored bytes
+	'''
+	key = cycle(key)
+	return ''.join(chr(ord(x) ^ ord(y)) for (x,y) in izip(bytes, key))
