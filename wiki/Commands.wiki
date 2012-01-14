@@ -44,6 +44,8 @@ There are a lot of commands that can be used in the interactive console of peepd
   * [#search search]
   * [#set set]
   * [#show show]
+  * [#xor xor]
+  * [#xor_search xor_search]
 ===Console===
   * [#exit exit]
   * [#help help]
@@ -1374,6 +1376,106 @@ PPDF> tree
 	/Outlines (3)
 	dictionary (6)
 /Info (14)
+}}}
+[#Console_commands Index]
+===xor===
+{{{
+Usage: xor stream|rawstream $object_id [$version] [$key]
+Usage: xor raw $offset $num_bytes $key
+Usage: xor file $file_name $key
+Usage: xor variable $var_name $key
+
+Performs an XOR operation using the specified key with the content of the specified file or variable, raw bytes of the
+file or stream/rawstream. If the key is not specified then a bruteforcing XOR is performed.
+}}}
+{{{
+PPDF> xor file test_file 0x12
+
+Z{>2fz{a2{a2s2fwaf2t{~w3
+}}}
+{{{
+PPDF> xor stream 7 0xfa
+
+d2 bb 9b 9b 9b 9b d3 da ae 90                     |..........|
+}}}
+If the key is not specified then a bruteforcing XOR is performed: 
+{{{
+PPDF> xor stream 7
+
+[0x0]
+(Aaaaa) Tj
+[/0x0]
+[0x1]
+)@````(!Uk
+[/0x1]
+[0x2]
+*Ccccc+"Vh
+[/0x2]
+[0x3]
++Bbbbb*#Wi
+[/0x3]
+[0x4]
+,Eeeee-$Pn
+[/0x4]
+[0x5]
+-Ddddd,%Qo
+[/0x5]
+[0x6]
+.Ggggg/&Rl
+[/0x6]
+[0x7]
+/Fffff.'Sm
+[/0x7]
+...
+}}}
+{{{
+PPDF> xor raw 100 50 0x16
+
+&6yt|**9Zsxqb~6%'$69Pzbsd69PzwbsRsuyrs6((ebdsw{
+}}}
+[#Console_commands Index]
+===xor_search===
+{{{
+Usage: xor_search [-i] stream|rawstream $object_id [$version] $string_to_search
+Usage: xor_search [-i] raw $offset $num_bytes $string_to_search
+Usage: xor_search [-i] file $file_name $string_to_search
+Usage: xor_search [-i] variable $var_name $string_to_search
+
+Searches for the specified string in the result of an XOR brute forcing operation with the content of the specified file
+or variable, raw bytes of the file or stream/rawstream. The output shows the offset/s where the string is found. It's a
+case sensitive search but it's possible to make it insensitive using -i.
+}}}
+{{{
+PPDF> xor_search stream 2 "template"
+
+Pattern found with the following keys: ['0x0']
+
+Offsets for key '0x0': [407, 466, 607, 624, 684, 825, 843, 903, 1044]
+}}}
+{{{
+PPDF> xor file test_file 0x63 > xored_test
+PPDF> xor_search file xored_test "file"
+
+Pattern found with the following keys: ['0x63']
+
+Offsets for key '0x63': [19]
+
+PPDF> xor_search -i file xored_test "file"
+
+Pattern found with the following keys: ['0x43', '0x63']
+
+Offsets for key '0x43': [19]
+Offsets for key '0x63': [19]
+
+PPDF> xor file xored_test 0x43
+
+hI
+  THISISATESTFILE*
+
+PPDF> xor file xored_test 0x63
+
+Hi, this is a test file!
+
 }}}
 [#Console_commands Index]
 <br/>
