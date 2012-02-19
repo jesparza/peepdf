@@ -1999,7 +1999,7 @@ class PDFConsole(cmd.Cmd):
                 return False
             else:
                 content = self.variables[src][0]
-                if not re.match(reUnicodeChars, content, re.IGNORECASE) and not re.match(reHexChars, content, re.IGNORECASE):
+                if re.findall(reUnicodeChars, content, re.IGNORECASE) == [] and re.findall(reHexChars, content, re.IGNORECASE) == []:
                     message = '*** Error: the variable does not contain escaped chars!!'
                     self.log_output('js_unescape ' + argv, message)
                     return False
@@ -2010,7 +2010,7 @@ class PDFConsole(cmd.Cmd):
                 return False
             else:
                 content = open(src,'r').read()
-                if not re.match(reUnicodeChars, content, re.IGNORECASE) and not re.match(reHexChars, content, re.IGNORECASE):
+                if re.findall(reUnicodeChars, content, re.IGNORECASE) == [] and re.findall(reHexChars, content, re.IGNORECASE) == []:
                     message = '*** Error: the file does not contain escaped chars!!'
                     self.log_output('js_unescape ' + argv, message)
                     return False                
