@@ -22,7 +22,6 @@
 #
 
 '''
-    JSAnalysis.py
     This module contains some functions to analyse Javascript code inside the PDF file
 '''
 
@@ -37,8 +36,9 @@ newLine = os.linesep
 def analyseJS(code):
     '''
         Search for obfuscated functions in the Javascript code
-        @param code The Javascript code (string)
-        @return List with analysis information of the Javascript code: [JSCode,unescapedBytes,urlsFound], where JSCode is a list with the several stages Javascript code, unescapedBytes is a list with the parameters of unescape functions, and urlsFound is a list with the URLs found in the unescaped bytes. 
+        
+        @param code: The Javascript code (string)
+        @return: List with analysis information of the Javascript code: [JSCode,unescapedBytes,urlsFound], where JSCode is a list with the several stages Javascript code, unescapedBytes is a list with the parameters of unescape functions, and urlsFound is a list with the URLs found in the unescaped bytes. 
     '''
     error = ''
     errors = []
@@ -127,10 +127,11 @@ def analyseJS(code):
        
 def getVarContent(jsCode, varContent):
     '''
-		Given the Javascript code and the content of a variable this method try to obtain the real value of the variable, cleaning expressions like "a = eval; a(js_code);"
-		@param jsCode The Javascript code (string)
-		@param varContent The content of the variable (string)
-		@return An string with real value of the variable
+		Given the Javascript code and the content of a variable this method tries to obtain the real value of the variable, cleaning expressions like "a = eval; a(js_code);"
+		
+		@param jsCode: The Javascript code (string)
+		@param varContent: The content of the variable (string)
+		@return: A string with real value of the variable
 	'''
     clearBytes = ''
     varContent = varContent.replace('\n','')
@@ -150,8 +151,9 @@ def getVarContent(jsCode, varContent):
 def isJavascript(content):
     '''
         Given an string this method looks for typical Javscript strings and try to identify if the string contains Javascrit code or not.
-        @param content (string)
-        @return A boolean, True if it seems to contain Javascript code or False in the other case
+        
+        @param content: A string
+        @return: A boolean, True if it seems to contain Javascript code or False in the other case
     '''
     JSStrings = ['var ',';',')','(','function ','=','{','}','if ','else','return','while ','for ',',','eval']
     keyStrings = [';','(',')']
@@ -180,9 +182,10 @@ def isJavascript(content):
 def searchObfuscatedFunctions(jsCode, function):
     '''
 		Search for obfuscated functions in the Javascript code
-		@param jsCode The Javascript code (string)
-		@param function The function name to look for (string)
-		@return List with obfuscated functions information [functionName,functionCall,containsReturns] 
+		
+		@param jsCode: The Javascript code (string)
+		@param function: The function name to look for (string)
+		@return: List with obfuscated functions information [functionName,functionCall,containsReturns] 
 	'''
     obfuscatedFunctionsInfo = []
     if jsCode != None:
@@ -199,24 +202,43 @@ def searchObfuscatedFunctions(jsCode, function):
 	       obfuscatedFunctionsInfo += searchObfuscatedFunctions(jsCode, obfuscatedElement)
     return obfuscatedFunctionsInfo
 
-def unescape(escapedBytes):
+def unescape(escapedBytes, unicode = True):
     '''
-        This method unescape the given string with Javascript escaped chars
-        @param escapedBytes (string)
-        @return A tuple (status,statusContent), where statusContent is an unescaped string in case status = 0 or an error in case status = -1
+        This method unescapes the given string
+        
+        @param escapedBytes: A string to unescape
+        @return: A tuple (status,statusContent), where statusContent is an unescaped string in case status = 0 or an error in case status = -1
     '''
-    #TODO: modify to accept a list of espaced strings?
+    #TODO: modify to accept a list of escaped strings?
     unescapedBytes = ''
+    if unicode:
+        unicodePadding = '\x00'
+    else:
+        unicodePadding = ''
     try:
-        if escapedBytes.find('%u') != -1 or escapedBytes.find('%U') != -1:
-            for i in range(2,len(escapedBytes)-1,6):
-                unescapedBytes += chr(int(escapedBytes[i+2]+escapedBytes[i+3],16))+chr(int(escapedBytes[i]+escapedBytes[i+1],16))
-        elif escapedBytes.find('%') != -1:
-            for i in range(1,len(escapedBytes)-1,3):
-                unescapedBytes += chr(int(escapedBytes[i]+escapedBytes[i+1],16))
-        elif re.match('[0-9a-f]{2,*}',escapedBytes,re.IGNORECASE):
-            for i in range(1,len(escapedBytes)-1,2):
-                unescapedBytes += chr(int(escapedBytes[i]+escapedBytes[i+1],16))
+        if escapedBytes.find('%u') != -1 or escapedBytes.find('%U') != -1 or escapedBytes.find('%') != -1:
+            splitBytes = escapedBytes.split('%')
+            for i in range(len(splitBytes)):
+                splitByte = splitBytes[i]
+                if splitByte == '':
+                    continue
+                if len(splitByte) > 4 and re.match('u[0-9a-f]{4}',splitByte[:5],re.IGNORECASE):
+                    unescapedBytes += chr(int(splitByte[3]+splitByte[4],16))+chr(int(splitByte[1]+splitByte[2],16))
+                    if len(splitByte) > 5:
+                        for j in range(5,len(splitByte)): 
+                            unescapedBytes += splitByte[j] + unicodePadding
+                elif len(splitByte) > 1 and re.match('[0-9a-f]{2}',splitByte[:2],re.IGNORECASE):
+                    unescapedBytes += chr(int(splitByte[0]+splitByte[1],16)) + unicodePadding
+                    if len(splitByte) > 2:
+                        for j in range(2,len(splitByte)): 
+                            unescapedBytes += splitByte[j] + unicodePadding
+                else:
+                    if i != 0:
+                        unescapedBytes += '%' + unicodePadding
+                    for j in range(len(splitByte)):
+                        unescapedBytes += splitByte[j] + unicodePadding
+        else:
+            unescapedBytes = escapedBytes
     except:
         return (-1,'Error while unescaping the bytes')
     return (0,unescapedBytes)
