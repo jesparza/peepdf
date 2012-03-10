@@ -186,6 +186,85 @@ def escapeString(string):
 			escapedValue += string[i]
 	return escapedValue
 
+def getBitsFromNum(num, bitsPerComponent = 8):
+    '''
+        Makes the conversion between number and bits
+        
+        @param num: Number to be converted
+        @param bitsPerComponent: Number of bits needed to represent a component
+        @return: A tuple (status,statusContent), where statusContent is the string containing the resulting bits in case status = 0 or an error in case status = -1
+    '''
+    if not isinstance(num,int):
+        return (-1,'num must be an integer')
+    if not isinstance(bitsPerComponent,int):
+        return (-1,'bitsPerComponent must be an integer')
+    try:
+        bitsRepresentation = bin(num)
+        bitsRepresentation = bitsRepresentation.replace('0b','')
+        mod = len(bitsRepresentation) % 8
+        if mod != 0:
+            bitsRepresentation = '0'*(8-mod) + bitsRepresentation
+        bitsRepresentation = bitsRepresentation[-1*bitsPerComponent:]
+    except:
+        return (-1,'Error in conversion from number to bits')
+    return (0,bitsRepresentation)
+
+
+def getNumsFromBytes(bytes, bitsPerComponent = 8):
+    '''
+        Makes the conversion between bytes and numbers, depending on the number of bits used per component.
+        
+        @param bytes: String representing the bytes to be converted
+        @param bitsPerComponent: Number of bits needed to represent a component
+        @return: A tuple (status,statusContent), where statusContent is a list of numbers in case status = 0 or an error in case status = -1
+    '''
+    if not isinstance(bytes,str):
+        return (-1,'bytes must be a string')
+    if not isinstance(bitsPerComponent,int):
+        return (-1,'bitsPerComponent must be an integer')
+    outputComponents = []
+    bitsStream = ''
+    for byte in bytes:
+        try:
+            bitsRepresentation = bin(ord(byte))
+            bitsRepresentation = bitsRepresentation.replace('0b','')
+            bitsRepresentation = '0'*(8-len(bitsRepresentation)) + bitsRepresentation
+            bitsStream += bitsRepresentation
+        except:
+            return (-1,'Error in conversion from bytes to bits')
+    
+    try:
+        for i in range(0,len(bitsStream),bitsPerComponent):
+            bytes = ''
+            bits = bitsStream[i:i+bitsPerComponent]
+            num = int(bits,2)
+            outputComponents.append(num)
+    except:
+        return (-1,'Error in conversion from bits to bytes')
+    return (0,outputComponents)       
+
+def getBytesFromBits(bitsStream):
+    '''
+        Makes the conversion between bits and bytes.
+        
+        @param bitsStream: String representing a chain of bits
+        @return: A tuple (status,statusContent), where statusContent is the string containing the resulting bytes in case status = 0 or an error in case status = -1
+    '''
+    if not isinstance(bitsStream,str):
+        return (-1,'The bitsStream must be a string')
+    bytes = ''
+    if re.match('[01]*$',bitsStream):
+        try:
+            for i in range(0,len(bitsStream),8):
+                bits = bitsStream[i:i+8]
+                byte = chr(int(bits,2))
+                bytes += byte
+        except:
+            return (-1,'Error in conversion from bits to bytes')
+        return (0,bytes)
+    else:
+        return (-1,'The format of the bit stream is not correct') 
+
 def getBytesFromFile(filename, offset, numBytes):
     '''
         Returns the number of bytes specified from a file, starting from the offset specified
