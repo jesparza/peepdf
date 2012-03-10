@@ -1896,8 +1896,10 @@ class PDFStream (PDFDictionary) :
                     self.modifiedStream = False
                     self.newFilters = False
                     self.deletedFilters = False
+                    errors = self.errors
                     try:
                         self.setElement('/Length',PDFNum(str(self.size)))
+                        self.errors += errors
                     except:
                         errorMessage = 'Error creating PDFNum'
                         if isForceMode:
@@ -2950,8 +2952,10 @@ class PDFObjectStream (PDFStream) :
                     self.modifiedStream = False
                     self.newFilters = False
                     self.deletedFilters = False
+                    errors = self.errors
                     try:
                         self.setElement('/Length',PDFNum(str(self.size)))
+                        self.errors += errors
                     except:
                         errorMessage = 'Error creating PDFNum'
                         if isForceMode:
@@ -4477,6 +4481,7 @@ class PDFFile :
         self.encryptDict = None
         self.encrypted = False
         self.fileId = ''
+        self.encryptionAlgorithms = ''
         self.encryptionKey = ''
         self.encryptionKeyLength = 128
         self.ownerPass = ''
@@ -4785,11 +4790,19 @@ class PDFFile :
         return (0,lastId)
 
     def decrypt(self, password = ''):
+        #TODO: Revision 5, included in Extension Level 3, and AES
         errorMessage = ''
+        encryptionAlgorithms = []
+        algorithm = None
+        stmAlgorithm = None
+        strAlgorithm = None
+        embedAlgorithm = None
         fileId = self.getFileId()
         if self.encryptDict == None or self.encryptDict[1] == []:
-            self.addError('Decryption error: /Encrypt dictionary not found!!')
-            return (-1,'Decryption error: /Encrypt dictionary not found!!')
+            if isForceMode:
+                self.addError('Decryption error: /Encrypt dictionary not found!!')
+            else:
+                return (-1,'Decryption error: /Encrypt dictionary not found!!')
         # Getting /Encrypt elements
         encDict = self.encryptDict[1]
         # Filter
@@ -4798,28 +4811,135 @@ class PDFFile :
             if filter != None and filter.getType() == 'name':
                 filter = filter.getValue()
                 if filter != '/Standard':
-                    self.addError('Decryption error: Filter not supported!!')
-                    return (-1,'Decryption error: Filter not supported!!')
+                    if isForceMode:
+                        self.addError('Decryption error: Filter not supported!!')
+                    else:
+                        return (-1,'Decryption error: Filter not supported!!')
             else:
-                self.addError('Decryption error: bad format for /Filter!!')
-                return (-1,'Decryption error: bad format for /Filter!!')
+                if isForceMode:
+                    self.addError('Decryption error: Bad format for /Filter!!')
+                else:
+                    return (-1,'Decryption error: Bad format for /Filter!!')
         else:
-            self.addError('Decryption error: Filter not found!!')
-            return (-1,'Decryption error: Filter not found!!')
+            if isForceMode:
+                self.addError('Decryption error: Filter not found!!')
+            else:
+                return (-1,'Decryption error: Filter not found!!')
         # Algorithm version
         if encDict.has_key('/V'):
             algVersion = encDict['/V']
             if algVersion != None and algVersion.getType() == 'integer':
                 algVersion = algVersion.getRawValue()
-                if algVersion != 1 and algVersion != 2:
-                    self.addError('Decryption error: Algorithm not supported!!')
-                    return (-1,'Decryption error: Algorithm not supported!!')
+                if algVersion == 4 or algVersion == 5:
+                    stmAlgorithm = ['Identity',40]
+                    strAlgorithm = ['Identity',40]
+                    embedAlgorithm = ['Identity',40]
+                    algorithms = {}
+                    if encDict.has_key('/CF'):
+                        cfDict = encDict['/CF']
+                        if cfDict != None and cfDict.getType() == 'dictionary':
+                            cfDict = cfDict.getElements()
+                            for cryptFilter in cfDict:
+                                cryptFilterDict = cfDict[cryptFilter]
+                                if cryptFilterDict != None and cryptFilterDict.getType() == 'dictionary':
+                                    algorithms[cryptFilter] = []
+                                    defaultKeyLength = 40
+                                    cfmValue = ''
+                                    cryptFilterDict = cryptFilterDict.getElements()
+                                    if cryptFilterDict.has_key('/CFM'):
+                                        cfmValue = cryptFilterDict['/CFM']
+                                        if cfmValue != None and cfmValue.getType() == 'name':
+                                            cfmValue = cfmValue.getValue()
+                                            if cfmValue == 'None':
+                                                algorithms[cryptFilter].append('Identity')
+                                            elif cfmValue == '/V2':
+                                                algorithms[cryptFilter].append('RC4')
+                                            elif cfmValue == '/AESV2':
+                                                algorithms[cryptFilter].append('AES')
+                                                defaultKeyLength = 128
+                                            elif cfmValue == '/AESV3':
+                                                algorithms[cryptFilter].append('AES')
+                                                defaultKeyLength = 256
+                                            else:
+                                                if isForceMode:
+                                                    self.addError('Decryption error: Unsupported encryption!!')
+                                                else:
+                                                    return (-1,'Decryption error: Unsupported encryption!!')
+                                    if cryptFilterDict.has_key('/Length') and cfmValue != '/AESV3':
+                                        keyLength = cryptFilterDict['/Length']
+                                        if keyLength != None and keyLength.getType() == 'integer':
+                                            keyLength = keyLength.getRawValue()
+                                            if keyLength % 8 != 0:
+                                                keyLength = defaultKeyLength
+                                                self.addError('Decryption error: Key length not valid!!')
+                                        else:
+                                            keyLength = defaultKeyLength
+                                            self.addError('Decryption error: Bad format for /Length!!')
+                                    else:
+                                        keyLength = defaultKeyLength
+                                    algorithms[cryptFilter].append(keyLength)
+                        else:
+                            if isForceMode:
+                                self.addError('Decryption error: Bad format for /CF!!')
+                            else:
+                                return (-1,'Decryption error: Bad format for /CF!!')
+                    if encDict.has_key('/StmF'):
+                        stmF = encDict['/StmF']
+                        if stmF != None and stmF.getType() == 'name':
+                            stmF = stmF.getValue()
+                            if stmF in algorithms:
+                                stmAlgorithm = algorithms[stmF]
+                        else:
+                            if isForceMode:
+                                self.addError('Decryption error: Bad format for /StmF!!')
+                            else:
+                                return (-1,'Decryption error: Bad format for /StmF!!')
+                    if encDict.has_key('/StrF'):
+                        strF = encDict['/StrF']
+                        if strF != None and strF.getType() == 'name':
+                            strF = strF.getValue()
+                            if strF in algorithms:
+                                strAlgorithm = algorithms[strF]
+                                if strAlgorithm not in encryptionAlgorithms:
+                                    encryptionAlgorithms.append(strAlgorithm)
+                        else:
+                            if isForceMode:
+                                self.addError('Decryption error: Bad format for /StrF!!')
+                            else:
+                                return (-1,'Decryption error: Bad format for /StrF!!')
+                    if encDict.has_key('/EEF'):
+                        eeF = encDict['/EEF']
+                        if eeF != None and eeF.getType() == 'name':
+                            eeF = eeF.getValue()
+                            if eeF in algorithms:
+                                embedAlgorithm = algorithms[eeF]
+                        else:
+                            if isForceMode:
+                                self.addError('Decryption error: Bad format for /EEF!!')
+                            else:
+                                return (-1,'Decryption error: Bad format for /EEF!!')
+                    if stmAlgorithm not in encryptionAlgorithms:
+                        encryptionAlgorithms.append(stmAlgorithm)                        
+                    if strAlgorithm not in encryptionAlgorithms:
+                        encryptionAlgorithms.append(strAlgorithm)
+                    if embedAlgorithm not in encryptionAlgorithms and embedAlgorithm != ['Identity',40]: # Not showing default embedAlgorithm
+                        encryptionAlgorithms.append(embedAlgorithm)
+                    if isForceMode:
+                        self.addError('Decryption error: Algorithm not supported!!')
+                    else:
+                        return (-1,'Decryption error: Algorithm not supported!!')   
             else:
-                self.addError('Decryption error: bad format for /V!!')
-                return (-1,'Decryption error: bad format for /V!!')
+                if isForceMode:
+                    self.addError('Decryption error: Bad format for /V!!')
+                else:
+                    return (-1,'Decryption error: Bad format for /V!!')
         else:
-            self.addError('Decryption error: Algorithm version not found!!')
-            return (-1,'Decryption error: Algorithm version not found!!')
+            algVersion = 0
+            if isForceMode:
+                self.addError('Decryption error: Algorithm version not found!!')
+            else:
+                return (-1,'Decryption error: Algorithm version not found!!')
+        
         # Key length
         if encDict.has_key('/Length'):
             keyLength = encDict['/Length']
@@ -4830,9 +4950,17 @@ class PDFFile :
                     self.addError('Decryption error: Key length not valid!!')
             else:
                 keyLength = 40
-                self.addError('Decryption error: bad format for /Length!!')
+                self.addError('Decryption error: Bad format for /Length!!')
         else:
             keyLength = 40
+        if algVersion == 1 or algVersion == 2:
+            algorithm = ['RC4',keyLength]
+            stmAlgorithm = strAlgorithm = embedAlgorithm = algorithm
+        elif algVersion == 5:
+            algorithm = ['AES',256]
+        if algorithm not in encryptionAlgorithms:
+            encryptionAlgorithms.append(algorithm)
+        self.setEncryptionAlgorithms(encryptionAlgorithms)
         # Standard encryption: /R /P /O /U
         # Revision
         if encDict.has_key('/R'):
@@ -4840,56 +4968,91 @@ class PDFFile :
             if revision != None and revision.getType() == 'integer':
                 revision = revision.getRawValue()
                 if revision != 2 and revision != 3:
-                    self.addError('Decryption error: Algorithm revision not supported!!')
-                    return (-1,'Decryption error: Algorithm revision not supported!!')
+                    # Revision 5??
+                    if isForceMode:
+                        self.addError('Decryption error: Algorithm revision not supported!!')
+                    else:
+                        return (-1,'Decryption error: Algorithm revision not supported!!')
             else:
-                self.addError('Decryption error: bad format for /R!!')
-                return (-1,'Decryption error: bad format for /R!!')
+                if isForceMode:
+                    self.addError('Decryption error: Bad format for /R!!')
+                else:
+                    return (-1,'Decryption error: Bad format for /R!!')
         else:
-            self.addError('Decryption error: Algorithm revision not found!!')
-            return (-1,'Decryption error: Algorithm revision not found!!')
+            if isForceMode:
+                self.addError('Decryption error: Algorithm revision not found!!')
+            else:
+                return (-1,'Decryption error: Algorithm revision not found!!')
         # Permission
         if encDict.has_key('/P'):
             perm = encDict['/P']
             if perm != None and perm.getType() == 'integer':
                 perm = perm.getRawValue()
             else:
-                self.addError('Decryption error: bad format for /P!!')
-                return (-1,'Decryption error: bad format for /P!!')
+                if isForceMode:
+                    self.addError('Decryption error: Bad format for /P!!')
+                else:
+                    return (-1,'Decryption error: Bad format for /P!!')
         else:
-            self.addError('Decryption error: Permission number not found!!')
-            return (-1,'Decryption error: Permission number not found!!')
+            if isForceMode:
+                self.addError('Decryption error: Permission number not found!!')
+            else:
+                return (-1,'Decryption error: Permission number not found!!')
         # Ownser pass
         if encDict.has_key('/O'):
             ownerPass = encDict['/O']
             if ownerPass != None and ownerPass.getType() == 'string':
                 ownerPass = ownerPass.getValue()
             else:
-                self.addError('Decryption error: bad format for /O!!')
-                return (-1,'Decryption error: bad format for /O!!')
+                if isForceMode:
+                    self.addError('Decryption error: Bad format for /O!!')
+                else:
+                    return (-1,'Decryption error: Bad format for /O!!')
         else:
-            self.addError('Decryption error: Owner password not found!!')
-            return (-1,'Decryption error: Owner password not found!!')
+            if isForceMode:
+                self.addError('Decryption error: Owner password not found!!')
+            else:
+                return (-1,'Decryption error: Owner password not found!!')
         # User pass
         if encDict.has_key('/U'):
             userPass = encDict['/U']
             if userPass != None and userPass.getType() == 'string':
                 userPass = userPass.getValue()
             else:
-                self.addError('Decryption error: bad format for /U!!')
-                return (-1,'Decryption error: bad format for /U!!')
+                if isForceMode:
+                    self.addError('Decryption error: Bad format for /U!!')
+                else:
+                    return (-1,'Decryption error: Bad format for /U!!')
         else:
-            self.addError('Decryption error: User password not found!!')
-            return (-1,'Decryption error: User password not found!!')
+            if isForceMode:
+                self.addError('Decryption error: User password not found!!')
+            else:
+                return (-1,'Decryption error: User password not found!!')
+        # Metadata encryption
+        if encDict.has_key('/EncryptMetadata'):
+            encryptMetadata = encDict['/EncryptMetadata']
+            if encryptMetadata != None and encryptMetadata.getType() == 'bool':
+                encryptMetadata = encryptMetadata.getValue()
+            else:
+                if isForceMode:
+                    self.addError('Decryption error: Bad format for /EncryptMetadata!!')
+                else:
+                    return (-1,'Decryption error: Bad format for /EncryptMetadata!!')
+        else:
+            encryptMetadata = 'true'
         # Checking password
         computedUserPass = computeUserPass(password,ownerPass,fileId,perm,keyLength,revision)
         if (revision > 2 and computedUserPass[:16] != userPass[:16]) or (revision < 3 and computedUserPass != userPass):
             if password == '':
-                self.addError('Decryption error: default password not working here!!')
-                return (-1,'Decryption error: default password not working here!!')
+                if isForceMode:
+                    self.addError('Decryption error: Default password not working here!!')
+                else:
+                    return (-1,'Decryption error: Default password not working here!!')
             else:
-                self.addError('Decryption error: password not working here!!')
-                return (-1,'Decryption error: password not working here!!')
+                if isForceMode:
+                    self.addError('Decryption error: Password not working here!!')
+                else:
+                    return (-1,'Decryption error: Password not working here!!')
         self.setOwnerPass(ownerPass)
         self.setUserPass(userPass)
         encryptionKey = computeEncryptionKey(password,ownerPass,fileId,perm,keyLength,revision)
@@ -4906,7 +5069,7 @@ class PDFFile :
                     object = indirectObject.getObject()
                     if object != None and not object.isCompressed():
                         objectType = object.getType()
-                        if objectType in ['string','hexstring','array','dictionary'] or (objectType == 'stream' and (object.getElement('/Type') == None or object.getElement('/Type').getValue() != '/XRef')):
+                        if objectType in ['string','hexstring','array','dictionary'] or (objectType == 'stream' and (object.getElement('/Type') == None or object.getElement('/Type').getValue() != '/XRef' or (object.getElement('/Type').getValue() == '/Metadata' and encryptMetadata == 'true'))):
                             key = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes)
                             ret = object.decrypt(key)
                             if ret[0] == -1:
@@ -5204,6 +5367,9 @@ class PDFFile :
         
     def getEncryptDict(self):
         return self.encryptDict
+    
+    def getEncryptionAlgorithms(self):
+        return self.encryptionAlgorithms
         
     def getEncryptionKey(self):
         return self.encryptionKey
@@ -5479,6 +5645,7 @@ class PDFFile :
         stats['Binary'] = str(self.binary)
         stats['Linearized'] = str(self.linearized)
         stats['Encrypted'] = str(self.encrypted)
+        stats['Encryption Algorithms'] = self.encryptionAlgorithms
         stats['Updates'] = str(self.updates)
         stats['Objects'] = str(self.numObjects)
         stats['Streams'] = str(self.numStreams)
@@ -5969,6 +6136,9 @@ class PDFFile :
     def setEncrypted(self, status):
         self.encrypted = status    
 
+    def setEncryptionAlgorithms(self, encryptionAlgorithms):
+        self.encryptionAlgorithms = encryptionAlgorithms
+
     def setEncryptionKey(self, key):
         self.encryptionKey = key    
 
@@ -6236,8 +6406,10 @@ class PDFParser :
             trailer = None
             trailerFound = False
             pdfIndirectObject = None
-            encryptDict = None
-            fileId = None
+            if not pdfFile.isEncrypted():
+                encryptDict = None
+            if pdfFile.getFileId() == '':
+                fileId = None
             content = self.fileParts[i]
             if i == 0:
                 bodyOffset = 0
@@ -6358,7 +6530,7 @@ class PDFParser :
                 ret = self.createPDFTrailer(trailerContent, trailerOffset, streamPresent = True)
                 if ret[0] != -1:
                     trailer = ret[1]
-                if streamTrailer != None:
+                if streamTrailer != None and not pdfFile.isEncrypted():
                     encryptDict = streamTrailer.getDictEntry('/Encrypt')
                     if encryptDict != None:
                         pdfFile.setEncrypted(True)
@@ -6371,27 +6543,27 @@ class PDFParser :
                         fileId = trailer.getDictEntry('/ID')
             else:
                 ret = self.createPDFTrailer(trailerContent, trailerOffset)
-                if ret[0] != -1:
+                if ret[0] != -1 and not pdfFile.isEncrypted():
                     trailer = ret[1]
                     encryptDict = trailer.getDictEntry('/Encrypt')
                     if encryptDict != None:
                         pdfFile.setEncrypted(True)
                     fileId = trailer.getDictEntry('/ID')
-            if encryptDict != None:
-                encryptDictId = None
+            if pdfFile.getEncryptDict() == None and encryptDict != None:
                 objectType = encryptDict.getType()
                 if objectType == 'reference':
                     encryptDictId = encryptDict.getId()
-                    encryptDict = pdfFile.getObject(encryptDictId,i)
-                    if encryptDict != None:
-                        objectType = encryptDict.getType()
+                    encryptObject = pdfFile.getObject(encryptDictId,i)
+                    if encryptObject != None:
+                        objectType = encryptObject.getType()
+                        encryptDict = encryptObject
                     else:
-                        pdfFile.addError('/Encrypt dictionary not found')
+                        if i == pdfFile.updates:
+                            pdfFile.addError('/Encrypt dictionary not found')
                 if objectType == 'dictionary':
                     pdfFile.setEncryptDict([encryptDictId,encryptDict.getElements()])
-                else:
-                    pdfFile.setEncrypted(False)
-            if fileId != None:
+
+            if fileId != None and pdfFile.getFileId() == '':
                 objectType = fileId.getType()
                 if objectType == 'array':
                     fileIdElements = fileId.getElements()
@@ -6403,10 +6575,8 @@ class PDFParser :
                             fileId = fileIdElements[1].getValue()
                             pdfFile.setFileId(fileId)
             pdfFile.addTrailer([trailer, streamTrailer])
-        if pdfFile.isEncrypted():
-            ret = pdfFile.decrypt()
-            if ret[0] == -1:
-                pdfFile.addError(ret[1])
+        if pdfFile.isEncrypted() and pdfFile.getEncryptDict() != None:
+            pdfFile.decrypt()
         return (0,pdfFile)
 
     def parsePDFSections(self, content, forceMode = False, looseMode = False):
