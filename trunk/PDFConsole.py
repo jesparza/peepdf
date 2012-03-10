@@ -925,9 +925,8 @@ class PDFConsole(cmd.Cmd):
             return False
         if len(args) == 0:
             errorsArray = self.pdfFile.getErrors()
-            messages,counters = countArrayElements(errorsArray)
-            for i in range(len(messages)):
-                errors += messages[i] + ' ('+ str(counters[i]) +') ' + newLine
+            for error in errorsArray:
+                errors += error + newLine
             if errors == '':
                 errors = 'No errors!!'
             self.log_output('errors ' + argv, errors)
@@ -1065,6 +1064,9 @@ class PDFConsole(cmd.Cmd):
         if filters == []:
             if object.hasElement('/Filter'):
                 value = object.getElementByName('/Filter').getValue()
+                if object.hasElement('/DecodeParms'):
+                    parameters = object.getElementByName('/DecodeParms').getValue()
+                    value += " " + parameters
             else:
                 message = '*** Warning: No filters found in the object!!'
                 self.log_output('filters ' + argv, message)
@@ -1077,10 +1079,14 @@ class PDFConsole(cmd.Cmd):
                 return False
             if len(filters) == 1:
                 if filters[0] == 'none':
-                    object.delElement('/Filter')
+                    ret = object.delElement('/Filter')
                 else:
                     filtersPDFName = PDFName(filter2RealFilterDict[filters[0]])
-                    object.setElement('/Filter',filtersPDFName)
+                    ret = object.setElement('/Filter',filtersPDFName)
+                if ret[0] == -1:
+                    message = '*** Error: '+ret[1]+'!!'
+                    self.log_output('filters ' + argv, message)
+                    return False
             else:
                 while True:
                     if 'none' in filters:
@@ -1092,7 +1098,11 @@ class PDFConsole(cmd.Cmd):
                     filtersArray.append(PDFName(filter2RealFilterDict[filter]))
                 if filtersArray != []: 
                     filtersPDFArray = PDFArray('',filtersArray)
-                    object.setElement('/Filter',filtersPDFArray)
+                    ret = object.setElement('/Filter',filtersPDFArray)
+                    if ret[0] == -1:
+                        message = '*** Error: '+ret[1]+'!!'
+                        self.log_output('filters ' + argv, message)
+                        return False
             ret = self.pdfFile.setObject(id, object, version)
             if ret[0] == -1:
                 message = '*** Error: '+ret[1]+'!!'
