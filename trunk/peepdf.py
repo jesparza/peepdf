@@ -27,7 +27,7 @@
 	Initial script to launch the tool
 '''
 
-import sys, os, optparse, re, urllib2, datetime
+import sys, os, optparse, re, urllib2, datetime, hashlib
 from PDFConsole import PDFConsole
 from PDFCore import PDFParser
 try:
@@ -37,64 +37,39 @@ except:
 	JS_MODULE = False
 
 
-def getRepFilesInfo(url, path = ''):
-	filesInfoDic = {} 
-	dumbReDirs = '<a\s*?onclick="ret[^>]*?>(.*?)</a>'
-	dumbReFiles = '<a\s*?onclick="_[^>]*?>(.*?)</a>'
-	dumbReSize = '<div>Size: (\S*?) bytes[^<]*?</div>'
-	if path != '':
-		lastDir = path[path.rfind('/')+1:]
-		path += '/'
-	else:
-		lastDir = 'trunk'
-	print '[-] Getting repository files information from "'+url+path+'"...'
+def getRepPaths(url, path = ''):
+	paths = []
+	dumbReDirs = '<li><a[^>]*?>(.*?)/</a></li>'
+	dumbReFiles = '<li><a[^>]*?>([^/]*?)</a></li>'
+	
 	try:
 		browsingPage = urllib2.urlopen(url+path).read()
 	except:
 		sys.exit('[x] Connection error while getting browsing page "'+url+path+'"')
 	dirs = re.findall(dumbReDirs, browsingPage)
-	filesInfo = re.findall(dumbReFiles, browsingPage)
-	if filesInfo != [] and len(filesInfo) % 5 == 0:
-		for i in range(0,len(filesInfo),5):
-			pathFile = path+filesInfo[i]
-			fileDate = filesInfo[i+3]
-			# Get date
-			#TODO: check Yesterday??
-			if fileDate.find('Today') != -1:
-				fileDate = datetime.datetime.today()
-			elif fileDate.find('(') != -1:
-				fileDate = fileDate[:fileDate.find('(')]
-				year = datetime.datetime.today().strftime('%Y')
-				fileDate = datetime.datetime.strptime(fileDate + year,'%b %d %Y')
+	files = re.findall(dumbReFiles, browsingPage)
+	for file in files:
+		if file != '..':
+			if path == '':
+				paths.append(file)
 			else:
-				fileDate = datetime.datetime.strptime(fileDate,'%b %d, %Y')
-			# Get size
-			try:
-				filePage = urllib2.urlopen(url+pathFile).read()
-			except:
-				sys.exit('[x] Connection error while getting file page "'+url+pathFile+'"')
-			size = re.findall(dumbReSize, filePage)
-			if len(size) != 1:
-				sys.exit('[x] Error while getting size of "'+pathFile+'"')
-			size = int(size[0])
-			filesInfoDic[pathFile] = [size, fileDate]
-	if dirs != [] and len(dirs) > 1:
-		for dir in dirs:
-			if (path == '' and dir != 'trunk') or dir != lastDir:
-				dirFilesInfo = getRepFilesInfo(url, path+dir)
-				if dirFilesInfo != {}:
-					for dirFile in dirFilesInfo:
-						filesInfoDic[dirFile] = dirFilesInfo[dirFile]
-	print '[+] Done'
-	return filesInfoDic
+				paths.append(path + '/' + file)
+	for dir in dirs:
+		if path == '':
+			dirPaths = getRepPaths(url, dir)
+		else:
+			dirPaths = getRepPaths(url, path+'/'+dir)
+		paths += dirPaths
+	return paths
 
 def getLocalFilesInfo(filesList):
 	localFilesInfo = {}
 	print '[-] Getting local files information...'
 	for path in filesList:
 		if os.path.exists(path):
-			fileSize = os.path.getsize(path)
-			localFilesInfo[path] = fileSize
+			content = open(path,'r').read()
+			shaHash = hashlib.sha256(content).hexdigest()
+			localFilesInfo[path] = shaHash
 	print '[+] Done'
 	return localFilesInfo
 
@@ -102,20 +77,22 @@ def getLocalFilesInfo(filesList):
 author = 'Jose Miguel Esparza' 
 email = 'jesparza AT eternal-todo.com'
 url = 'http://peepdf.eternal-todo.com'
-twitter = '@eternaltodo'
+twitter = 'http://twitter.com/EternalTodo'
+peepTwitter = 'http://twitter.com/peepdf'
 version = '0.1'
-revision = '72'   
+revision = '78'   
 stats = ''
 pdf = None
 fileName = None
 newLine = os.linesep
 vulnsDict = {'/JBIG2Decode':'CVE-2009-0658','mailto':'CVE-2007-5020','Collab.collectEmailInfo':'CVE-2007-5659','util.printf':'CVE-2008-2992','getAnnots':'CVE-2009-1492','getIcon':'CVE-2009-0927','spell.customDictionaryOpen':'CVE-2009-1493','media.newPlayer':'CVE-2009-4324','doc.printSeps':'CVE-2010-4091','/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462'],'/PRC':'CVE-2011-4369'}
 versionHeader = 'Version: peepdf ' + version + ' r' + revision
-peepdfHeader =  versionHeader + newLine +\
-               'Author: ' + author + newLine +\
-               'E-mail: ' + email + newLine +\
-               'Twitter: ' + twitter + newLine +\
-               'URL: ' + url + newLine
+peepdfHeader =  versionHeader + newLine*2 +\
+               url + newLine +\
+               peepTwitter + newLine*2 +\
+               author + newLine +\
+               email + newLine +\
+               twitter + newLine
                
 argsParser = optparse.OptionParser(usage='Usage: '+sys.argv[0]+' [options] PDF_file',description=versionHeader)
 argsParser.add_option('-i', '--interactive', action='store_true', dest='isInteractive', default=False, help='Sets console mode.')
@@ -131,60 +108,54 @@ if options.version:
 elif options.update:
 	updated = False
 	newVersion = ''
+	localVersion = 'v'+version+' r'+revision
 	reVersion = 'version = \'(\d\.\d)\'\s*?revision = \'(\d+)\''
-	rawURL = 'http://peepdf.googlecode.com/svn/trunk/'
-	browseURL = 'http://code.google.com/p/peepdf/source/browse/trunk/'
-	repFilesInfo = getRepFilesInfo(browseURL,'')
-	pathNames = repFilesInfo.keys()
-	localFilesInfo = getLocalFilesInfo(pathNames)
-	print '[-] Checking files...'
-	for path in repFilesInfo:
-		repInfo = repFilesInfo[path]
-		if localFilesInfo.has_key(path):
-			# File exists
-			repSize = repInfo[0]
-			localSize = localFilesInfo[path]
-			if repSize != localSize:
-				# Downloading
-				print '[-] Downloading new version of "'+path+'"...'
-				try:
-					fileContent = urllib2.urlopen(rawURL+path).read()
-				except:
-					sys.exit('[x] Connection error while getting file "'+path+'"')
-				# Size check
-				if len(fileContent) == repSize:
-					updated = True
-					open(path,'w').write(fileContent)
-					print '[+] File updated successfully'
-				else:
-					sys.exit('[x] Size check failed for file "'+path+'" ('+str(len(fileContent))+' != '+str(repSize)+')!!')
-				if path == 'peepdf.py':
-					ver = re.findall(reVersion, fileContent)
-					if ver != []:
-						newVersion = 'v'+ver[0][0]+' r'+ver[0][1]
-		else:
-			# File does not exist
-			# Downloading
-			print '[-] Downloading new file "'+path+'"...'
+	repURL = 'http://peepdf.googlecode.com/svn/trunk/'
+	print '[-] Checking if there are new updates...'
+	try:
+		remotePeepContent = urllib2.urlopen(repURL+'peepdf.py').read()
+	except:
+		sys.exit('[x] Connection error while getting file "'+path+'"')
+	repVer = re.findall(reVersion, remotePeepContent)
+	if repVer != []:
+		newVersion = 'v'+repVer[0][0]+' r'+repVer[0][1]
+	else:
+		sys.exit('[x] Error getting the version number from the repository')
+	if localVersion == newVersion:
+		print '[+] No changes! ;)'
+	else:
+		print '[+] There are new updates!!'
+		print '[-] Getting paths from the repository...'
+		pathNames = getRepPaths(repURL,'')
+		print '[+] Done'
+		localFilesInfo = getLocalFilesInfo(pathNames)
+		print '[-] Checking files...'
+		for path in pathNames:
 			try:
-				fileContent = urllib2.urlopen(rawURL+path).read()
+				fileContent = urllib2.urlopen(repURL+path).read()
 			except:
 				sys.exit('[x] Connection error while getting file "'+path+'"')
-			index = path.rfind('/')
-			if index != -1:
-				dirsPath = path[:index]
-				if not os.path.exists(dirsPath):
-					os.makedirs(dirsPath)
-			open(path,'w').write(fileContent)
-			print '[+] File updated successfully'
-			updated = True
-	if updated:
+			if localFilesInfo.has_key(path):
+				# File exists
+				# Checking hash
+				shaHash = hashlib.sha256(fileContent).hexdigest()
+				if shaHash != localFilesInfo[path]:
+					open(path,'w').write(fileContent)
+					print '[+] File "'+path+'" updated successfully'
+			else:
+				# File does not exist
+				index = path.rfind('/')
+				if index != -1:
+					dirsPath = path[:index]
+					if not os.path.exists(dirsPath):
+						print '[+] New directory "'+dirsPath+'" created successfully'
+						os.makedirs(dirsPath)
+				open(path,'w').write(fileContent)
+				print '[+] New file "'+path+'" created successfully'
 		message = '[+] peepdf updated successfully'
 		if newVersion != '':
 			message += ' to '+newVersion
 		print message
-	else:
-		print '[+] No updates needed'
 		
 else:
 	if len(args) == 1:
@@ -216,7 +187,12 @@ else:
 		stats += 'Version: ' + statsDict['Version'] + newLine
 		stats += 'Binary: ' + statsDict['Binary'] + newLine
 		stats += 'Linearized: ' + statsDict['Linearized'] + newLine
-		stats += 'Encrypted: ' + statsDict['Encrypted'] + newLine
+		stats += 'Encrypted: ' + statsDict['Encrypted']
+		if statsDict['Encryption Algorithms'] != []:
+			stats += ' ('
+			for algorithmInfo in statsDict['Encryption Algorithms']:
+				stats += algorithmInfo[0] + ' ' + str(algorithmInfo[1]) + ' bits, '
+			stats = stats[:-2] + ')' + newLine
 		stats += 'Updates: ' + statsDict['Updates'] + newLine
 		stats += 'Objects: ' + statsDict['Objects'] + newLine
 		stats += 'Streams: ' + statsDict['Streams'] + newLine
