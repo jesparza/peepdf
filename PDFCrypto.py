@@ -58,9 +58,12 @@ def computeEncryptionKey(password, ownerPass, fileID, pElement, keyLength = 128,
 		while counter < 50:
 			key = hashlib.md5(key[:keyLength]).digest()
 			counter += 1
+		key = key[:keyLength]
+	elif revision == 2:
+		key = key[:5]
 	return key
 
-def computeObjectKey(id, generationNum, encryptionKey, keyLengthBytes):
+def computeObjectKey(id, generationNum, encryptionKey, keyLengthBytes, algorithm = 'RC4'):
 	'''
 		Compute the key necessary to encrypt each object, depending on the id and generation number
 		
@@ -71,7 +74,8 @@ def computeObjectKey(id, generationNum, encryptionKey, keyLengthBytes):
 		@return: The computed key in string format
 	'''	
 	key = encryptionKey + struct.pack('<i',id)[:3] + struct.pack('<i',generationNum)[:2]
-	# AES: key += '\x73\x41\x6C\x54'
+	if algorithm == 'AES':
+		key += '\x73\x41\x6C\x54' # sAlT
 	key = hashlib.md5(key).digest()
 	if keyLengthBytes+5 < 16:
 		key = key[:keyLengthBytes+5]
@@ -146,10 +150,10 @@ def computeUserPass(userPassString, ownerPass, fileID, pElement, keyLength = 128
 				newKey += chr(ord(rc4Key[i]) ^ counter)
 			userPass = RC4(userPass,newKey)
 			counter += 1
-	counter = 0
-	while counter < 16:
-		userPass += chr(random.randint(32,255))
-		counter += 1
+		counter = 0
+		while counter < 16:
+			userPass += chr(random.randint(32,255))
+			counter += 1
 	return userPass
 
 def RC4(data, key):
