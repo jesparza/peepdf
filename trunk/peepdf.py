@@ -351,7 +351,8 @@ else:
 					stats += ' ('
 					for algorithmInfo in statsDict['Encryption Algorithms']:
 						stats += algorithmInfo[0] + ' ' + str(algorithmInfo[1]) + ' bits, '
-					stats = stats[:-2] + ')' + newLine
+					stats = stats[:-2] + ')'
+				stats += newLine
 				stats += 'Updates: ' + statsDict['Updates'] + newLine
 				stats += 'Objects: ' + statsDict['Objects'] + newLine
 				stats += 'Streams: ' + statsDict['Streams'] + newLine
