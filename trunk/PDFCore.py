@@ -44,7 +44,6 @@ monitorizedEvents = ['/OpenAction','/AA','/Names','/AcroForm']
 monitorizedActions = ['/JS','/JavaScript','/Launch','/SubmitForm','/ImportData']
 monitorizedElements = ['/JBIG2Decode','/EmbeddedFiles','/EmbeddedFile','getPageNthWord','arguments.callee','/U3D','/PRC']
 jsVulns = ['mailto','Collab.collectEmailInfo','util.printf','getAnnots','getIcon','spell.customDictionaryOpen','media.newPlayer','doc.printSeps']
-vulnsDict = {'/JBIG2Decode':'CVE-2009-0658','mailto':'CVE-2007-5020','Collab.collectEmailInfo':'CVE-2007-5659','util.printf':'CVE-2008-2992','getAnnots':'CVE-2009-1492','getIcon':'CVE-2009-0927','spell.customDictionaryOpen':'CVE-2009-1493','media.newPlayer':'CVE-2009-4324','doc.printSeps':'CVE-2010-4091','/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462'],'/PRC':'CVE-2011-4369'}
 
 
 class PDFObject :
@@ -4474,6 +4473,8 @@ class PDFFile :
         self.path = ''
         self.size = 0
         self.md5 = ''
+        self.sha1 = ''
+        self.sha256 = ''
         self.body = [] # PDFBody[]
         self.binary = False
         self.binaryChars = ''
@@ -4481,7 +4482,7 @@ class PDFFile :
         self.encryptDict = None
         self.encrypted = False
         self.fileId = ''
-        self.encryptionAlgorithms = ''
+        self.encryptionAlgorithms = []
         self.encryptionKey = ''
         self.encryptionKeyLength = 128
         self.ownerPass = ''
@@ -5633,6 +5634,12 @@ class PDFFile :
                             matchedObjects.append(indirectObject.id)
         return matchedObjects
 
+    def getSHA1(self):
+        return self.sha1
+    
+    def getSHA256(self):
+        return self.sha256
+    
     def getSize(self):
         return self.size
         
@@ -5640,6 +5647,8 @@ class PDFFile :
         stats = {}
         stats['File'] = self.fileName
         stats['MD5'] = self.md5
+        stats['SHA1'] = self.sha1
+        stats['SHA256'] = self.sha256
         stats['Size'] = str(self.size)
         stats['Version'] = self.version
         stats['Binary'] = str(self.binary)
@@ -5650,7 +5659,7 @@ class PDFFile :
         stats['Objects'] = str(self.numObjects)
         stats['Streams'] = str(self.numStreams)
         stats['Comments'] = str(len(self.comments))
-        stats['Errors'] = str(len(self.errors))
+        stats['Errors'] = self.errors
         stats['Versions'] = []
         for version in range(self.updates+1):
             statsVersion = {}
@@ -5673,41 +5682,41 @@ class PDFFile :
             else:
                 statsVersion['Info'] = None
             objectsById = sorted(self.body[version].getObjectsIds(), key=lambda x: int(x))
-            statsVersion['Objects'] = [str(self.body[version].getNumObjects()),str(objectsById)]
+            statsVersion['Objects'] = [str(self.body[version].getNumObjects()),objectsById]
             if self.body[version].containsCompressedObjects():
                 compressedObjects = self.body[version].getCompressedObjects()
-                statsVersion['Compressed Objects'] = [str(len(compressedObjects)),str(compressedObjects)]
+                statsVersion['Compressed Objects'] = [str(len(compressedObjects)),compressedObjects]
             else:
                 statsVersion['Compressed Objects'] = None
             numFaultyObjects = self.body[version].getNumFaultyObjects()
             if numFaultyObjects > 0:
-                statsVersion['Errors'] = [str(numFaultyObjects),str(self.body[version].getFaultyObjects())]
+                statsVersion['Errors'] = [str(numFaultyObjects),self.body[version].getFaultyObjects()]
             else:
                 statsVersion['Errors'] = None
             numStreams = self.body[version].getNumStreams()
-            statsVersion['Streams'] = [str(numStreams),str(self.body[version].getStreams())]
+            statsVersion['Streams'] = [str(numStreams),self.body[version].getStreams()]
             if self.body[version].containsXrefStreams():
                 xrefStreams = self.body[version].getXrefStreams()
-                statsVersion['Xref Streams'] = [str(len(xrefStreams)),str(xrefStreams)]
+                statsVersion['Xref Streams'] = [str(len(xrefStreams)),xrefStreams]
             else:
                 statsVersion['Xref Streams'] = None
             if self.body[version].containsObjectStreams():
                 objectStreams = self.body[version].getObjectStreams()
-                statsVersion['Object Streams'] = [str(len(objectStreams)),str(objectStreams)]
+                statsVersion['Object Streams'] = [str(len(objectStreams)),objectStreams]
             else:
                 statsVersion['Object Streams'] = None
             if numStreams > 0:
-                statsVersion['Encoded'] = [str(self.body[version].getNumEncodedStreams()),str(self.body[version].getEncodedStreams())]
+                statsVersion['Encoded'] = [str(self.body[version].getNumEncodedStreams()),self.body[version].getEncodedStreams()]
                 numDecodingErrors = self.body[version].getNumDecodingErrors()
                 if numDecodingErrors > 0:
-                    statsVersion['Decoding Errors'] = [str(numDecodingErrors),str(self.body[version].getFaultyStreams())]
+                    statsVersion['Decoding Errors'] = [str(numDecodingErrors),self.body[version].getFaultyStreams()]
                 else:
                     statsVersion['Decoding Errors'] = None
             else:
                 statsVersion['Encoded'] = None
             containingJS = self.body[version].getContainingJS()
             if len(containingJS) > 0:
-                statsVersion['Objects with JS code'] = [str(len(containingJS)),str(containingJS)]
+                statsVersion['Objects with JS code'] = [str(len(containingJS)),containingJS]
             else:
                 statsVersion['Objects with JS code'] = None
             actions = self.body[version].getSuspiciousActions()
@@ -6205,6 +6214,12 @@ class PDFFile :
     def setPath(self, path):
         self.path = path
 
+    def setSHA1(self, sha1):
+        self.sha1 = sha1
+
+    def setSHA256(self, sha256):
+        self.sha256 = sha256
+
     def setSize(self, size):
         self.size = size
                 
@@ -6373,6 +6388,8 @@ class PDFParser :
         fileContent = open(fileName,'rb').read()
         pdfFile.setSize(len(fileContent))
         pdfFile.setMD5(hashlib.md5(fileContent).hexdigest())
+        pdfFile.setSHA1(hashlib.sha1(fileContent).hexdigest())
+        pdfFile.setSHA256(hashlib.sha256(fileContent).hexdigest())
         
         # Getting the number of updates in the file
         while fileContent.find('%%EOF') != -1:
