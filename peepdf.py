@@ -28,8 +28,10 @@
 '''
 
 import sys, os, optparse, re, urllib2, datetime, hashlib
-from PDFConsole import PDFConsole
+from lxml import etree
+from datetime import datetime
 from PDFCore import PDFParser
+
 try:
 	from spidermonkey import Runtime
 	JS_MODULE = True 
@@ -73,6 +75,143 @@ def getLocalFilesInfo(filesList):
 	print '[+] Done'
 	return localFilesInfo
 
+def getPeepXML(statsDict, version, revision):
+	root = etree.Element('peepdf_analysis', version = version+' r'+revision, url = 'http://peepdf.eternal-todo.com', author = 'Jose Miguel Esparza')
+	analysisDate = etree.SubElement(root, 'date')
+	analysisDate.text = datetime.today().strftime('%Y-%m-%d %H:%M')
+	basicInfo = etree.SubElement(root, 'basic')
+	fileName = etree.SubElement(basicInfo, 'filename')
+	fileName.text = statsDict['File']
+	md5 = etree.SubElement(basicInfo, 'md5')
+	md5.text = statsDict['MD5']
+	sha1 = etree.SubElement(basicInfo, 'sha1')
+	sha1.text = statsDict['SHA1']
+	sha256 = etree.SubElement(basicInfo, 'sha256')
+	sha256.text = statsDict['SHA256']
+	size = etree.SubElement(basicInfo, 'size')
+	size.text = statsDict['Size']
+	version = etree.SubElement(basicInfo, 'pdf_version')
+	version.text = statsDict['Version']
+	binary = etree.SubElement(basicInfo, 'binary', status = statsDict['Binary'].lower())
+	linearized = etree.SubElement(basicInfo, 'linearized', status = statsDict['Linearized'].lower())
+	encrypted = etree.SubElement(basicInfo, 'encrypted', status = statsDict['Encrypted'].lower())
+	if statsDict['Encryption Algorithms'] != []:
+		algorithms = etree.SubElement(encrypted, 'algorithms')
+		for algorithmInfo in statsDict['Encryption Algorithms']:
+			algorithm = etree.SubElement(algorithms, 'algorithm', bits = str(algorithmInfo[1]))
+			algorithm.text = algorithmInfo[0]
+	updates = etree.SubElement(basicInfo, 'updates')
+	updates.text = statsDict['Updates']
+	objects = etree.SubElement(basicInfo, 'num_objects')
+	objects.text = statsDict['Objects']
+	streams = etree.SubElement(basicInfo, 'num_streams')
+	streams.text = statsDict['Streams']
+	comments = etree.SubElement(basicInfo, 'comments')
+	comments.text = statsDict['Comments']
+	errors = etree.SubElement(basicInfo, 'errors', num = str(len(statsDict['Errors'])))
+	for error in statsDict['Errors']:
+		errorMessage = etree.SubElement(errors, 'error_message')
+		errorMessage.text = error
+	advancedInfo = etree.SubElement(root, 'advanced')
+	for version in range(len(statsDict['Versions'])):
+		statsVersion = statsDict['Versions'][version]
+		if version == 0:
+			versionType = 'original'
+		else:
+			versionType = 'update'
+		versionInfo = etree.SubElement(advancedInfo, 'version', num = str(version), type = versionType)
+		catalog = etree.SubElement(versionInfo, 'catalog')
+		if statsVersion['Catalog'] != None:
+			catalog.set('object_id', statsVersion['Catalog'])
+		info = etree.SubElement(versionInfo, 'info')
+		if statsVersion['Info'] != None:
+			info.set('object_id', statsVersion['Info'])
+		objects = etree.SubElement(versionInfo, 'objects', num = statsVersion['Objects'][0])
+		for id in statsVersion['Objects'][1]:
+			object = etree.SubElement(objects, 'object', id = str(id))
+			if statsVersion['Compressed Objects'] != None:
+				if id in statsVersion['Compressed Objects'][1]:
+					object.set('compressed','true')
+				else:
+					object.set('compressed','false')
+			if statsVersion['Errors'] != None:
+				if id in statsVersion['Errors'][1]:
+					object.set('errors','true')
+				else:
+					object.set('errors','false')
+		streams = etree.SubElement(versionInfo, 'streams', num = statsVersion['Streams'][0])
+		for id in statsVersion['Streams'][1]:
+			stream = etree.SubElement(streams, 'stream', id = str(id))
+			if statsVersion['Xref Streams'] != None:
+				if id in statsVersion['Xref Streams'][1]:
+					stream.set('xref_stream','true')
+				else:
+					stream.set('xref_stream','false')
+			if statsVersion['Object Streams'] != None:
+				if id in statsVersion['Object Streams'][1]:
+					stream.set('object_stream','true')
+				else:
+					stream.set('object_stream','false')
+			if statsVersion['Encoded'] != None:
+				if id in statsVersion['Encoded'][1]:
+					stream.set('encoded','true')
+					if statsVersion['Decoding Errors'] != None:
+						if id in statsVersion['Decoding Errors'][1]:
+							stream.set('decoding_errors','true')
+						else:
+							stream.set('decoding_errors','false')
+				else:
+					stream.set('encoded','false')
+		jsObjects = etree.SubElement(versionInfo, 'js_objects')
+		if statsVersion['Objects with JS code'] != None:
+			for id in statsVersion['Objects with JS code'][1]:
+				etree.SubElement(jsObjects, 'container_object', id = str(id))
+		actions = statsVersion['Actions']
+		events = statsVersion['Events']
+		vulns = statsVersion['Vulns']
+		elements = statsVersion['Elements']
+		suspicious = etree.SubElement(versionInfo, 'suspicious_elements')
+		if events != None or actions != None or vulns != None or elements != None:
+			if events != None:
+				triggers = etree.SubElement(suspicious, 'triggers')
+				for event in events:
+					trigger = etree.SubElement(triggers, 'trigger', name = event)
+					for id in events[event]:
+						etree.SubElement(trigger, 'container_object', id = str(id))
+			if actions != None:
+				actionsList = etree.SubElement(suspicious, 'actions')
+				for action in actions:
+					actionInfo = etree.SubElement(actionsList, 'action', name = action)
+					for id in actions[action]:
+						etree.SubElement(actionInfo, 'container_object', id = str(id))
+			if elements != None:
+				elementsList = etree.SubElement(suspicious, 'elements')
+				for element in elements:
+					elementInfo = etree.SubElement(elementsList, 'element', name = element)
+					if vulnsDict.has_key(element):
+						for vulnCVE in vulnsDict[element]:
+							cve = etree.SubElement(elementInfo, 'cve')
+							cve.text = vulnCVE
+					for id in elements[element]:
+						etree.SubElement(elementInfo, 'container_object', id = str(id))
+			if vulns != None:
+				vulnsList = etree.SubElement(suspicious, 'js_vulns')
+				for vuln in vulns:
+					vulnInfo = etree.SubElement(vulnsList, 'vulnerable_function', name = vuln)
+					if vulnsDict.has_key(vuln):
+						for vulnCVE in vulnsDict[vuln]:
+							cve = etree.SubElement(vulnInfo, 'cve')
+							cve.text = vulnCVE
+					for id in vulns[vuln]:
+						etree.SubElement(vulnInfo, 'container_object', id = str(id))
+		urls = statsVersion['URLs']
+		suspiciousURLs = etree.SubElement(versionInfo, 'suspicious_urls')
+		if urls != None:
+			for url in urls:
+				urlInfo = etree.SubElement(versionInfo, 'url')
+				urlInfo.text = url
+	return etree.tostring(root, pretty_print=True)
+
 	
 author = 'Jose Miguel Esparza' 
 email = 'jesparza AT eternal-todo.com'
@@ -80,12 +219,13 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.1'
-revision = '78'   
+revision = '81'   
 stats = ''
 pdf = None
 fileName = None
+statsDict = None
 newLine = os.linesep
-vulnsDict = {'/JBIG2Decode':'CVE-2009-0658','mailto':'CVE-2007-5020','Collab.collectEmailInfo':'CVE-2007-5659','util.printf':'CVE-2008-2992','getAnnots':'CVE-2009-1492','getIcon':'CVE-2009-0927','spell.customDictionaryOpen':'CVE-2009-1493','media.newPlayer':'CVE-2009-4324','doc.printSeps':'CVE-2010-4091','/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462'],'/PRC':'CVE-2011-4369'}
+vulnsDict = {'/JBIG2Decode':['CVE-2009-0658'],'mailto':['CVE-2007-5020'],'Collab.collectEmailInfo':['CVE-2007-5659'],'util.printf':['CVE-2008-2992'],'getAnnots':['CVE-2009-1492'],'getIcon':['CVE-2009-0927'],'spell.customDictionaryOpen':['CVE-2009-1493'],'media.newPlayer':['CVE-2009-4324'],'doc.printSeps':['CVE-2010-4091'],'/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462'],'/PRC':['CVE-2011-4369']}
 versionHeader = 'Version: peepdf ' + version + ' r' + revision
 peepdfHeader =  versionHeader + newLine*2 +\
                url + newLine +\
@@ -93,7 +233,7 @@ peepdfHeader =  versionHeader + newLine*2 +\
                author + newLine +\
                email + newLine +\
                twitter + newLine
-               
+
 argsParser = optparse.OptionParser(usage='Usage: '+sys.argv[0]+' [options] PDF_file',description=versionHeader)
 argsParser.add_option('-i', '--interactive', action='store_true', dest='isInteractive', default=False, help='Sets console mode.')
 argsParser.add_option('-s', '--load-script', action='store', type='string', dest='scriptFile', help='Loads the commands stored in the specified file and execute them.')
@@ -101,6 +241,7 @@ argsParser.add_option('-f', '--force-mode', action='store_true', dest='isForceMo
 argsParser.add_option('-l', '--loose-mode', action='store_true', dest='isLooseMode', default=False, help='Sets loose parsing mode to catch malformed objects.')
 argsParser.add_option('-u', '--update', action='store_true', dest='update', default=False, help='Updates peepdf with the latest files from the repository.')
 argsParser.add_option('-v', '--version', action='store_true', dest='version', default=False, help='Shows program\'s version number.')
+argsParser.add_option('-x', '--xml', action='store_true', dest='xmlOutput', default=False, help='Shows the document information in XML format.')
 (options, args) = argsParser.parse_args()
 
 if options.version:
@@ -170,107 +311,118 @@ else:
 			sys.exit('Error: The script file "'+options.scriptFile+'" does not exist!!')
 		
 	if fileName != None:
-		if not JS_MODULE:
-			stats += 'Warning: Spidermonkey is not installed!!'+newLine
 		pdfParser = PDFParser()
 		ret,pdf = pdfParser.parse(fileName, options.isForceMode, options.isLooseMode)
-		errors = pdf.getErrors()
-		for error in errors:
-			if error.find('Decryption error') != -1:
-				stats += error + newLine
-		if stats != '':
-			stats += newLine
-		statsDict = pdf.getStats()
-		stats += 'File: ' + statsDict['File'] + newLine
-		stats += 'MD5: ' + statsDict['MD5'] + newLine
-		stats += 'Size: ' + statsDict['Size'] + ' bytes' + newLine
-		stats += 'Version: ' + statsDict['Version'] + newLine
-		stats += 'Binary: ' + statsDict['Binary'] + newLine
-		stats += 'Linearized: ' + statsDict['Linearized'] + newLine
-		stats += 'Encrypted: ' + statsDict['Encrypted']
-		if statsDict['Encryption Algorithms'] != []:
-			stats += ' ('
-			for algorithmInfo in statsDict['Encryption Algorithms']:
-				stats += algorithmInfo[0] + ' ' + str(algorithmInfo[1]) + ' bits, '
-			stats = stats[:-2] + ')' + newLine
-		stats += 'Updates: ' + statsDict['Updates'] + newLine
-		stats += 'Objects: ' + statsDict['Objects'] + newLine
-		stats += 'Streams: ' + statsDict['Streams'] + newLine
-		stats += 'Comments: ' + statsDict['Comments'] + newLine
-		stats += 'Errors: ' + statsDict['Errors'] + newLine*2
-		for version in range(len(statsDict['Versions'])):
-			statsVersion = statsDict['Versions'][version]
-			stats += 'Version ' + str(version) + ':' + newLine
-			if statsVersion['Catalog'] != None:
-				stats += '\tCatalog: ' + statsVersion['Catalog'] + newLine
-			else:
-				stats += '\tCatalog: No' + newLine
-			if statsVersion['Info'] != None:
-				stats += '\tInfo: ' + statsVersion['Info'] + newLine
-			else:
-				stats += '\tInfo: No' + newLine
-			stats += '\tObjects ('+statsVersion['Objects'][0]+'): ' + statsVersion['Objects'][1] + newLine
-			if statsVersion['Compressed Objects'] != None:
-				stats += '\tCompressed objects ('+statsVersion['Compressed Objects'][0]+'): ' + statsVersion['Compressed Objects'][1] + newLine
-			if statsVersion['Errors'] != None:
-				stats += '\t\tErrors ('+statsVersion['Errors'][0]+'): ' + statsVersion['Errors'][1] + newLine
-			stats += '\tStreams ('+statsVersion['Streams'][0]+'): ' + statsVersion['Streams'][1]
-			if statsVersion['Xref Streams'] != None:
-				stats += newLine + '\t\tXref streams ('+statsVersion['Xref Streams'][0]+'): ' + statsVersion['Xref Streams'][1]
-			if statsVersion['Object Streams'] != None:
-				stats += newLine + '\t\tObject streams ('+statsVersion['Object Streams'][0]+'): ' + statsVersion['Object Streams'][1]
-			if int(statsVersion['Streams'][0]) > 0:
-				stats += newLine + '\t\tEncoded ('+statsVersion['Encoded'][0]+'): ' + statsVersion['Encoded'][1]
-				if statsVersion['Decoding Errors'] != None:
-					stats += newLine + '\t\tDecoding errors ('+statsVersion['Decoding Errors'][0]+'): ' + statsVersion['Decoding Errors'][1]
-			if statsVersion['Objects with JS code'] != None:
-				stats += newLine + '\tObjects with JS code ('+statsVersion['Objects with JS code'][0]+'): ' + statsVersion['Objects with JS code'][1]
-			actions = statsVersion['Actions']
-			events = statsVersion['Events']
-			vulns = statsVersion['Vulns']
-			elements = statsVersion['Elements']
-			if events != None or actions != None or vulns != None or elements != None:
-				stats += newLine + '\tSuspicious elements:' + newLine
-				if events != None:
-					for event in events:
-						stats += '\t\t' + event + ': ' + str(events[event]) + newLine
-				if actions != None:
-					for action in actions:
-						stats += '\t\t' + action + ': ' + str(actions[action]) + newLine
-				if vulns != None:
-					for vuln in vulns:
-						if vulnsDict.has_key(vuln):
-							vulnString = str(vulnsDict[vuln])
-							if vulnString.find('[') != -1:
-								vulnString = vulnString[1:-1] 
-							stats += '\t\t' + vuln + ' (' + vulnString +'): ' + str(vulns[vuln]) + newLine
-						else:
-							stats += '\t\t' + vuln + ': ' + str(vulns[vuln]) + newLine
-				if elements != None:
-					for element in elements:
-						if vulnsDict.has_key(element):
-							vulnString = str(vulnsDict[element])
-							if vulnString.find('[') != -1:
-								vulnString = vulnString[1:-1] 
-							stats += '\t\t' + element + ' (' + vulnString +'): ' + str(elements[element]) + newLine
-						else:
-							stats += '\t\t' + element + ': ' + str(elements[element]) + newLine
-			urls = statsVersion['URLs']
-			if urls != None:
-				newLine + '\tFound URLs:' + newLine
-				for url in urls:
-					stats += '\t\t' + url + newLine
-			stats += newLine * 2
-		
+	
 	if options.scriptFile != None:
+		from PDFConsole import PDFConsole
 		scriptFileObject = open(options.scriptFile,'r')
 		console = PDFConsole(pdf,stdin=scriptFileObject)
 		try:
 			console.cmdloop()
 		finally:
 			scriptFileObject.close()
-	elif options.isInteractive:
-		console = PDFConsole(pdf)
-		console.cmdloop(stats + newLine)
-	elif fileName != None:
-		print stats
+	else:
+		statsDict = pdf.getStats()
+		if options.xmlOutput:
+			xml = getPeepXML(statsDict, version, revision)
+			print xml
+		else:
+			if statsDict != None:
+				if not JS_MODULE:
+					stats += 'Warning: Spidermonkey is not installed!!'+newLine
+				errors = statsDict['Errors']
+				for error in errors:
+					if error.find('Decryption error') != -1:
+						stats += error + newLine
+				if stats != '':
+					stats += newLine
+				statsDict = pdf.getStats()
+				stats += 'File: ' + statsDict['File'] + newLine
+				stats += 'MD5: ' + statsDict['MD5'] + newLine
+				stats += 'SHA1: ' + statsDict['SHA1'] + newLine
+				#stats += 'SHA256: ' + statsDict['SHA256'] + newLine
+				stats += 'Size: ' + statsDict['Size'] + ' bytes' + newLine
+				stats += 'Version: ' + statsDict['Version'] + newLine
+				stats += 'Binary: ' + statsDict['Binary'] + newLine
+				stats += 'Linearized: ' + statsDict['Linearized'] + newLine
+				stats += 'Encrypted: ' + statsDict['Encrypted']
+				if statsDict['Encryption Algorithms'] != []:
+					stats += ' ('
+					for algorithmInfo in statsDict['Encryption Algorithms']:
+						stats += algorithmInfo[0] + ' ' + str(algorithmInfo[1]) + ' bits, '
+					stats = stats[:-2] + ')' + newLine
+				stats += 'Updates: ' + statsDict['Updates'] + newLine
+				stats += 'Objects: ' + statsDict['Objects'] + newLine
+				stats += 'Streams: ' + statsDict['Streams'] + newLine
+				stats += 'Comments: ' + statsDict['Comments'] + newLine
+				stats += 'Errors: ' + str(len(statsDict['Errors'])) + newLine*2
+				for version in range(len(statsDict['Versions'])):
+					statsVersion = statsDict['Versions'][version]
+					stats += 'Version ' + str(version) + ':' + newLine
+					if statsVersion['Catalog'] != None:
+						stats += '\tCatalog: ' + statsVersion['Catalog'] + newLine
+					else:
+						stats += '\tCatalog: No' + newLine
+					if statsVersion['Info'] != None:
+						stats += '\tInfo: ' + statsVersion['Info'] + newLine
+					else:
+						stats += '\tInfo: No' + newLine
+					stats += '\tObjects ('+statsVersion['Objects'][0]+'): ' + str(statsVersion['Objects'][1]) + newLine
+					if statsVersion['Compressed Objects'] != None:
+						stats += '\tCompressed objects ('+statsVersion['Compressed Objects'][0]+'): ' + str(statsVersion['Compressed Objects'][1]) + newLine
+					if statsVersion['Errors'] != None:
+						stats += '\t\tErrors ('+statsVersion['Errors'][0]+'): ' + str(statsVersion['Errors'][1]) + newLine
+					stats += '\tStreams ('+statsVersion['Streams'][0]+'): ' + str(statsVersion['Streams'][1])
+					if statsVersion['Xref Streams'] != None:
+						stats += newLine + '\t\tXref streams ('+statsVersion['Xref Streams'][0]+'): ' + str(statsVersion['Xref Streams'][1])
+					if statsVersion['Object Streams'] != None:
+						stats += newLine + '\t\tObject streams ('+statsVersion['Object Streams'][0]+'): ' + str(statsVersion['Object Streams'][1])
+					if int(statsVersion['Streams'][0]) > 0:
+						stats += newLine + '\t\tEncoded ('+statsVersion['Encoded'][0]+'): ' + str(statsVersion['Encoded'][1])
+						if statsVersion['Decoding Errors'] != None:
+							stats += newLine + '\t\tDecoding errors ('+statsVersion['Decoding Errors'][0]+'): ' + str(statsVersion['Decoding Errors'][1])
+					if statsVersion['Objects with JS code'] != None:
+						stats += newLine + '\tObjects with JS code ('+statsVersion['Objects with JS code'][0]+'): ' + str(statsVersion['Objects with JS code'][1])
+					actions = statsVersion['Actions']
+					events = statsVersion['Events']
+					vulns = statsVersion['Vulns']
+					elements = statsVersion['Elements']
+					if events != None or actions != None or vulns != None or elements != None:
+						stats += newLine + '\tSuspicious elements:' + newLine
+						if events != None:
+							for event in events:
+								stats += '\t\t' + event + ': ' + str(events[event]) + newLine
+						if actions != None:
+							for action in actions:
+								stats += '\t\t' + action + ': ' + str(actions[action]) + newLine
+						if vulns != None:
+							for vuln in vulns:
+								if vulnsDict.has_key(vuln):
+									stats += '\t\t' + vuln + ' ('
+									for vulnCVE in vulnsDict[vuln]: 
+										stats += vulnCVE + ',' 
+									stats = stats[:-1] + '): ' + str(vulns[vuln]) + newLine
+								else:
+									stats += '\t\t' + vuln + ': ' + str(vulns[vuln]) + newLine
+						if elements != None:
+							for element in elements:
+								if vulnsDict.has_key(element):
+									stats += '\t\t' + element + ' ('
+									for vulnCVE in vulnsDict[element]: 
+										stats += vulnCVE + ',' 
+									stats = stats[:-1] + '): ' + str(elements[element]) + newLine
+								else:
+									stats += '\t\t' + element + ': ' + str(elements[element]) + newLine
+					urls = statsVersion['URLs']
+					if urls != None:
+						newLine + '\tFound URLs:' + newLine
+						for url in urls:
+							stats += '\t\t' + url + newLine
+					stats += newLine * 2
+			if options.isInteractive:
+				from PDFConsole import PDFConsole
+				console = PDFConsole(pdf)
+				console.cmdloop(stats + newLine)
+			elif fileName != None:
+				print stats
