@@ -8,6 +8,7 @@ It's not necessary to install anything to execute the tool, just executing the P
 The packages and libraries needed to have a full installation of peepdf are the following:
 
   * _lzw_ (included in the package): library to encode/decode streams with the filter _/LZWDecode_.
+  * _lxml_ (external in Windows): creation of XML otuput. Only needed with -x.
   * _python-spidermonkey_ (external): execution of Javascript code.
   * _sctest_ (external): binary of the package Libemu to emulate the shellcode execution.
 <br>
@@ -27,3 +28,12 @@ It's not so easy as Spidermonkey, but it's not difficult. You can download the p
 [http://sourceforge.net/projects/nepenthes/files/libemu%20development/ http://sourceforge.net/projects/nepenthes/files/libemu development/]
 
 The next step is to compile it and copy the sctest executable (tools/sctest) to the peepdf directory.
+<br>
+<br>
+ 
+
+=== lxml ===
+
+Just follow the instructions on the official page, very easy!
+
+[http://lxml.de/installation.html http://lxml.de/installation.html]
