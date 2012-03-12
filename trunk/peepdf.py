@@ -28,7 +28,6 @@
 '''
 
 import sys, os, optparse, re, urllib2, datetime, hashlib
-from lxml import etree
 from datetime import datetime
 from PDFCore import PDFParser
 
@@ -69,7 +68,7 @@ def getLocalFilesInfo(filesList):
 	print '[-] Getting local files information...'
 	for path in filesList:
 		if os.path.exists(path):
-			content = open(path,'r').read()
+			content = open(path,'rb').read()
 			shaHash = hashlib.sha256(content).hexdigest()
 			localFilesInfo[path] = shaHash
 	print '[+] Done'
@@ -219,7 +218,7 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.1'
-revision = '81'   
+revision = '86'   
 stats = ''
 pdf = None
 fileName = None
@@ -281,7 +280,7 @@ elif options.update:
 				# Checking hash
 				shaHash = hashlib.sha256(fileContent).hexdigest()
 				if shaHash != localFilesInfo[path]:
-					open(path,'w').write(fileContent)
+					open(path,'wb').write(fileContent)
 					print '[+] File "'+path+'" updated successfully'
 			else:
 				# File does not exist
@@ -291,7 +290,7 @@ elif options.update:
 					if not os.path.exists(dirsPath):
 						print '[+] New directory "'+dirsPath+'" created successfully'
 						os.makedirs(dirsPath)
-				open(path,'w').write(fileContent)
+				open(path,'wb').write(fileContent)
 				print '[+] New file "'+path+'" created successfully'
 		message = '[+] peepdf updated successfully'
 		if newVersion != '':
@@ -313,6 +312,7 @@ else:
 	if fileName != None:
 		pdfParser = PDFParser()
 		ret,pdf = pdfParser.parse(fileName, options.isForceMode, options.isLooseMode)
+		statsDict = pdf.getStats()
 	
 	if options.scriptFile != None:
 		from PDFConsole import PDFConsole
@@ -323,8 +323,8 @@ else:
 		finally:
 			scriptFileObject.close()
 	else:
-		statsDict = pdf.getStats()
 		if options.xmlOutput:
+			from lxml import etree
 			xml = getPeepXML(statsDict, version, revision)
 			print xml
 		else:
