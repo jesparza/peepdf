@@ -5408,6 +5408,10 @@ class PDFFile :
             infoId = self.getInfoObjectId(version)
             if infoId != None:
                 infoObject = self.getObject(infoId, version, indirect)
+                if infoObject == None and version == 0 and self.getLinearized():
+                    # Linearized documents can store Info object in the next update
+                    infoObject = self.getObject(infoId, None, indirect)
+                    return infoObject
                 return infoObject
             else:
                 return None
@@ -6130,7 +6134,7 @@ class PDFFile :
                 prevXrefSectionOffset = lastXrefSectionOffset
                 self.body[v].setObjects(indirectObjects)
                 offset = len(outputFileContent)
-            open(filename,'w').write(outputFileContent)
+            open(filename,'wb').write(outputFileContent)
             self.setMD5(hashlib.md5(outputFileContent).hexdigest())
             self.setSize(len(outputFileContent))
             self.path = os.path.realpath(filename)
@@ -6425,6 +6429,7 @@ class PDFParser :
             pdfIndirectObject = None
             if not pdfFile.isEncrypted():
                 encryptDict = None
+                encryptDictId = None
             if pdfFile.getFileId() == '':
                 fileId = None
             content = self.fileParts[i]
