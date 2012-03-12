@@ -1,28 +1,31 @@
 ** Home page **
 
 http://peepdf.eternal-todo.com
-
+http://twitter.com/peepdf
 
 
 ** Dependencies **
 
 - In order to analyse Javascript code "python-spidermonkey" is needed:
 
-http://code.google.com/p/python-spidermonkey
+    http://code.google.com/p/python-spidermonkey
 
 
 - The "sctest" command is a wrapper of "sctest" (libemu):
 
-http://libemu.carnivore.it
+    http://libemu.carnivore.it
 
 The "sctest" executable must be placed in the root directory or specify the "sctest" path through the "set" command:
 
-> set sctest "/opt/libemu/bin/sctest"
+    PPDF> set sctest "/opt/libemu/bin/sctest"
 
 
-- Included modules:
+- To support XML output "lxml" is needed:
 
-lzw, colorama
+    http://lxml.de/installation.html
+    
+
+- Included modules: lzw, colorama
 
 
 
@@ -44,25 +47,33 @@ There are two important options when peepdf is executed:
 
 Shows the statistics of the file after being decoded/decrypted and analysed:
 
-./peepdf.py [options] pdf_file
+    python peepdf.py [options] pdf_file
 
 
 * Interactive console
 
 Executes the interactive console to let play with the PDF file:
 
-./peepdf.py -i [options] pdf_file
+    python peepdf.py -i [options] pdf_file
 
 If no PDF file is specified it's possible to use the decode/encode/js*/sctest commands and create a new PDF file:
 
-./peepdf.py -i
+    python peepdf.py -i
 
 
 * Batch execution
 
 It's possible to use a commands file to specify the commands to be executed in the batch mode. This type of execution is good to automatise analysis of several files:
 
-./peepdf.py [options] -s commands_file pdf_file
+    python peepdf.py [options] -s commands_file pdf_file
+
+
+
+** Updating **
+
+Just type this and you will be updated to the latest version from the repository:
+
+    python peepdf.py -u
 
 
 
