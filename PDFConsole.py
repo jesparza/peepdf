@@ -117,7 +117,7 @@ class PDFConsole(cmd.Cmd):
                 self.log_output('bytes ' + argv, bytes, bytes, storeOutput = True, bytesOutput = True)
             else:
                 outputFile = args[2]
-                open(outputFile,'w').write(bytes)
+                open(outputFile,'wb').write(bytes)
         else:
             self.help_bytes()
                 
@@ -241,7 +241,7 @@ class PDFConsole(cmd.Cmd):
                             message = '*** Error: the file "'+jsFile+'" does not exist!!'
                             self.log_output('create ' + argv, message)
                             return False
-                        content = open(jsFile,'r').read()
+                        content = open(jsFile,'rb').read()
                     else:
                         if self.use_rawinput:
                             content = raw_input(newLine+'Please, specify the Javascript code you want to include in the file (if the code includes EOL characters use a js_file instead):' + newLine*2)
@@ -391,7 +391,7 @@ class PDFConsole(cmd.Cmd):
                 self.log_output('decode ' + argv, message)
                 return False
             else:
-                decodedContent = open(src,'r').read()                
+                decodedContent = open(src,'rb').read()                
         else:
             ret = getBytesFromFile(self.pdfFile.getPath(),offset,size)
             if ret[0] == -1:
@@ -760,7 +760,7 @@ class PDFConsole(cmd.Cmd):
                 self.log_output('encode ' + argv, message)
                 return False
             else:
-                encodedContent = open(src,'r').read()                
+                encodedContent = open(src,'rb').read()                
         else:
             ret = getBytesFromFile(self.pdfFile.getPath(),offset,size)
             if ret[0] == -1:
@@ -1177,7 +1177,7 @@ class PDFConsole(cmd.Cmd):
                 self.log_output('hash ' + argv, message)
                 return False
             else:
-                content = open(srcName,'r').read()
+                content = open(srcName,'rb').read()
         else:
             if self.pdfFile == None:
                 message = '*** Error: You must open a file!!'
@@ -1529,7 +1529,7 @@ class PDFConsole(cmd.Cmd):
                 self.log_output('js ' + argv, message)
                 return False
             else:
-                content = open(src,'r').read()
+                content = open(src,'rb').read()
                 if not isJavascript(content):
                     if self.use_rawinput:
                         res = raw_input('The file may not contain Javascript code, do you want to continue? (y/n) ')
@@ -1590,7 +1590,7 @@ class PDFConsole(cmd.Cmd):
                 return False
         
         oldStdErr = sys.stderr
-        errorFile = open('jserror.log','w')
+        errorFile = open('jserror.log','wb')
         sys.stderr = errorFile
         r = Runtime()
         context = r.new_context()
@@ -1602,7 +1602,7 @@ class PDFConsole(cmd.Cmd):
             pass                
         errorFile.close()
         sys.stderr = oldStdErr
-        errorFileContent = open('jserror.log','r').read()
+        errorFileContent = open('jserror.log','rb').read()
         if errorFileContent != '' and errorFileContent.find('JavaScript error') != -1:
             lines = errorFileContent.split(newLine)
             for line in lines:
@@ -1663,7 +1663,7 @@ class PDFConsole(cmd.Cmd):
                 self.log_output('js_analyse ' + argv, message)
                 return False
             else:
-                content = open(src,'r').read()
+                content = open(src,'rb').read()
                 if not isJavascript(content):
                     if self.use_rawinput:
                         res = raw_input('The file may not contain Javascript code, do you want to continue? (y/n) ')
@@ -1800,7 +1800,7 @@ class PDFConsole(cmd.Cmd):
                 self.log_output('js_beautify ' + argv, message)
                 return False
             else:
-                content = open(src,'r').read()
+                content = open(src,'rb').read()
                 if not isJavascript(content):
                     if self.use_rawinput:
                         res = raw_input('The file may not contain Javascript code, do you want to continue? (y/n) ')
@@ -1963,7 +1963,7 @@ class PDFConsole(cmd.Cmd):
                 self.log_output('js_join ' + argv, message)
                 return False
             else:
-                content = open(src,'r').read()    
+                content = open(src,'rb').read()    
         strings = re.findall(reSeparatedStrings, content)
         if strings == []:
             message = '*** Error: the variable or file does not contain separated strings!!'
@@ -2019,7 +2019,7 @@ class PDFConsole(cmd.Cmd):
                 self.log_output('js_unescape ' + argv, message)
                 return False
             else:
-                content = open(src,'r').read()
+                content = open(src,'rb').read()
                 if re.findall(reUnicodeChars, content, re.IGNORECASE) == [] and re.findall(reHexChars, content, re.IGNORECASE) == []:
                     message = '*** Error: the file does not contain escaped chars!!'
                     self.log_output('js_unescape ' + argv, message)
@@ -2259,7 +2259,7 @@ class PDFConsole(cmd.Cmd):
                     self.log_output('modify ' + argv, message)
                     return False
                 if contentFile != None:
-                    streamContent = open(contentFile,'r').read()
+                    streamContent = open(contentFile,'rb').read()
                 else:
                     if self.use_rawinput:
                         streamContent = raw_input(newLine + 'Please, specify the stream content (if the content includes EOL characters use a file instead):' + newLine*2)
@@ -2661,11 +2661,11 @@ class PDFConsole(cmd.Cmd):
                     message = '*** Error: the file does not exist!!'
                     self.log_output('replace ' + argv, message)
                     return False
-                content = open(src,'r').read()
+                content = open(src,'rb').read()
                 if content.find(string1) != -1:
                     replaceOutput = content.replace(string1, string2)
                     try:
-                        open(src,'w').write(replaceOutput)
+                        open(src,'wb').write(replaceOutput)
                     except:
                         message = '*** Error: the file cannot be modified!!'
                         self.log_output('replace ' + argv, message)
@@ -2854,7 +2854,7 @@ class PDFConsole(cmd.Cmd):
                 self.log_output('sctest ' + argv, message)
                 return False
             else:
-                bytes = open(src,'r').read()                
+                bytes = open(src,'rb').read()                
         else:
             ret = getBytesFromFile(self.pdfFile.getPath(),offset,size)
             if ret[0] == -1:
@@ -3239,7 +3239,7 @@ class PDFConsole(cmd.Cmd):
                 self.log_output('xor ' + argv, message)
                 return False
             else:
-                content = open(srcName,'r').read()
+                content = open(srcName,'rb').read()
         else:
             if self.pdfFile == None:
                 message = '*** Error: You must open a file!!'
@@ -3363,7 +3363,7 @@ class PDFConsole(cmd.Cmd):
                 self.log_output('xor_search ' + argv, message)
                 return False
             else:
-                content = open(srcName,'r').read()
+                content = open(srcName,'rb').read()
         else:
             if self.pdfFile == None:
                 message = '*** Error: You must open a file!!'
@@ -3635,7 +3635,7 @@ class PDFConsole(cmd.Cmd):
         niceOutput = niceOutput.replace('\r','\n')
         longOutput = command + newLine * 2 + niceOutput + newLine * 2
         if self.loggingFile != None:
-            open(self.loggingFile,'a').write('PPDF> '+longOutput)
+            open(self.loggingFile,'ab').write('PPDF> '+longOutput)
         if self.redirect:
             if bytes != None:
                 output = bytes
@@ -3643,10 +3643,10 @@ class PDFConsole(cmd.Cmd):
                 output = niceOutput
             if self.redirect == FILE_WRITE:
                 if self.outputFileName != None:
-                    open(str(self.outputFileName),'w').write(output)
+                    open(str(self.outputFileName),'wb').write(output)
             elif self.redirect == FILE_ADD:
                 if self.outputFileName != None:
-                    open(str(self.outputFileName),'a').write(output)
+                    open(str(self.outputFileName),'ab').write(output)
             elif self.redirect == VAR_WRITE:
                 if self.outputVarName != None:
                     self.variables[self.outputVarName] = [output,output]
@@ -3661,7 +3661,7 @@ class PDFConsole(cmd.Cmd):
                 if bytes != None:
                     output = bytes
                 if self.variables['output'][0] == 'file':
-                    open(self.output,'a').write(output)
+                    open(self.output,'ab').write(output)
                 elif self.variables['output'][0] == 'variable':
                     if self.variables.has_key(self.output):
                         self.variables[self.output][0] = output
@@ -3699,7 +3699,7 @@ class PDFConsole(cmd.Cmd):
         newObjectType = objectType
         if objectType != 'array' and objectType != 'stream' and objectType != 'dictionary':
             if contentFile != None and iteration == 0:
-                content = open(contentFile,'r').read()
+                content = open(contentFile,'rb').read()
             else:
                 if objectType == 'string' or objectType == 'hexstring':
                     res = raw_input(newLine + 'Do you want to enter an ascii (1) or hexadecimal (2) string? (1/2) ')
@@ -3771,7 +3771,7 @@ class PDFConsole(cmd.Cmd):
                             object.setDecodedStream('')
                         elif ret == 'm':
                             if contentFile != None:
-                                streamContent = open(contentFile,'r').read()
+                                streamContent = open(contentFile,'rb').read()
                             else:
                                 streamContent = raw_input(newLine + 'Please, specify the stream content (if the content includes EOL characters use a file instead):' + newLine*2)
                             object.setDecodedStream(streamContent)
