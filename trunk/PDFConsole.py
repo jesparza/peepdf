@@ -1254,19 +1254,27 @@ class PDFConsole(cmd.Cmd):
             self.log_output('info ' + argv, message)
             return False
         if len(args) == 0:
-            statsDict = self.pdfFile.getStats()
-            stats = 'File: ' + statsDict['File'] + newLine
+            statsDict = pdfFile.getStats()
+            stats += 'File: ' + statsDict['File'] + newLine
             stats += 'MD5: ' + statsDict['MD5'] + newLine
+            stats += 'SHA1: ' + statsDict['SHA1'] + newLine
+            #stats += 'SHA256: ' + statsDict['SHA256'] + newLine
             stats += 'Size: ' + statsDict['Size'] + ' bytes' + newLine
             stats += 'Version: ' + statsDict['Version'] + newLine
             stats += 'Binary: ' + statsDict['Binary'] + newLine
             stats += 'Linearized: ' + statsDict['Linearized'] + newLine
-            stats += 'Encrypted: ' + statsDict['Encrypted'] + newLine
+            stats += 'Encrypted: ' + statsDict['Encrypted']
+            if statsDict['Encryption Algorithms'] != []:
+                stats += ' ('
+                for algorithmInfo in statsDict['Encryption Algorithms']:
+                    stats += algorithmInfo[0] + ' ' + str(algorithmInfo[1]) + ' bits, '
+                stats = stats[:-2] + ')'
+            stats += newLine
             stats += 'Updates: ' + statsDict['Updates'] + newLine
             stats += 'Objects: ' + statsDict['Objects'] + newLine
             stats += 'Streams: ' + statsDict['Streams'] + newLine
             stats += 'Comments: ' + statsDict['Comments'] + newLine
-            stats += 'Errors: ' + statsDict['Errors'] + newLine*2
+            stats += 'Errors: ' + str(len(statsDict['Errors'])) + newLine*2
             for version in range(len(statsDict['Versions'])):
                 statsVersion = statsDict['Versions'][version]
                 stats += 'Version ' + str(version) + ':' + newLine
@@ -1278,22 +1286,22 @@ class PDFConsole(cmd.Cmd):
                     stats += '\tInfo: ' + statsVersion['Info'] + newLine
                 else:
                     stats += '\tInfo: No' + newLine
-                stats += '\tObjects ('+statsVersion['Objects'][0]+'): ' + statsVersion['Objects'][1] + newLine
+                stats += '\tObjects ('+statsVersion['Objects'][0]+'): ' + str(statsVersion['Objects'][1]) + newLine
                 if statsVersion['Compressed Objects'] != None:
-                    stats += '\tCompressed objects ('+statsVersion['Compressed Objects'][0]+'): ' + statsVersion['Compressed Objects'][1] + newLine
+                    stats += '\tCompressed objects ('+statsVersion['Compressed Objects'][0]+'): ' + str(statsVersion['Compressed Objects'][1]) + newLine
                 if statsVersion['Errors'] != None:
-                    stats += '\t\tErrors ('+statsVersion['Errors'][0]+'): ' + statsVersion['Errors'][1] + newLine
-                stats += '\tStreams ('+statsVersion['Streams'][0]+'): ' + statsVersion['Streams'][1]
+                    stats += '\t\tErrors ('+statsVersion['Errors'][0]+'): ' + str(statsVersion['Errors'][1]) + newLine
+                stats += '\tStreams ('+statsVersion['Streams'][0]+'): ' + str(statsVersion['Streams'][1])
                 if statsVersion['Xref Streams'] != None:
-                    stats += newLine + '\t\tXref streams ('+statsVersion['Xref Streams'][0]+'): ' + statsVersion['Xref Streams'][1]
-                if statsVersion['Object Streams']:
-                    stats += newLine + '\t\tObject streams ('+statsVersion['Object Streams'][0]+'): ' + statsVersion['Object Streams'][1]
+                    stats += newLine + '\t\tXref streams ('+statsVersion['Xref Streams'][0]+'): ' + str(statsVersion['Xref Streams'][1])
+                if statsVersion['Object Streams'] != None:
+                    stats += newLine + '\t\tObject streams ('+statsVersion['Object Streams'][0]+'): ' + str(statsVersion['Object Streams'][1])
                 if int(statsVersion['Streams'][0]) > 0:
-                    stats += newLine + '\t\tEncoded ('+statsVersion['Encoded'][0]+'): ' + statsVersion['Encoded'][1]
+                    stats += newLine + '\t\tEncoded ('+statsVersion['Encoded'][0]+'): ' + str(statsVersion['Encoded'][1])
                     if statsVersion['Decoding Errors'] != None:
-                        stats += newLine + '\t\tDecoding errors ('+statsVersion['Decoding Errors'][0]+'): ' + statsVersion['Decoding Errors'][1]
+                        stats += newLine + '\t\tDecoding errors ('+statsVersion['Decoding Errors'][0]+'): ' + str(statsVersion['Decoding Errors'][1])
                 if statsVersion['Objects with JS code'] != None:
-                    stats += newLine + '\tObjects with JS code ('+statsVersion['Objects with JS code'][0]+'): ' + statsVersion['Objects with JS code'][1]
+                    stats += newLine + '\tObjects with JS code ('+statsVersion['Objects with JS code'][0]+'): ' + str(statsVersion['Objects with JS code'][1])
                 actions = statsVersion['Actions']
                 events = statsVersion['Events']
                 vulns = statsVersion['Vulns']
@@ -1309,19 +1317,19 @@ class PDFConsole(cmd.Cmd):
                     if vulns != None:
                         for vuln in vulns:
                             if vulnsDict.has_key(vuln):
-                                vulnString = str(vulnsDict[vuln])
-                                if vulnString.find('[') != -1:
-                                    vulnString = vulnString[1:-1] 
-                                stats += '\t\t' + vuln + ' (' + vulnString +'): ' + str(vulns[vuln]) + newLine
+                                stats += '\t\t' + vuln + ' ('
+                                for vulnCVE in vulnsDict[vuln]: 
+                                    stats += vulnCVE + ',' 
+                                stats = stats[:-1] + '): ' + str(vulns[vuln]) + newLine
                             else:
                                 stats += '\t\t' + vuln + ': ' + str(vulns[vuln]) + newLine
                     if elements != None:
                         for element in elements:
                             if vulnsDict.has_key(element):
-                                vulnString = str(vulnsDict[element])
-                                if vulnString.find('[') != -1:
-                                    vulnString = vulnString[1:-1] 
-                                stats += '\t\t' + element + ' (' + vulnString +'): ' + str(elements[element]) + newLine
+                                stats += '\t\t' + element + ' ('
+                                for vulnCVE in vulnsDict[element]: 
+                                    stats += vulnCVE + ',' 
+                                stats = stats[:-1] + '): ' + str(elements[element]) + newLine
                             else:
                                 stats += '\t\t' + element + ': ' + str(elements[element]) + newLine
                 urls = statsVersion['URLs']
