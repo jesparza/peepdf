@@ -29,7 +29,7 @@
 
 import sys, os, optparse, re, urllib2, datetime, hashlib
 from datetime import datetime
-from PDFCore import PDFParser
+from PDFCore import PDFParser,vulnsDict
 
 try:
 	from spidermonkey import Runtime
@@ -218,13 +218,13 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.1'
-revision = '86'   
+revision = '89'   
 stats = ''
 pdf = None
 fileName = None
 statsDict = None
 newLine = os.linesep
-vulnsDict = {'/JBIG2Decode':['CVE-2009-0658'],'mailto':['CVE-2007-5020'],'Collab.collectEmailInfo':['CVE-2007-5659'],'util.printf':['CVE-2008-2992'],'getAnnots':['CVE-2009-1492'],'getIcon':['CVE-2009-0927'],'spell.customDictionaryOpen':['CVE-2009-1493'],'media.newPlayer':['CVE-2009-4324'],'doc.printSeps':['CVE-2010-4091'],'/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462'],'/PRC':['CVE-2011-4369']}
+#vulnsDict = {'/JBIG2Decode':['CVE-2009-0658'],'mailto':['CVE-2007-5020'],'Collab.collectEmailInfo':['CVE-2007-5659'],'util.printf':['CVE-2008-2992'],'getAnnots':['CVE-2009-1492'],'getIcon':['CVE-2009-0927'],'spell.customDictionaryOpen':['CVE-2009-1493'],'media.newPlayer':['CVE-2009-4324'],'doc.printSeps':['CVE-2010-4091'],'/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462'],'/PRC':['CVE-2011-4369']}
 versionHeader = 'Version: peepdf ' + version + ' r' + revision
 peepdfHeader =  versionHeader + newLine*2 +\
                url + newLine +\
