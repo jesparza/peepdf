@@ -1,0 +1,45 @@
+-----------------------------------------------
+peepdf Black Hat Arsenal (0.1 r92), 2012-03-16
+-----------------------------------------------
+
+    * New features:
+
+        - Added support for more parameters in Flate/LZW decode (stream filters)
+        - Encryption algorithm now showing in document information
+        - Added XML output and SHA hash to file information    
+        - Improved unescape function to support mixed escaped formats (eg. "%u6734%34%u8790")
+        - Added xor and xor_search commands
+        - Added easy way of redirect console output (>, >>, $>, $>>)
+        - Added xor function by Evan Fosmark
+        - Added detection of CVE-2011-4369 (/PRC)
+        - Added hash command (Thanks to @binjo for code and comments)
+        - Added js_beautify command
+        - Update function added
+        - Added new vulns and showing information related to non JS vulns
+        - Added escape sequence in the limited output
+        - Added ascii85 decode from pdfminer to improve code and avoid bugs (Thanks to Brandon Dixon!)
+        - Added lzwdecode from pdfminer to improve code and avoid bugs
+
+    * Fixes:
+
+        - Update process rewritten, now based on hashing of files
+        - Silly bug in computeUserPass function (Thanks to Christian Martorella!)
+        - Added binary mode in files operations
+        - Recursion bug in update function
+        - Minor bug in do_embed function
+        - Bug to support encoding following PDF specifications (Issue 3 by czchen)
+        - Bug to handle negative numbers in P element
+        - Bug in the xref table when creating a new PDF (Issue 2)
+        - Silly bug when parsing filter parameters
+        - Bug related to updating objects and statistics of PDF files
+        - Some bugs related to offsets calculation
+        - Fixed "replace" function in PDFObjectStream
+        - Fix in asciiHexDecode filter function
+
+
+-----------------------------------------------
+peepdf 0.1 r15, 2011-05-05
+-----------------------------------------------
+
+- Initial Release
+
