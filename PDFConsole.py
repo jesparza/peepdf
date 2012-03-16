@@ -1254,7 +1254,7 @@ class PDFConsole(cmd.Cmd):
             self.log_output('info ' + argv, message)
             return False
         if len(args) == 0:
-            statsDict = pdfFile.getStats()
+            statsDict = self.pdfFile.getStats()
             stats += 'File: ' + statsDict['File'] + newLine
             stats += 'MD5: ' + statsDict['MD5'] + newLine
             stats += 'SHA1: ' + statsDict['SHA1'] + newLine
