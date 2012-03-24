@@ -196,7 +196,7 @@ $ ./peepdf.py -s command_file.txt sample.pdf
 }}}
 <br/>
 ===XML Output===
-Additionaly, it's possible to obtain the same information provided in the [#Basic_execution basic execution] in XML format thanks to the -x option (combined with -fl if needed):
+Additionaly, it's possible to obtain the same information provided in the [#Basic_execution basic execution] in XML format thanks to the -x option (combined with -fl if needed). The associated DTD can be found [http://peepdf.googlecode.com/svn/trunk/peepdf.dtd here (peepdf.dtd)].
 
 {{{
 $ ./peepdf.py -flx 517fe6ba9417e6c8b4d0a0b3b9c4c9a9
