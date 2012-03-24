@@ -4,24 +4,29 @@
 = Execution =
 <br/>
 {{{
-Usage: peepdf.py [options] PDF_file
+Usage: ./peepdf.py [options] PDF_file
 
 Options:
   -h, --help            show this help message and exit
   -i, --interactive     Sets console mode.
+  -s SCRIPTFILE, --load-script=SCRIPTFILE
+                        Loads the commands stored in the specified file and
+                        execute them.
   -f, --force-mode      Sets force parsing mode to ignore errors.
   -l, --loose-mode      Sets loose parsing mode to catch malformed objects.
-  -s SCRIPTFILE, --load-script=SCRIPTFILE
-                        Load the commands stored in the specified file and
-                        execute them.
+  -u, --update          Updates peepdf with the latest files from the
+                        repository.
+  -v, --version         Shows program's version number.
+  -x, --xml             Shows the document information in XML format.
 
 }}}
 <br/>
-There are three possible ways of execution:
+There are four possible ways of execution:
 
   * [#Basic_execution Basic execution]
   * [#Interactive_console Interactive console]
   * [#Batch_mode Batch mode]
+  * [#Xml_output XML Output]
 <br/>
 All of them accept two parameters to ignore errors and continue with the analysis and deal with malformed objects:
 
@@ -188,4 +193,93 @@ $ ./peepdf.py -s command_file.txt sample.pdf
         Trailer (64)
     1305
     1306 EOF
+}}}
+<br/>
+===XML Output===
+Additionaly, it's possible to obtain the same information provided in the [#Basic_execution basic execution] in XML format thanks to the -x option (combined with -fl if needed):
+
+{{{
+$ ./peepdf.py -flx 517fe6ba9417e6c8b4d0a0b3b9c4c9a9
+<peepdf_analysis url="http://peepdf.eternal-todo.com" version="0.1 r92" author="Jose Miguel Esparza">
+  <date>2012-03-24 17:09</date>
+  <basic>
+    <filename>517fe6ba9417e6c8b4d0a0b3b9c4c9a9</filename>
+    <md5>517fe6ba9417e6c8b4d0a0b3b9c4c9a9</md5>
+    <sha1>abf382f076f8a021dbf82aca425b152d172fa5ca</sha1>
+    <sha256>fa32485935ab75d09cae7d52f5251fb6620813205fb45a1b05d91e23b56068a1</sha256>
+    <size>80577</size>
+    <pdf_version>1.7</pdf_version>
+    <binary status="false"/>
+    <linearized status="false"/>
+    <encrypted status="false"/>
+    <updates>0</updates>
+    <num_objects>16</num_objects>
+    <num_streams>5</num_streams>
+    <comments>0</comments>
+    <errors num="1">
+      <error_message>%%EOF not found</error_message>
+    </errors>
+  </basic>
+  <advanced>
+    <version num="0" type="original">
+      <catalog/>
+      <info/>
+      <objects num="16">
+        <object id="1" errors="false"/>
+        <object id="2" errors="false"/>
+        <object id="3" errors="false"/>
+        <object id="4" errors="false"/>
+        <object id="5" errors="false"/>
+        <object id="6" errors="false"/>
+        <object id="7" errors="false"/>
+        <object id="8" errors="false"/>
+        <object id="9" errors="false"/>
+        <object id="10" errors="false"/>
+        <object id="11" errors="false"/>
+        <object id="12" errors="false"/>
+        <object id="13" errors="false"/>
+        <object id="14" errors="false"/>
+        <object id="15" errors="true"/>
+        <object id="16" errors="true"/>
+      </objects>
+      <streams num="5">
+        <stream id="2" encoded="true" decoding_errors="false"/>
+        <stream id="7" encoded="true" decoding_errors="false"/>
+        <stream id="10" encoded="true" decoding_errors="false"/>
+        <stream id="16" encoded="true" decoding_errors="true"/>
+        <stream id="15" encoded="true" decoding_errors="false"/>
+      </streams>
+      <js_objects>
+        <container_object id="15"/>
+      </js_objects>
+      <suspicious_elements>
+        <triggers>
+          <trigger name="/AcroForm">
+            <container_object id="4"/>
+          </trigger>
+          <trigger name="/OpenAction">
+            <container_object id="4"/>
+          </trigger>
+        </triggers>
+        <actions>
+          <action name="/JS">
+            <container_object id="14"/>
+          </action>
+          <action name="/JavaScript">
+            <container_object id="14"/>
+          </action>
+        </actions>
+        <elements>
+          <element name="/U3D">
+            <cve>CVE-2009-3953</cve>
+            <cve>CVE-2009-3959</cve>
+            <cve>CVE-2011-2462</cve>
+            <container_object id="10"/>
+          </element>
+        </elements>
+      </suspicious_elements>
+      <suspicious_urls/>
+    </version>
+  </advanced>
+</peepdf_analysis>
 }}}
