@@ -26,7 +26,7 @@ There are four possible ways of execution:
   * [#Basic_execution Basic execution]
   * [#Interactive_console Interactive console]
   * [#Batch_mode Batch mode]
-  * [#Xml_output XML Output]
+  * [#XML_Output XML Output]
 <br/>
 All of them accept two parameters to ignore errors and continue with the analysis and deal with malformed objects:
 
