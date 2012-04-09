@@ -2064,17 +2064,27 @@ class PDFStream (PDFDictionary) :
                                 else:
                                     self.decodedStream = ret[1]
                             elif filterParamsType == 'array':
-                                params = self.filterParams.getElements()[i]
-                                if params == None:
-                                    if isForceMode:
-                                        errorMessage = 'Bad /FilterParms element in PDFArray'
-                                        self.addError(errorMessage)
-                                        continue
-                                    return (-1,'Bad /FilterParms element in PDFArray')
-                                ret = decodeStream(self.decodedStream, filter.getValue(), params.getElements())
+                                paramsArray = self.filterParams.getElements()
+                                if i >= len(paramsArray):
+                                    paramsObj = None
+                                    paramsDict = {}
+                                else:
+                                    paramsObj = paramsArray[i]
+                                    if paramsObj == None:
+                                        if isForceMode:
+                                            errorMessage = 'Bad /FilterParms element in PDFArray'
+                                            self.addError(errorMessage)
+                                            continue
+                                        return (-1,'Bad /FilterParms element in PDFArray')
+                                    paramsObjType = paramsObj.getType()
+                                    if paramsObjType == 'dictionary':
+                                        paramsDict = paramsObj.getElements()
+                                    else:
+                                        paramsDict = {}
+                                ret = decodeStream(self.decodedStream, filter.getValue(), paramsDict)
                                 if ret[0] == -1:
                                     if i == 0 and self.rawStream != self.encodedStream:
-                                        ret = decodeStream(self.rawStream, filter.getValue(), params.getElements())
+                                        ret = decodeStream(self.rawStream, filter.getValue(), paramsDict)
                                     if ret[0] == -1:
                                         self.decodingError = True
                                         errorMessage = 'Decoding error: '+ret[1]
@@ -2202,6 +2212,13 @@ class PDFStream (PDFDictionary) :
                 self.rawStream = self.decodedStream
                 filterElements = list(self.filter.getElements())
                 filterElements.reverse()
+                if self.filterParams != None and filterParamsType == 'array':
+                    paramsArray = self.filterParams.getElements()
+                    for j in range(len(paramsArray),len(filterElements)):
+                        paramsArray.append(PDFNull('Null'))
+                    paramsArray.reverse()
+                else:
+                    paramsArray = []
                 for i in range(len(filterElements)):
                     filter = filterElements[i]
                     if filter == None:
@@ -2223,14 +2240,20 @@ class PDFStream (PDFDictionary) :
                             else:
                                 self.rawStream = ret[1]
                         elif filterParamsType == 'array':
-                            params = self.filterParams.getElements()[i]
-                            if params == None:
+                            paramsObj = paramsArray[i]
+                            if paramsObj == None:
                                 if isForceMode:
                                     errorMessage = 'Bad /FilterParms element in PDFArray'
                                     self.addError(errorMessage)
                                     continue
                                 return (-1,'Bad /FilterParms element in PDFArray')
-                            ret = encodeStream(self.rawStream, filter.getValue(), params.getElements())
+                            paramsObjType = paramsObj.getType()
+                            if paramsObjType == 'dictionary':
+                                paramsDict = paramsObj.getElements()
+                            else:
+                                paramsDict = {}
+
+                            ret = encodeStream(self.rawStream, filter.getValue(), paramsDict)
                             if ret[0] == -1:
                                 errorMessage = 'Encoding error: '+ret[1]
                                 if isForceMode:
