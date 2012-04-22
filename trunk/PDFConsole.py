@@ -432,7 +432,7 @@ class PDFConsole(cmd.Cmd):
         print '\tlzw: /LZWDecode'
         print '\tflatedecode,fl: /FlateDecode'
         print '\trunlength,rl: /RunLengthDecode'
-        print '\tccittfax,ccf: /CCITTFaxDecode (Not implemented)'
+        print '\tccittfax,ccf: /CCITTFaxDecode'
         print '\tjbig2: /JBIG2Decode (Not implemented)'
         print '\tdct: /DCTDecode (Not implemented)'
         print '\tjpx: /JPXDecode (Not implemented)' + newLine
