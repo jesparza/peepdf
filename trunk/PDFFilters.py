@@ -57,6 +57,7 @@
 
 import sys, zlib, lzw, struct
 from PDFUtils import getNumsFromBytes, getBytesFromBits, getBitsFromNum
+from ccitt import CCITTFax
 
 def decodeStream(stream, filter, parameters = {}):
 	'''
@@ -628,7 +629,85 @@ def ccittFaxDecode(stream, parameters):
 		@return: A tuple (status,statusContent), where statusContent is the decoded PDF stream in case status = 0 or an error in case status = -1
 	'''
 	decodedStream = ''
-	return (-1,'CcittFaxDecode not supported yet')
+
+	if parameters == None or parameters == {}:
+		try:
+			decodedStream = CCITTFax().decode(stream)
+			return (0, decodedStream)
+		except:
+			return (-1,'Error decompressing string')
+	else:
+		# K = A code identifying the encoding scheme used
+		if parameters.has_key('/K'):
+			k = parameters['/K'].getRawValue()
+			if type(k) != int:
+				k = 0
+			else:
+				if k != 0:
+					# Only supported "Group 3, 1-D" encoding (Pure one-dimensional encoding)
+					return (-1,'CCITT encoding scheme not supported')
+		else:
+			k = 0
+		# EndOfLine = A flag indicating whether end-of-line bit patterns are required to be present in the encoding.
+		if parameters.has_key('/EndOfLine'):
+			eol = parameters['/EndOfLine'].getRawValue()
+			if eol == 'true':
+				eol = True
+			else:
+				eol = False
+		else:
+			eol = False
+		# EncodedByteAlign = A flag indicating whether the filter expects extra 0 bits before each encoded line so that the line begins on a byte boundary
+		if parameters.has_key('/EncodedByteAlign'):
+			byteAlign = parameters['/EncodedByteAlign'].getRawValue()
+			if byteAlign == 'true':
+				byteAlign = True
+			else:
+				byteAlign = False
+		else:
+			byteAlign = False
+		# Columns = The width of the image in pixels.
+		if parameters.has_key('/Columns'):
+			columns = parameters['/Columns'].getRawValue()
+			if type(columns) != int:
+				columns = 1728
+		else:
+			columns = 1728
+		# Rows = The height of the image in scan lines.
+		if parameters.has_key('/Rows'):
+			rows = parameters['/Rows'].getRawValue()
+			if type(rows) != int:
+				rows = 0
+		else:
+			rows = 0
+		# EndOfBlock = number of samples per row
+		if parameters.has_key('/EndOfBlock'):
+			eob = parameters['/EndOfBlock'].getRawValue()
+			if eob == 'false':
+				eob = False
+			else:
+				eob = True
+		else:
+			eob = True
+		# BlackIs1 = A flag indicating whether 1 bits are to be interpreted as black pixels and 0 bits as white pixels
+		if parameters.has_key('/BlackIs1'):
+			blackIs1 = parameters['/BlackIs1'].getRawValue()
+			if blackIs1 == 'true':
+				blackIs1 = True
+			else:
+				blackIs1 = False
+		else:
+			blackIs1 = False
+		# DamagedRowsBeforeError = The number of damaged rows of data to be tolerated before an error occurs
+		if parameters.has_key('/DamagedRowsBeforeError'):
+			damagedRowsBeforeError = parameters['/DamagedRowsBeforeError'].getRawValue()
+		else:
+			damagedRowsBeforeError = 0
+		try:
+			decodedStream = CCITTFax().decode(stream, k, eol, byteAlign, columns, rows, eob, blackIs1, damagedRowsBeforeError)
+			return (0, decodedStream)
+		except:
+			return (-1,'Error decompressing string')
 
 def ccittFaxEncode(stream, parameters):
 	'''
