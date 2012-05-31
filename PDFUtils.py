@@ -278,7 +278,7 @@ def getBytesFromFile(filename, offset, numBytes):
         return (-1,'The offset and the number of bytes must be integers')
     if os.path.exists(filename):
         fileSize = os.path.getsize(filename)
-        bytesFile = open(filename,'r')
+        bytesFile = open(filename,'rb')
         bytesFile.seek(offset)
         if offset+numBytes > fileSize:
             bytes = bytesFile.read()

@@ -46,7 +46,7 @@ def analyseJS(code):
     unescapedBytes = []
     urlsFound = []
     oldStdErr = sys.stderr
-    errorFile = open('jserror.log','w')
+    errorFile = open('jserror.log','wb')
     sys.stderr = errorFile
 		
     if code != None and JS_MODULE:
@@ -117,7 +117,7 @@ def analyseJS(code):
                                    urlsFound.append(url)
     errorFile.close()
     sys.stderr = oldStdErr
-    errorFileContent = open('jserror.log','r').read()
+    errorFileContent = open('jserror.log','rb').read()
     if errorFileContent != '' and errorFileContent.find('JavaScript error') != -1:
         lines = errorFileContent.split(newLine)
         for line in lines:

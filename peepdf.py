@@ -218,7 +218,7 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.1'
-revision = '132'   
+revision = '133'   
 stats = ''
 pdf = None
 fileName = None
@@ -316,7 +316,7 @@ else:
 	
 	if options.scriptFile != None:
 		from PDFConsole import PDFConsole
-		scriptFileObject = open(options.scriptFile,'r')
+		scriptFileObject = open(options.scriptFile,'rb')
 		console = PDFConsole(pdf,stdin=scriptFileObject)
 		try:
 			console.cmdloop()
