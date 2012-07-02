@@ -40,9 +40,11 @@ MAL_BAD_HEAD = 6
 pdfFile = None
 newLine = os.linesep
 isForceMode = False
-monitorizedEvents = ['/OpenAction','/AA','/Names','/AcroForm']
-monitorizedActions = ['/JS','/JavaScript','/Launch','/SubmitForm','/ImportData']
-monitorizedElements = ['/JBIG2Decode','/EmbeddedFiles','/EmbeddedFile','getPageNthWord','arguments.callee','/U3D','/PRC']
+spacesChars = ['\x00','\x09','\x0a','\x0c','\x0d','\x20']
+delimiterChars = ['<<','(','<','[','{','/','%']
+monitorizedEvents = ['/OpenAction ','/AA ','/Names ','/AcroForm ']
+monitorizedActions = ['/JS ','/JavaScript','/Launch','/SubmitForm','/ImportData']
+monitorizedElements = ['/EmbeddedFiles ','/EmbeddedFile','/JBIG2Decode','getPageNthWord','arguments.callee','/U3D','/PRC']
 jsVulns = ['mailto','Collab.collectEmailInfo','util.printf','getAnnots','getIcon','spell.customDictionaryOpen','media.newPlayer','doc.printSeps']
 vulnsDict = {'/JBIG2Decode':['CVE-2009-0658'],'mailto':['CVE-2007-5020'],'Collab.collectEmailInfo':['CVE-2007-5659'],'util.printf':['CVE-2008-2992'],'getAnnots':['CVE-2009-1492'],'getIcon':['CVE-2009-0927'],'spell.customDictionaryOpen':['CVE-2009-1493'],'media.newPlayer':['CVE-2009-4324'],'doc.printSeps':['CVE-2010-4091'],'/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462'],'/PRC':['CVE-2011-4369']}
 
@@ -4150,34 +4152,38 @@ class PDFBody :
         value = pdfObject.getValue()
         for event in monitorizedEvents:
             if value.find(event) != -1:
-                if self.suspiciousEvents.has_key(event):
+                printedEvent = event.strip()
+                if self.suspiciousEvents.has_key(printedEvent):
                     if delete:
-                        if id in self.suspiciousEvents[event]:
-                            self.suspiciousEvents[event].remove(id)
-                    elif id not in self.suspiciousEvents[event]:
-                        self.suspiciousEvents[event].append(id)
+                        if id in self.suspiciousEvents[printedEvent]:
+                            self.suspiciousEvents[printedEvent].remove(id)
+                    elif id not in self.suspiciousEvents[printedEvent]:
+                        self.suspiciousEvents[printedEvent].append(id)
                 elif not delete:
-                    self.suspiciousEvents[event] = [id]
+                    self.suspiciousEvents[printedEvent] = [id]
         for action in monitorizedActions:
-            if value.find(action) != -1:
-                if self.suspiciousActions.has_key(action):
+            index = value.find(action)
+            if index != -1 and (action == '/JS ' or len(value) == index + len(action) or value[index+len(action)] in delimiterChars+spacesChars):
+                printedAction = action.strip()
+                if self.suspiciousActions.has_key(printedAction):
                     if delete:
-                        if id in self.suspiciousActions[action]:
-                            self.suspiciousActions[action].remove(id)
-                    elif id not in self.suspiciousActions[action]:
-                        self.suspiciousActions[action].append(id)
+                        if id in self.suspiciousActions[printedAction]:
+                            self.suspiciousActions[printedAction].remove(id)
+                    elif id not in self.suspiciousActions[printedAction]:
+                        self.suspiciousActions[printedAction].append(id)
                 elif not delete:
-                    self.suspiciousActions[action] = [id]
+                    self.suspiciousActions[printedAction] = [id]
         for element in monitorizedElements:
-            if value.find(element) != -1:
-                if self.suspiciousElements.has_key(element):
+            if value.find(element) != -1 and (element == '/EmbeddedFiles ' or len(value) == index + len(element) or value[index+len(element)] in delimiterChars+spacesChars):
+                printedElement = element.strip()
+                if self.suspiciousElements.has_key(printedElement):
                     if delete:
-                        if id in self.suspiciousElements[element]:
-                            self.suspiciousElements[element].remove(id)
-                    elif id not in self.suspiciousElements[element]:
-                        self.suspiciousElements[element].append(id)
+                        if id in self.suspiciousElements[printedElement]:
+                            self.suspiciousElements[printedElement].remove(id)
+                    elif id not in self.suspiciousElements[printedElement]:
+                        self.suspiciousElements[printedElement].append(id)
                 elif not delete:
-                    self.suspiciousElements[element] = [id]
+                    self.suspiciousElements[printedElement] = [id]
         if pdfObject.containsJS():
             if delete:
                 jsCodeArray = pdfObject.getJSCode()
@@ -6319,10 +6325,8 @@ class PDFFile :
 
 class PDFParser :
     def __init__(self) :
-        self.spacesChars = ['\x00','\x09','\x0a','\x0c','\x0d','\x20']
         self.commentChar = '%'
         self.comments = []
-        self.demilimiterChars = ['<<','(','<','[','{','/','%']
         self.delimiters = [('<<','>>','dictionary'),('(',')','string'),('<','>','hexadecimal'),('[',']','array'),('{','}',''),('/','','name'),('%','','comment')]
         self.fileParts = []
         self.charCounter = 0    
@@ -7418,7 +7422,7 @@ class PDFParser :
             return (-1,'Bad string')
         spacesCounter = self.charCounter
         for i in range(self.charCounter,len(string)):
-            if string[i] not in self.spacesChars:
+            if string[i] not in spacesChars:
                 break
             self.charCounter += 1
         spacesCounter -= self.charCounter
@@ -7496,7 +7500,7 @@ class PDFParser :
                         self.charCounter += 1
                 elif (char == '(' and prevChar != '\\') or (char in ['[','<'] and delim[0] != '('):
                     if (char + nextChar) != '<<':
-                        delimIndex = self.demilimiterChars.index(char)
+                        delimIndex = delimiterChars.index(char)
                         self.charCounter += 1
                         ret = self.readUntilClosingDelim(content, self.delimiters[delimIndex])
                         if ret[0] != -1:
@@ -7504,7 +7508,7 @@ class PDFParser :
                         else:
                             return ret
                     else:
-                        delimIndex = self.demilimiterChars.index(char + nextChar)
+                        delimIndex = delimiterChars.index(char + nextChar)
                         self.charCounter += 2
                         ret = self.readUntilClosingDelim(content, self.delimiters[delimIndex])
                         if ret[0] != -1:
@@ -7577,7 +7581,7 @@ class PDFParser :
         readChars = ''
         if not isinstance(string,str):
             return (-1,'Bad string')
-        notRegChars = self.spacesChars + self.demilimiterChars
+        notRegChars = spacesChars + delimiterChars
         for i in range(self.charCounter,len(string)):
             if string[i] in notRegChars:
                 self.readSpaces(string)
