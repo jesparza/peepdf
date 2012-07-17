@@ -3,7 +3,7 @@
 #	http://peepdf.eternal-todo.com
 #	By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#	Copyright (C) 2011 Jose Miguel Esparza
+#	Copyright (C) 2012 Jose Miguel Esparza
 #
 #	This file is part of peepdf.
 #
@@ -25,52 +25,71 @@
 	Module to manage cryptographic operations with PDF files
 '''	
 
-import hashlib,struct,random,warnings
+import hashlib,struct,random,warnings,aes
 from itertools import cycle, izip
 warnings.filterwarnings("ignore")
 
 
-def computeEncryptionKey(password, ownerPass, fileID, pElement, keyLength = 128, revision = 3):
+def computeEncryptionKey(password, dictOwnerPass, dictUserPass, dictOE, dictUE, fileID, pElement, dictKeyLength = 128, revision = 3, encryptMetadata = False, passwordType = None):
 	'''
 		Compute an encryption key to encrypt/decrypt the PDF file
 		
 		@param password: The password entered by the user
-		@param ownerPass: The computed owner password
+		@param dictOwnerPass: The owner password from the standard security handler dictionary
+		@param dictUserPass: The user password from the standard security handler dictionary
+		@param dictOE: The owner encrypted string from the standard security handler dictionary
+		@param dictUE:The user encrypted string from the standard security handler dictionary
 		@param fileID: The /ID element in the trailer dictionary of the PDF file
 		@param pElement: The /P element of the Encryption dictionary
-		@param keyLength: The length of the key
+		@param dictKeyLength: The length of the key
 		@param revision: The algorithm revision
-		@return: The computed encryption key in string format
+		@param encryptMetadata: A boolean extracted from the standard security handler dictionary to specify if it's necessary to encrypt the document metadata or not
+		@param passwordType: It specifies the given password type. It can be 'USER', 'OWNER' or None.
+		@return: A tuple (status,statusContent), where statusContent is the encryption key in case status = 0 or an error message in case status = -1
 	'''
-	paddingString = '\x28\xBF\x4E\x5E\x4E\x75\x8A\x41\x64\x00\x4E\x56\xFF\xFA\x01\x08\x2E\x2E\x00\xB6\xD0\x68\x3E\x80\x2F\x0C\xA9\xFE\x64\x53\x69\x7A'
-	keyLength = keyLength/8
-	lenPass = len(password)
-	if lenPass > 32:
-		password = password[:32]
-	elif lenPass < 32:
-		password += paddingString[:32-lenPass]
-	md5input = password + ownerPass + struct.pack('<i',int(pElement)) + fileID
-	if revision > 3:
-		md5input += '\xFF'*4
-	key = hashlib.md5(md5input).digest()
-	if revision > 2:
-		counter = 0
-		while counter < 50:
-			key = hashlib.md5(key[:keyLength]).digest()
-			counter += 1
-		key = key[:keyLength]
-	elif revision == 2:
-		key = key[:5]
-	return key
+	if revision != 5:
+		paddingString = '\x28\xBF\x4E\x5E\x4E\x75\x8A\x41\x64\x00\x4E\x56\xFF\xFA\x01\x08\x2E\x2E\x00\xB6\xD0\x68\x3E\x80\x2F\x0C\xA9\xFE\x64\x53\x69\x7A'
+		keyLength = dictKeyLength/8
+		lenPass = len(password)
+		if lenPass > 32:
+			password = password[:32]
+		elif lenPass < 32:
+			password += paddingString[:32-lenPass]
+		md5input = password + dictOwnerPass + struct.pack('<i',int(pElement)) + fileID
+		if revision > 3 and not encryptMetadata:
+			md5input += '\xFF'*4
+		key = hashlib.md5(md5input).digest()
+		if revision > 2:
+			counter = 0
+			while counter < 50:
+				key = hashlib.md5(key[:keyLength]).digest()
+				counter += 1
+			key = key[:keyLength]
+		elif revision == 2:
+			key = key[:5]
+		return (0, key)
+	else:
+		if passwordType == 'USER':
+			password = password.encode('utf-8')[:127]
+			kSalt = dictUserPass[40:48]
+			intermediateKey = hashlib.sha256(password + kSalt).digest()
+			ret = aes.decryptData('\0'*16+dictUE, intermediateKey)
+		elif passwordType == 'OWNER':
+			password = password.encode('utf-8')[:127]
+			kSalt = dictOwnerPass[40:48]
+			intermediateKey = hashlib.sha256(password + kSalt + dictUserPass).digest()
+			ret = aes.decryptData('\0'*16+dictOE, intermediateKey)
+		return ret
 
 def computeObjectKey(id, generationNum, encryptionKey, keyLengthBytes, algorithm = 'RC4'):
 	'''
-		Compute the key necessary to encrypt each object, depending on the id and generation number
+		Compute the key necessary to encrypt each object, depending on the id and generation number. Only necessary with /V < 5.
 		
 		@param id: The object id
 		@param generationNum: The generation number of the object
 		@param encryptionKey: The encryption key
 		@param keyLengthBytes: The length of the encryption key in bytes
+		@param algorithm: The algorithm used in the encryption/decryption process
 		@return: The computed key in string format
 	'''	
 	key = encryptionKey + struct.pack('<i',id)[:3] + struct.pack('<i',generationNum)[:2]
@@ -79,6 +98,8 @@ def computeObjectKey(id, generationNum, encryptionKey, keyLengthBytes, algorithm
 	key = hashlib.md5(key).digest()
 	if keyLengthBytes+5 < 16:
 		key = key[:keyLengthBytes+5]
+	else:
+		key = key[:16]
 	# AES: block size = 16 bytes, initialization vector (16 bytes), random, first bytes encrypted string
 	return key
 
@@ -122,7 +143,7 @@ def computeOwnerPass(ownerPassString, userPassString, keyLength = 128, revision 
 			counter += 1
 	return ownerPass
 
-def computeUserPass(userPassString, ownerPass, fileID, pElement, keyLength = 128, revision = 3):
+def computeUserPass(userPassString, ownerPass, fileID, pElement, keyLength = 128, revision = 3, encryptMetadata = False):
 	'''
 		Compute the user password of the PDF file
 		
@@ -132,11 +153,12 @@ def computeUserPass(userPassString, ownerPass, fileID, pElement, keyLength = 128
 		@param pElement: The /P element of the /Encryption dictionary
 		@param keyLength: The length of the key
 		@param revision: The algorithm revision
+		@param encryptMetadata: A boolean extracted from the standard security handler dictionary to specify if it's necessary to encrypt the document metadata or not
 		@return: The computed password in string format
 	'''
 	userPass = ''
 	paddingString = '\x28\xBF\x4E\x5E\x4E\x75\x8A\x41\x64\x00\x4E\x56\xFF\xFA\x01\x08\x2E\x2E\x00\xB6\xD0\x68\x3E\x80\x2F\x0C\xA9\xFE\x64\x53\x69\x7A'
-	rc4Key = computeEncryptionKey(userPassString, ownerPass, fileID, pElement, keyLength, revision)
+	rc4Key = computeEncryptionKey(userPassString, ownerPass, fileID, pElement, keyLength, revision, encryptMetadata)
 	if revision == 2:
 		userPass = RC4(paddingString,rc4Key)
 	elif revision > 2:
@@ -156,6 +178,55 @@ def computeUserPass(userPassString, ownerPass, fileID, pElement, keyLength = 128
 			counter += 1
 	return userPass
 
+def isUserPass(password, computedUserPass, dictU, revision):
+	'''
+		Checks if the given password is the User password of the file
+		
+		@param password: The given password or the empty password
+		@param computedUserPass: The computed user password of the file
+		@param dictU: The /U element of the /Encrypt dictionary
+		@param revision: The number of revision of the standard security handler
+		@return The boolean telling if the given password is the user password or not
+	'''
+	if revision == 5:
+		vSalt = dictU[32:40]
+		inputHash = hashlib.sha256(password + vSalt).digest()
+		if inputHash == dictU[:32]:
+			return True
+		else:
+			return False 
+	elif revision == 3 or revision == 4:
+		if computedUserPass[:16] == dictU[:16]:
+			return True
+		else:
+			return False
+	elif revision < 3:
+		if computedUserPass == dictU:
+			return True
+		else:
+			return False
+
+def isOwnerPass(password, dictO, dictU, algorithmVersion):
+	'''
+		Checks if the given password is the owner password of the file
+		
+		@param password: The given password or the empty password
+		@param dictO: The /O element of the /Encrypt dictionary
+		@param dictU: The /U element of the /Encrypt dictionary
+		@param algorithmVersion: The algorithm version
+		@return The boolean telling if the given password is the owner password or not
+	'''
+	if algorithmVersion == 5:
+		vSalt = dictO[32:40]
+		inputHash = hashlib.sha256(password + vSalt + dictU).digest()
+		if inputHash == dictO[:32]:
+			return True
+		else:
+			return False 
+	else:
+		#TODO
+		return False
+	
 def RC4(data, key):
 	'''
 		RC4 implementation
