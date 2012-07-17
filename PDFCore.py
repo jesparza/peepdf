@@ -3,7 +3,7 @@
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2011 Jose Miguel Esparza
+#    Copyright (C) 2012 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
@@ -25,7 +25,7 @@
     This module contains classes and methods to analyse and modify PDF files
 '''
 
-import sys,os,re,hashlib,struct
+import sys,os,re,hashlib,struct,aes as AES
 from PDFUtils import *
 from PDFCrypto import *
 from JSAnalysis import *
@@ -188,6 +188,8 @@ class PDFObject :
         '''
         stats = {}
         stats['Object'] = self.type
+        stats['MD5'] = hashlib.md5(self.value).hexdigest()
+        stats['SHA1'] = hashlib.sha1(self.value).hexdigest()
         if self.isCompressed():
             stats['Compressed in'] = str(self.compressedIn)
         else:
@@ -594,7 +596,7 @@ class PDFString (PDFObject) :
             return (-1,errorMessage)
         return (0,'')
 
-    def decrypt(self, password = None):
+    def decrypt(self, password = None, algorithm = 'RC4'):
         '''
             Decrypt the content of the object if possible 
             
@@ -605,9 +607,19 @@ class PDFString (PDFObject) :
         if password != None:
             self.encryptionKey = password
         try:
-            self.rawValue = RC4(unescapeString(self.encryptedValue),self.encryptionKey)
+            cleanString = unescapeString(self.encryptedValue)
+            if algorithm == 'RC4':
+                self.rawValue = RC4(cleanString,self.encryptionKey)
+            elif algorithm == 'AES':
+                ret = AES.decryptData(cleanString,self.encryptionKey)
+                if ret[0] != -1:
+                    self.rawValue = ret[1]
+                else:
+                    errorMessage = 'AES decryption error: '+ret[1]
+                    self.addError(errorMessage)
+                    return (-1,errorMessage)
         except:
-            errorMessage = 'Error decrypting with RC4'
+            errorMessage = 'Error decrypting with '+str(algorithm)
             self.addError(errorMessage)
             return (-1,errorMessage)
         ret = self.update(decrypt = True)
@@ -733,7 +745,7 @@ class PDFHexString (PDFObject) :
             return (-1,errorMessage)
         return (0,'')
     
-    def decrypt(self, password = None):
+    def decrypt(self, password = None, algorithm = 'RC4'):
         '''
             Decrypt the content of the object if possible 
             
@@ -744,9 +756,19 @@ class PDFHexString (PDFObject) :
         if password != None:
             self.encryptionKey = password
         try:
-            self.rawValue = RC4(unescapeString(self.encryptedValue),self.encryptionKey)
+            cleanString = unescapeString(self.encryptedValue)
+            if algorithm == 'RC4':
+                self.rawValue = RC4(cleanString,self.encryptionKey)
+            elif algorithm == 'AES':
+                ret = AES.decryptData(cleanString,self.encryptionKey)
+                if ret[0] != -1:
+                    self.rawValue = ret[1]
+                else:
+                    errorMessage = 'AES decryption error: '+ret[1]
+                    self.addError(errorMessage)
+                    return (-1,errorMessage)
         except:
-            errorMessage = 'Error decrypting with RC4'
+            errorMessage = 'Error decrypting with '+str(algorithm)
             self.addError(errorMessage)
             return (-1,errorMessage)
         ret = self.update(decrypt = True)
@@ -939,13 +961,13 @@ class PDFArray (PDFObject) :
         ret = self.update()
         return ret
         
-    def decrypt(self, password = None):
+    def decrypt(self, password = None, algorithm = 'RC4'):
         '''
             Decrypt the content of the object if possible 
             
             @param password: The password used to decrypt the object. It's dependent on the object.
             @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
-        '''
+        '''  
         errorMessage = ''
         self.encrypted = True
         if password != None:
@@ -955,7 +977,7 @@ class PDFArray (PDFObject) :
             if element != None:
                 type = element.getType()
                 if type in ['string','hexstring','array','dictionary']:
-                    ret = element.decrypt(self.encryptionKey)
+                    ret = element.decrypt(self.encryptionKey, algorithm)
                     if ret[0] == -1:
                         errorMessage = ret[1]
                         self.addError(errorMessage)
@@ -1219,7 +1241,7 @@ class PDFDictionary (PDFObject):
             return (-1,errorMessage)
         return (0,'')
                 
-    def decrypt(self, password = None):
+    def decrypt(self, password = None, algorithm = 'RC4'):
         '''
             Decrypt the content of the object if possible 
             
@@ -1235,7 +1257,7 @@ class PDFDictionary (PDFObject):
             object = self.elements[key]
             objectType = object.getType()
             if objectType in ['string','hexstring','array','dictionary']:
-                ret = object.decrypt(self.encryptionKey)
+                ret = object.decrypt(self.encryptionKey, algorithm)
                 if ret[0] == -1:
                     errorMessage = ret[1]
                     self.addError(errorMessage)
@@ -1358,6 +1380,8 @@ class PDFDictionary (PDFObject):
     def getStats(self):
         stats = {}
         stats['Object'] = self.type
+        stats['MD5'] = hashlib.md5(self.value).hexdigest()
+        stats['SHA1'] = hashlib.sha1(self.value).hexdigest()
         if self.isCompressed():
             stats['Compressed in'] = str(self.compressedIn)
         else:
@@ -1545,7 +1569,7 @@ class PDFStream (PDFDictionary) :
         else:
             self.addError('No dictionary in stream object')
 
-    def update(self, onlyElements = False, decrypt = False):
+    def update(self, onlyElements = False, decrypt = False, algorithm = 'RC4'):
         '''
             Updates the object after some modification has occurred
             
@@ -1770,9 +1794,20 @@ class PDFStream (PDFDictionary) :
                             if self.isEncodedStream:
                                 if decrypt:
                                     try:
-                                        self.encodedStream = RC4(self.rawStream,self.encryptionKey)
+                                        if algorithm == 'RC4':
+                                            self.encodedStream = RC4(self.encodedStream,self.encryptionKey)
+                                        elif algorithm == 'AES':
+                                            ret = AES.decryptData(self.encodedStream,self.encryptionKey)
+                                            if ret[0] != -1:
+                                                self.encodedStream = ret[1]
+                                            else:
+                                                errorMessage = 'AES decryption error: '+ret[1]
+                                                if isForceMode:
+                                                    self.addError(errorMessage)
+                                                else:
+                                                    return (-1,errorMessage)
                                     except:
-                                        errorMessage = 'Error decrypting stream with RC4'
+                                        errorMessage = 'Error decrypting stream with '+str(algorithm)
                                         if isForceMode:
                                             self.addError(errorMessage)
                                         else:
@@ -1850,9 +1885,20 @@ class PDFStream (PDFDictionary) :
                     else:
                         if self.isEncodedStream:
                             try:
-                                self.encodedStream = RC4(self.rawStream,self.encryptionKey)
+                                if algorithm == 'RC4':
+                                    self.encodedStream = RC4(self.encodedStream,self.encryptionKey)
+                                elif algorithm == 'AES':
+                                    ret = AES.decryptData(self.encodedStream,self.encryptionKey)
+                                    if ret[0] != -1:
+                                        self.encodedStream = ret[1]
+                                    else:
+                                        errorMessage = 'AES decryption error: '+ret[1]
+                                        if isForceMode:
+                                            self.addError(errorMessage)
+                                        else:
+                                            return (-1,errorMessage)
                             except:
-                                errorMessage = 'Error decrypting stream with RC4'
+                                errorMessage = 'Error decrypting stream with '+str(algorithm)
                                 if isForceMode:
                                     self.addError(errorMessage)
                                 else:
@@ -1860,9 +1906,20 @@ class PDFStream (PDFDictionary) :
                             self.decode()
                         else:
                             try:
-                                self.decodedStream = RC4(self.rawStream,self.encryptionKey)
+                                if algorithm == 'RC4':
+                                    self.decodedStream = RC4(self.decodedStream,self.encryptionKey)
+                                elif algorithm == 'AES':
+                                    ret = AES.decryptData(self.decodedStream,self.encryptionKey)
+                                    if ret[0] != -1:
+                                        self.decodedStream = ret[1]
+                                    else:
+                                        errorMessage = 'AES decryption error: '+ret[1]
+                                        if isForceMode:
+                                            self.addError(errorMessage)
+                                        else:
+                                            return (-1,errorMessage)
                             except:
-                                errorMessage = 'Error decrypting stream with RC4'
+                                errorMessage = 'Error decrypting stream with '+str(algorithm)
                                 if isForceMode:
                                     self.addError(errorMessage)
                                 else:
@@ -2129,7 +2186,7 @@ class PDFStream (PDFDictionary) :
         else:
             return (-1,'Empty stream')            
 
-    def decrypt(self, password = None):
+    def decrypt(self, password = None, strAlgorithm = 'RC4', altAlgorithm = 'RC4'):
         '''
             Decrypt the content of the object if possible 
             
@@ -2145,13 +2202,13 @@ class PDFStream (PDFDictionary) :
             object = self.elements[key]
             objectType = object.getType()
             if objectType in ['string','hexstring','array','dictionary']:
-                ret = object.decrypt(self.encryptionKey)
+                ret = object.decrypt(self.encryptionKey, strAlgorithm)
                 if ret[0] == -1:
                     errorMessage = ret[1]
                     self.addError(ret[1])
             decryptedElements[key] = object
         self.elements = decryptedElements
-        ret = self.update(decrypt = True)
+        ret = self.update(decrypt = True, algorithm = altAlgorithm)
         if ret[0] == 0 and errorMessage != '':
             return (-1,errorMessage)
         return ret
@@ -2307,6 +2364,12 @@ class PDFStream (PDFDictionary) :
     def getStats(self):
         stats = {}
         stats['Object'] = self.type
+        stats['MD5'] = hashlib.md5(self.value).hexdigest()
+        stats['SHA1'] = hashlib.sha1(self.value).hexdigest()
+        stats['Stream MD5'] = hashlib.md5(self.decodedStream).hexdigest()
+        stats['Stream SHA1'] = hashlib.sha1(self.decodedStream).hexdigest()
+        stats['Raw Stream MD5'] = hashlib.md5(self.rawStream).hexdigest()
+        stats['Raw Stream SHA1'] = hashlib.sha1(self.rawStream).hexdigest()
         if self.isCompressed():
             stats['Compressed in'] = str(self.compressedIn)
         else:
@@ -2595,7 +2658,7 @@ class PDFObjectStream (PDFStream) :
         else:
             self.addError('No dictionary in stream object')
 
-    def update(self, modifiedCompressedObjects = False, onlyElements = False, decrypt = False):
+    def update(self, modifiedCompressedObjects = False, onlyElements = False, decrypt = False, algorithm = 'RC4'):
         '''
             Updates the object after some modification has occurred
             
@@ -2816,9 +2879,20 @@ class PDFObjectStream (PDFStream) :
                                     if self.isEncodedStream:
                                         if decrypt:
                                             try:
-                                                self.encodedStream = RC4(self.rawStream,self.encryptionKey)
+                                                if algorithm == 'RC4':
+                                                    self.encodedStream = RC4(self.encodedStream,self.encryptionKey)
+                                                elif algorithm == 'AES':
+                                                    ret = AES.decryptData(self.encodedStream,self.encryptionKey)
+                                                    if ret[0] != -1:
+                                                        self.encodedStream = ret[1]
+                                                    else:
+                                                        errorMessage = 'AES decryption error: '+ret[1]
+                                                        if isForceMode:
+                                                            self.addError(errorMessage)
+                                                        else:
+                                                            return (-1,errorMessage)
                                             except:
-                                                errorMessage = 'Error decrypting stream with RC4'
+                                                errorMessage = 'Error decrypting stream with '+str(algorithm)
                                                 if isForceMode:
                                                     self.addError(errorMessage)
                                                 else:
@@ -2906,9 +2980,20 @@ class PDFObjectStream (PDFStream) :
                         else:
                             if self.isEncodedStream:
                                 try:
-                                    self.encodedStream = RC4(self.rawStream,self.encryptionKey)
+                                    if algorithm == 'RC4':
+                                        self.encodedStream = RC4(self.encodedStream,self.encryptionKey)
+                                    elif algorithm == 'AES':
+                                        ret = AES.decryptData(self.encodedStream,self.encryptionKey)
+                                        if ret[0] != -1:
+                                            self.encodedStream = ret[1]
+                                        else:
+                                            errorMessage = 'AES decryption error: '+ret[1]
+                                            if isForceMode:
+                                                self.addError(errorMessage)
+                                            else:
+                                                return (-1,errorMessage)
                                 except:
-                                    errorMessage = 'Error decrypting stream with RC4'
+                                    errorMessage = 'Error decrypting stream with '+str(algorithm)                    
                                     if isForceMode:
                                         self.addError(errorMessage)
                                     else:
@@ -2916,9 +3001,20 @@ class PDFObjectStream (PDFStream) :
                                 self.decode()
                             else:
                                 try:
-                                    self.decodedStream = RC4(self.rawStream,self.encryptionKey)
+                                    if algorithm == 'RC4':
+                                        self.decodedStream = RC4(self.decodedStream,self.encryptionKey)
+                                    elif algorithm == 'AES':
+                                        ret = AES.decryptData(self.decodedStream,self.encryptionKey)
+                                        if ret[0] != -1:
+                                            self.decodedStream = ret[1]
+                                        else:
+                                            errorMessage = 'AES decryption error: '+ret[1]
+                                            if isForceMode:
+                                                self.addError(errorMessage)
+                                            else:
+                                                return (-1,errorMessage)
                                 except:
-                                    errorMessage = 'Error decrypting stream with RC4'
+                                    errorMessage = 'Error decrypting stream with '+str(algorithm)                                
                                     if isForceMode:
                                         self.addError(errorMessage)
                                     else:
@@ -4174,7 +4270,8 @@ class PDFBody :
                 elif not delete:
                     self.suspiciousActions[printedAction] = [id]
         for element in monitorizedElements:
-            if value.find(element) != -1 and (element == '/EmbeddedFiles ' or len(value) == index + len(element) or value[index+len(element)] in delimiterChars+spacesChars):
+            index = value.find(element)
+            if index != -1 and (element == '/EmbeddedFiles ' or len(value) == index + len(element) or value[index+len(element)] in delimiterChars+spacesChars):
                 printedElement = element.strip()
                 if self.suspiciousElements.has_key(printedElement):
                     if delete:
@@ -4820,8 +4917,8 @@ class PDFFile :
         return (0,lastId)
 
     def decrypt(self, password = ''):
-        #TODO: Revision 5, included in Extension Level 3, and AES
         errorMessage = ''
+        passType = None
         encryptionAlgorithms = []
         algorithm = None
         stmAlgorithm = None
@@ -4895,7 +4992,14 @@ class PDFFile :
                                                     self.addError('Decryption error: Unsupported encryption!!')
                                                 else:
                                                     return (-1,'Decryption error: Unsupported encryption!!')
+                                        else:
+                                            cfmValue = ''
+                                            if isForceMode:
+                                                self.addError('Decryption error: Bad format for /CFM!!')
+                                            else:
+                                                return (-1,'Decryption error: Bad format for /CFM!!')
                                     if cryptFilterDict.has_key('/Length') and cfmValue != '/AESV3':
+                                        # Length is key length in bits
                                         keyLength = cryptFilterDict['/Length']
                                         if keyLength != None and keyLength.getType() == 'integer':
                                             keyLength = keyLength.getRawValue()
@@ -4930,8 +5034,6 @@ class PDFFile :
                             strF = strF.getValue()
                             if strF in algorithms:
                                 strAlgorithm = algorithms[strF]
-                                if strAlgorithm not in encryptionAlgorithms:
-                                    encryptionAlgorithms.append(strAlgorithm)
                         else:
                             if isForceMode:
                                 self.addError('Decryption error: Bad format for /StrF!!')
@@ -4944,21 +5046,21 @@ class PDFFile :
                             if eeF in algorithms:
                                 embedAlgorithm = algorithms[eeF]
                         else:
+                            embedAlgorithm = stmAlgorithm
                             if isForceMode:
                                 self.addError('Decryption error: Bad format for /EEF!!')
                             else:
                                 return (-1,'Decryption error: Bad format for /EEF!!')
+                    else:
+                        embedAlgorithm = stmAlgorithm
                     if stmAlgorithm not in encryptionAlgorithms:
                         encryptionAlgorithms.append(stmAlgorithm)                        
                     if strAlgorithm not in encryptionAlgorithms:
                         encryptionAlgorithms.append(strAlgorithm)
                     if embedAlgorithm not in encryptionAlgorithms and embedAlgorithm != ['Identity',40]: # Not showing default embedAlgorithm
-                        encryptionAlgorithms.append(embedAlgorithm)
-                    if isForceMode:
-                        self.addError('Decryption error: Algorithm not supported!!')
-                    else:
-                        return (-1,'Decryption error: Algorithm not supported!!')   
+                        encryptionAlgorithms.append(embedAlgorithm) 
             else:
+                algVersion = 0
                 if isForceMode:
                     self.addError('Decryption error: Bad format for /V!!')
                 else:
@@ -4986,9 +5088,16 @@ class PDFFile :
         if algVersion == 1 or algVersion == 2:
             algorithm = ['RC4',keyLength]
             stmAlgorithm = strAlgorithm = embedAlgorithm = algorithm
+        elif algVersion == 3:
+            algorithm = ['Unpublished',keyLength]
+            stmAlgorithm = strAlgorithm = embedAlgorithm = algorithm
+            if isForceMode:
+                self.addError('Decryption error: Algorithm not supported!!')
+            else:
+                return (-1,'Decryption error: Algorithm not supported!!')
         elif algVersion == 5:
             algorithm = ['AES',256]
-        if algorithm not in encryptionAlgorithms:
+        if algorithm != None and algorithm not in encryptionAlgorithms:
             encryptionAlgorithms.append(algorithm)
         self.setEncryptionAlgorithms(encryptionAlgorithms)
         # Standard encryption: /R /P /O /U
@@ -4997,8 +5106,7 @@ class PDFFile :
             revision = encDict['/R']
             if revision != None and revision.getType() == 'integer':
                 revision = revision.getRawValue()
-                if revision != 2 and revision != 3:
-                    # Revision 5??
+                if revision < 2 or revision > 5:
                     if isForceMode:
                         self.addError('Decryption error: Algorithm revision not supported!!')
                     else:
@@ -5028,11 +5136,11 @@ class PDFFile :
                 self.addError('Decryption error: Permission number not found!!')
             else:
                 return (-1,'Decryption error: Permission number not found!!')
-        # Ownser pass
+        # Owner pass
         if encDict.has_key('/O'):
-            ownerPass = encDict['/O']
-            if ownerPass != None and ownerPass.getType() == 'string':
-                ownerPass = ownerPass.getValue()
+            dictO = encDict['/O']
+            if dictO != None and dictO.getType() == 'string':
+                dictO = dictO.getValue()
             else:
                 if isForceMode:
                     self.addError('Decryption error: Bad format for /O!!')
@@ -5043,11 +5151,28 @@ class PDFFile :
                 self.addError('Decryption error: Owner password not found!!')
             else:
                 return (-1,'Decryption error: Owner password not found!!')
+        # Owner encrypted string
+        if encDict.has_key('/OE'):
+            dictOE = encDict['/OE']
+            if dictOE != None and dictOE.getType() == 'string':
+                dictOE = dictOE.getValue()
+            else:
+                if isForceMode:
+                    self.addError('Decryption error: Bad format for /OE!!')
+                else:
+                    return (-1,'Decryption error: Bad format for /OE!!')
+        else:
+            dictOE = ''
+            if algVersion == 5:
+                if isForceMode:
+                    self.addError('Decryption error: /OE not found!!')
+                else:
+                    return (-1,'Decryption error: /OE not found!!')
         # User pass
         if encDict.has_key('/U'):
-            userPass = encDict['/U']
-            if userPass != None and userPass.getType() == 'string':
-                userPass = userPass.getValue()
+            dictU = encDict['/U']
+            if dictU != None and dictU.getType() == 'string':
+                dictU = dictU.getValue()
             else:
                 if isForceMode:
                     self.addError('Decryption error: Bad format for /U!!')
@@ -5058,6 +5183,23 @@ class PDFFile :
                 self.addError('Decryption error: User password not found!!')
             else:
                 return (-1,'Decryption error: User password not found!!')
+        # User encrypted string
+        if encDict.has_key('/UE'):
+            dictUE = encDict['/UE']
+            if dictUE != None and dictUE.getType() == 'string':
+                dictUE = dictUE.getValue()
+            else:
+                if isForceMode:
+                    self.addError('Decryption error: Bad format for /UE!!')
+                else:
+                    return (-1,'Decryption error: Bad format for /UE!!')
+        else:
+            dictUE = ''
+            if algVersion == 5:
+                if isForceMode:
+                    self.addError('Decryption error: /UE not found!!')
+                else:
+                    return (-1,'Decryption error: /UE not found!!')
         # Metadata encryption
         if encDict.has_key('/EncryptMetadata'):
             encryptMetadata = encDict['/EncryptMetadata']
@@ -5070,22 +5212,37 @@ class PDFFile :
                     return (-1,'Decryption error: Bad format for /EncryptMetadata!!')
         else:
             encryptMetadata = 'true'
-        # Checking password
-        computedUserPass = computeUserPass(password,ownerPass,fileId,perm,keyLength,revision)
-        if (revision > 2 and computedUserPass[:16] != userPass[:16]) or (revision < 3 and computedUserPass != userPass):
+        # Checking user password
+        if algVersion != 5:
+            computedUserPass = computeUserPass(password, dictO, fileId, perm, keyLength, revision, encryptMetadata)
+        else:
+            computedUserPass = ''
+        if isUserPass(password, computedUserPass, dictU, revision):
+            passType = 'USER'
+        elif isOwnerPass(password, dictO, dictU, algVersion):
+            passType = 'OWNER'
+        else:
             if password == '':
                 if isForceMode:
-                    self.addError('Decryption error: Default password not working here!!')
+                    self.addError('Decryption error: Default user password not working here!!')
                 else:
-                    return (-1,'Decryption error: Default password not working here!!')
+                    return (-1,'Decryption error: Default user password not working here!!')
             else:
                 if isForceMode:
-                    self.addError('Decryption error: Password not working here!!')
+                    self.addError('Decryption error: User password not working here!!')
                 else:
-                    return (-1,'Decryption error: Password not working here!!')
-        self.setOwnerPass(ownerPass)
-        self.setUserPass(userPass)
-        encryptionKey = computeEncryptionKey(password,ownerPass,fileId,perm,keyLength,revision)
+                    return (-1,'Decryption error: User password not working here!!')
+        self.setOwnerPass(dictO)
+        self.setUserPass(dictU)
+        ret = computeEncryptionKey(password, dictO, dictU, dictOE, dictUE, fileId, perm, keyLength, revision, encryptMetadata, passType)
+        if ret[0] != -1:
+            encryptionKey = ret[1]
+        else:
+            encryptionKey = ''
+            if isForceMode:
+                self.addError('Decryption error: '+ret[1])
+            else:
+                return (-1,'Decryption error: '+ret[1])
         self.setEncryptionKey(encryptionKey)
         self.setEncryptionKeyLength(keyLength)
         # Computing objects passwords and decryption
@@ -5100,8 +5257,21 @@ class PDFFile :
                     if object != None and not object.isCompressed():
                         objectType = object.getType()
                         if objectType in ['string','hexstring','array','dictionary'] or (objectType == 'stream' and (object.getElement('/Type') == None or object.getElement('/Type').getValue() != '/XRef' or (object.getElement('/Type').getValue() == '/Metadata' and encryptMetadata == 'true'))):
-                            key = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes)
-                            ret = object.decrypt(key)
+                            key = self.encryptionKey
+                            if objectType in ['string','hexstring','array','dictionary']:
+                                if algVersion < 5:
+                                    key = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes,strAlgorithm[0])
+                                ret = object.decrypt(key, strAlgorithm[0])
+                            else:
+                                if object.getElement('/Type') != None and object.getElement('/Type').getValue() == '/EmbeddedFile':
+                                    if algVersion < 5:
+                                        key = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes,embedAlgorithm[0])
+                                    altAlgorithm = embedAlgorithm[0]
+                                else:
+                                    if algVersion < 5:
+                                        key = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes,stmAlgorithm[0])
+                                    altAlgorithm = stmAlgorithm[0]
+                                ret = object.decrypt(key,strAlgorithm[0], altAlgorithm)
                             if ret[0] == -1:
                                 errorMessage = ret[1]
                                 self.addError(ret[1])
@@ -5136,6 +5306,7 @@ class PDFFile :
         return (0,'')
     
     def encrypt(self, password = ''):
+        #TODO: Revision 5, included in Extension Level 3, and AES
         errorMessage = ''
         encryptDictId = None
         permissionNum = 1073741823
@@ -5169,15 +5340,23 @@ class PDFFile :
                 trailer.setDictEntry('/ID',fileIdArray)
                 self.setTrailer([trailer,trailerStream])
                                 
-            ownerPass = computeOwnerPass(password,password,128,revision = 3)
-            self.setOwnerPass(ownerPass)
-            userPass = computeUserPass(password,ownerPass,fileId,permissionNum,128,revision = 3)
-            self.setUserPass(userPass)
-            encryptionKey = computeEncryptionKey(password,ownerPass,fileId,permissionNum,128,revision = 3)
+            dictO = computeOwnerPass(password,password,128,revision = 3)
+            self.setOwnerPass(dictO)
+            dictU = computeUserPass(password,dictO,fileId,permissionNum,128,revision = 3)
+            self.setUserPass(dictU)
+            ret = computeEncryptionKey(password,dictO,fileId,permissionNum,128,revision = 3)
+            if ret[0] != -1:
+                encryptionKey = ret[1]
+            else:
+                encryptionKey = ''
+                if isForceMode:
+                    self.addError('Decryption error: '+ret[1])
+                else:
+                    return (-1,'Decryption error: '+ret[1])
             self.setEncryptionKey(encryptionKey)
             self.setEncryptionKeyLength(128)
             encryptDict = PDFDictionary(elements = {'/V':PDFNum('2'),'/Length':PDFNum('128'),'/Filter':PDFName('Standard'),
-                                                                                        '/R':PDFNum('3'),'/P':PDFNum(str(permissionNum)),'/O':PDFString(ownerPass),'/U':PDFString(userPass)})
+                                                                                        '/R':PDFNum('3'),'/P':PDFNum(str(permissionNum)),'/O':PDFString(dictO),'/U':PDFString(dictU)})
             if encryptDictId != None:
                 ret = self.setObject(encryptDictId,encryptDict)
                 if ret[0] == -1:
