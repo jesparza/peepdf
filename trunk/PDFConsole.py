@@ -3,7 +3,7 @@
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2011 Jose Miguel Esparza
+#    Copyright (C) 2012 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
@@ -1441,6 +1441,7 @@ class PDFConsole(cmd.Cmd):
             if statsDict['Offset'] != None:
                 stats += 'Offset: ' + statsDict['Offset'] + newLine
             stats += 'Size: ' + statsDict['Size'] + newLine
+            stats += 'MD5: ' + statsDict['MD5'] + newLine
             stats += 'Object: ' + statsDict['Object'] + newLine
             if statsDict['Object'] in ['dictionary','stream']:
                 if statsDict['Type'] != None:
@@ -1448,6 +1449,9 @@ class PDFConsole(cmd.Cmd):
                 if statsDict['Subtype'] != None:
                     stats += 'Subtype: ' + statsDict['Subtype'] + newLine
                 if statsDict['Object'] == 'stream':
+                    stats += 'Stream MD5: ' + statsDict['Stream MD5'] + newLine
+                    if statsDict['Stream MD5'] != statsDict['Raw Stream MD5']:
+                        stats += 'Raw Stream MD5: ' + statsDict['Raw Stream MD5'] + newLine
                     stats += 'Length: ' + statsDict['Length'] + newLine
                     if statsDict['Real Length'] != None:
                         stats += 'Real length: ' + statsDict['Real Length'] + newLine
