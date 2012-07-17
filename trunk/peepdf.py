@@ -5,7 +5,7 @@
 #	http://peepdf.eternal-todo.com
 #	By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#	Copyright (C) 2011 Jose Miguel Esparza
+#	Copyright (C) 2012 Jose Miguel Esparza
 #
 #	This file is part of peepdf.
 #
@@ -218,7 +218,7 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.1'
-revision = '135'   
+revision = '141'   
 stats = ''
 pdf = None
 fileName = None
