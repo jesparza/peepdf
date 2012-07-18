@@ -550,25 +550,14 @@ class PDFString (PDFObject) :
             return (-1,errorMessage)
         if isJavascript(self.value):
             self.containsJScode = True
-            try:
-                self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.value)
-                if jsErrors != []:
-                    for jsError in jsErrors:
-                        errorMessage = 'Error analysing Javascript: '+jsError
-                        if isForceMode:
-                            self.addError(errorMessage)
-                        else:
-                            return (-1,errorMessage)
-            except:
-                errorMessage = 'Error analysing Javascript'
-                if isForceMode:
-                    self.addError(errorMessage)
-                else:
-                    return (-1,errorMessage)
-            self.JSCode = [self.value] + self.JSCode
-            for js in self.JSCode:
-                if js == None or js == '':
-                     self.JSCode.remove(js)
+            self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.value)
+            if jsErrors != []:
+                for jsError in jsErrors:
+                    errorMessage = 'Error analysing Javascript: '+jsError
+                    if isForceMode:
+                        self.addError(errorMessage)
+                    else:
+                        return (-1,errorMessage)
         if self.encrypted and not decrypt:
             ret = self.encrypt()
             if ret[0] == -1:
@@ -708,25 +697,14 @@ class PDFHexString (PDFObject) :
             return (-1,errorMessage)
         if isJavascript(self.value):
             self.containsJScode = True
-            try:
-                self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.value)
-                if jsErrors != []:
-                    for jsError in jsErrors:
-                        errorMessage = 'Error analysing Javascript: '+jsError
-                        if isForceMode:
-                            self.addError(errorMessage)
-                        else:
-                            return (-1,errorMessage)
-            except:
-                errorMessage = 'Error analysing Javascript'
-                if isForceMode:
-                    self.addError(errorMessage)
-                else:
-                    return (-1,errorMessage)
-            self.JSCode = [self.value] + self.JSCode
-            for js in self.JSCode:
-                if js == None or js == '':
-                     self.JSCode.remove(js)
+            self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.value)
+            if jsErrors != []:
+                for jsError in jsErrors:
+                    errorMessage = 'Error analysing Javascript: '+jsError
+                    if isForceMode:
+                        self.addError(errorMessage)
+                    else:
+                        return (-1,errorMessage)
         if self.encrypted and not decrypt:
             ret = self.encrypt()
             if ret[0] == -1:
@@ -1177,7 +1155,6 @@ class PDFDictionary (PDFObject):
         '''
         self.errors = []
         self.references = []
-        self.value = ''
         self.containsJScode = False
         self.JSCode = []
         self.dictType = ''
@@ -1198,7 +1175,7 @@ class PDFDictionary (PDFObject):
                 else:
                     return (-1,errorMessage)
             else:
-                valueObject = values[i] 
+                valueObject = values[i]
             v = valueObject.getValue()
             type = valueObject.getType()
             if keys[i] == '/Type':
@@ -1577,19 +1554,19 @@ class PDFStream (PDFDictionary) :
             @param decrypt: A boolean indicating if a decryption has been performed. By default: False.
             @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
         '''
-        self.errors = []
-        self.value = ''
-        self.references = []
         self.value = '<< '
         self.rawValue = '<< '
         self.encryptedValue = '<< '
         keys = self.elements.keys()
         values = self.elements.values()
-        self.JSCode = []
-        self.unescapedBytes = []
-        self.urlsFound = []
-        self.containsJScode = False
-        self.decodingError = False
+        if not onlyElements:
+            self.references = []
+            self.errors = []
+            self.JSCode = []
+            self.unescapedBytes = []
+            self.urlsFound = []
+            self.containsJScode = False
+            self.decodingError = False
             
         # Dictionary
         if self.elements.has_key('/Type') and self.elements['/Type'] != None:
@@ -1672,14 +1649,15 @@ class PDFStream (PDFDictionary) :
             v = valueElement.getValue()
             type = valueElement.getType()
             if type == 'reference':
-                self.references.append(v)
+                if v not in self.references: 
+                    self.references.append(v)
             elif type == 'dictionary' or type == 'array':
-                self.references += valueElement.getReferences()
+                self.references = list(set(self.references + valueElement.getReferences()))
             if valueElement.containsJS():
                 self.containsJScode = True
-                self.JSCode += valueElement.getJSCode()
-                self.unescapedBytes += valueElement.getUnescapedBytes()
-                self.urlsFound += valueElement.getURLs()
+                self.JSCode = list(set(self.JSCode + valueElement.getJSCode()))
+                self.unescapedBytes = list(set(self.unescapedBytes + valueElement.getUnescapedBytes()))
+                self.urlsFound = list(set(self.urlsFound + valueElement.getURLs()))
             if valueElement.isFaulty():
                 errorMessage = 'Children element is faulty'
                 self.addError(errorMessage)
@@ -1739,25 +1717,14 @@ class PDFStream (PDFDictionary) :
                         self.references = list(set(self.references))
                     if isJavascript(self.decodedStream):
                         self.containsJScode = True
-                        try:
-                            self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.decodedStream)
-                            if jsErrors != []:
-                                for jsError in jsErrors:
-                                    errorMessage = 'Error analysing Javascript: '+jsError
-                                    if isForceMode:
-                                        self.addError(errorMessage)
-                                    else:
-                                        return (-1,errorMessage)
-                        except:
-                            errorMessage = 'Error analysing Javascript'
-                            if isForceMode:
-                                self.addError(errorMessage)
-                            else:
-                                return (-1,errorMessage)
-                        self.JSCode = [self.decodedStream] + self.JSCode
-                        for js in self.JSCode:
-                            if js == None or js == '':
-                                 self.JSCode.remove(js)
+                        self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.decodedStream)
+                        if jsErrors != []:
+                            for jsError in jsErrors:
+                                errorMessage = 'Error analysing Javascript: '+jsError
+                                if isForceMode:
+                                    self.addError(errorMessage)
+                                else:
+                                    return (-1,errorMessage)
                     if self.isEncodedStream:
                         ret = self.encode()
                         if ret[0] != -1:
@@ -1849,25 +1816,14 @@ class PDFStream (PDFDictionary) :
                                 self.references = list(set(self.references))
                             if isJavascript(self.decodedStream):
                                 self.containsJScode = True
-                                try:
-                                    self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.decodedStream)
-                                    if jsErrors != []:
-                                        for jsError in jsErrors:
-                                            errorMessage = 'Error analysing Javascript: '+jsError
-                                            if isForceMode:
-                                                self.addError(errorMessage)
-                                            else:
-                                                return (-1,errorMessage)
-                                except:
-                                    errorMessage = 'Error analysing Javascript'
-                                    if isForceMode:
-                                        self.addError(errorMessage)
-                                    else:
-                                        return (-1,errorMessage)
-                                self.JSCode = [self.decodedStream] + self.JSCode
-                                for js in self.JSCode:
-                                    if js == None or js == '':
-                                         self.JSCode.remove(js)
+                                self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.decodedStream)
+                                if jsErrors != []:
+                                    for jsError in jsErrors:
+                                        errorMessage = 'Error analysing Javascript: '+jsError
+                                        if isForceMode:
+                                            self.addError(errorMessage)
+                                        else:
+                                            return (-1,errorMessage)
                 else:
                     if not decrypt:
                         try:
@@ -1931,25 +1887,14 @@ class PDFStream (PDFDictionary) :
                                 self.references = list(set(self.references))
                             if isJavascript(self.decodedStream):
                                 self.containsJScode = True
-                                try:
-                                    self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.decodedStream)
-                                    if jsErrors != []:
-                                        for jsError in jsErrors:
-                                            errorMessage = 'Error analysing Javascript: '+jsError
-                                            if isForceMode:
-                                                self.addError(errorMessage)
-                                            else:
-                                                return (-1,errorMessage)
-                                except:
-                                    errorMessage = 'Error analysing Javascript'
-                                    if isForceMode:
-                                        self.addError(errorMessage)
-                                    else:
-                                        return (-1,errorMessage)
-                                self.JSCode = [self.decodedStream] + self.JSCode
-                                for js in self.JSCode:
-                                    if js == None or js == '':
-                                         self.JSCode.remove(js)
+                                self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.decodedStream)
+                                if jsErrors != []:
+                                    for jsError in jsErrors:
+                                        errorMessage = 'Error analysing Javascript: '+jsError
+                                        if isForceMode:
+                                            self.addError(errorMessage)
+                                        else:
+                                            return (-1,errorMessage)
                 if not self.modifiedRawStream:
                     self.modifiedStream = False
                     self.newFilters = False
@@ -2531,25 +2476,14 @@ class PDFStream (PDFDictionary) :
             self.references = list(set(self.references))
         if isJavascript(self.decodedStream):
             self.containsJScode = True
-            try:
-                self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.decodedStream)
-                if jsErrors != []:
-                    for jsError in jsErrors:
-                        errorMessage = 'Error analysing Javascript: '+jsError
-                        if isForceMode:
-                            self.addError(errorMessage)
-                        else:
-                            return (-1,errorMessage)
-            except:
-                errorMessage = 'Error analysing Javascript'
-                if isForceMode:
-                    self.addError(errorMessage)
-                else:
-                    return (-1,errorMessage)
-            self.JSCode = [self.decodedStream] + self.JSCode
-            for js in self.JSCode:
-                if js == None or js == '':
-                     self.JSCode.remove(js)
+            self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.decodedStream)
+            if jsErrors != []:
+                for jsError in jsErrors:
+                    errorMessage = 'Error analysing Javascript: '+jsError
+                    if isForceMode:
+                        self.addError(errorMessage)
+                    else:
+                        return (-1,errorMessage)
         if errorMessage != '':
             return (-1,errorMessage)
         return (0,'')
@@ -2667,19 +2601,19 @@ class PDFObjectStream (PDFStream) :
             @param decrypt: A boolean indicating if a decryption has been performed. By default: False.
             @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
         '''
-        self.errors = []
-        self.value = ''
-        self.references = []
         self.value = '<< '
         self.rawValue = '<< '
         self.encryptedValue = '<< '
         keys = self.elements.keys()
         values = self.elements.values()
-        self.JSCode = []
-        self.unescapedBytes = []
-        self.urlsFound = []
-        self.containsJScode = False
-        self.decodingError = False
+        if not onlyElements:
+            self.errors = []
+            self.references = []
+            self.JSCode = []
+            self.unescapedBytes = []
+            self.urlsFound = []
+            self.containsJScode = False
+            self.decodingError = False
             
         # Dictionary
         if self.elements.has_key('/First') and self.elements['/First'] != None:
@@ -2780,14 +2714,15 @@ class PDFObjectStream (PDFStream) :
             v = valueElement.getValue()
             type = valueElement.getType()
             if type == 'reference':
-                self.references.append(v)
+                if v not in self.references: 
+                    self.references.append(v)
             elif type == 'dictionary' or type == 'array':
-                self.references += valueElement.getReferences()
+                self.references = list(set(self.references + valueElement.getReferences()))
             if valueElement.containsJS():
                 self.containsJScode = True
-                self.JSCode += valueElement.getJSCode()
-                self.unescapedBytes += valueElement.getUnescapedBytes()
-                self.urlsFound += valueElement.getURLs()
+                self.JSCode = list(set(self.JSCode + valueElement.getJSCode()))
+                self.unescapedBytes = list(set(self.unescapedBytes + valueElement.getUnescapedBytes()))
+                self.urlsFound = list(set(self.urlsFound + valueElement.getURLs()))
             if valueElement.isFaulty():
                 errorMessage = 'Child element is faulty'
                 self.addError(errorMessage)
@@ -3049,25 +2984,14 @@ class PDFObjectStream (PDFStream) :
                             self.references = list(set(self.references))
                         if isJavascript(self.decodedStream):
                             self.containsJScode = True
-                            try:
-                                self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.decodedStream)
-                                if jsErrors != []:
-                                    for jsError in jsErrors:
-                                        errorMessage = 'Error analysing Javascript: '+jsError
-                                        if isForceMode:
-                                            self.addError(errorMessage)
-                                        else:
-                                            return (-1,errorMessage)
-                            except:
-                                errorMessage = 'Error analysing Javascript'
-                                if isForceMode:
-                                    self.addError(errorMessage)
-                                else:
-                                    return (-1,errorMessage)
-                            self.JSCode = [self.decodedStream] + self.JSCode
-                            for js in self.JSCode:
-                                if js == None or js == '':
-                                     self.JSCode.remove(js)
+                            self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.decodedStream)
+                            if jsErrors != []:
+                                for jsError in jsErrors:
+                                    errorMessage = 'Error analysing Javascript: '+jsError
+                                    if isForceMode:
+                                        self.addError(errorMessage)
+                                    else:
+                                        return (-1,errorMessage)
                 if not self.modifiedRawStream:
                     self.modifiedStream = False
                     self.newFilters = False
