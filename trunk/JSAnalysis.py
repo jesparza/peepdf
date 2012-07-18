@@ -26,13 +26,15 @@
 '''
 
 import sys,re,os
+from PDFUtils import unescapeHTMLEntities
 try:
 	from spidermonkey import Runtime
 	JS_MODULE = True 
 except:
 	JS_MODULE = False
 newLine = os.linesep         
-                    
+reJSscript = '<script[^>]*?contentType\s*?=\s*?[\'"]application/x-javascript[\'"][^>]*?>(.*?)</script>'
+ 
 def analyseJS(code):
     '''
         Search for obfuscated functions in the Javascript code
@@ -48,26 +50,22 @@ def analyseJS(code):
     oldStdErr = sys.stderr
     errorFile = open('jserror.log','wb')
     sys.stderr = errorFile
-		
-    if code != None and JS_MODULE:
-        r = Runtime()
-        context = r.new_context()
-        while True:
-            evalFunctionsData = searchObfuscatedFunctions(code, 'eval')
-            originalElement = code
-            for evalFunctionData in evalFunctionsData:
-                if not evalFunctionData[2]:
-                    modifiedCode = evalFunctionData[1][0].replace(evalFunctionData[0],'return')
-                    code = originalElement.replace(evalFunctionData[1][0],modifiedCode)
-                else:
-                    code = originalElement.replace(evalFunctionData[1][0],evalFunctionData[1][1]+';')
-                try:
-                    executedJS = context.eval_script(code)
-                    if executedJS == None:
-                        raise exception
-                    break
-                except:                   
-                    if evalFunctionData[2]:
+	
+    try:
+        scriptCode = re.findall(reJSscript, code, re.DOTALL | re.IGNORECASE)
+        if scriptCode != []:
+            code = scriptCode[0]
+        code = unescapeHTMLEntities(code)
+        JSCode.append(code)
+    
+        if code != None and JS_MODULE:
+            r = Runtime()
+            context = r.new_context()
+            while True:
+                evalFunctionsData = searchObfuscatedFunctions(code, 'eval')
+                originalElement = code
+                for evalFunctionData in evalFunctionsData:
+                    if not evalFunctionData[2]:
                         modifiedCode = evalFunctionData[1][0].replace(evalFunctionData[0],'return')
                         code = originalElement.replace(evalFunctionData[1][0],modifiedCode)
                     else:
@@ -76,53 +74,70 @@ def analyseJS(code):
                         executedJS = context.eval_script(code)
                         if executedJS == None:
                             raise exception
-                    except:
-                        code = originalElement
-                        continue
-            else:
-                break
-            if executedJS != originalElement and executedJS != None and executedJS != '':
-                code = executedJS
-                JSCode.append(code)                
-            else:                                            
-                break
-        
-        if code != None:
-            escapedVars = re.findall('(\w*?)\s*?=\s*?(unescape\((.*?)\))', code, re.DOTALL)
-            for var in escapedVars:
-                bytes = var[2]
-                if bytes.find('+') != -1:
-                    varContent = getVarContent(code, bytes)
-                    if len(varContent) > 150:
-                        ret = unescape(varContent)
-                        if ret[0] != -1:
-                            bytes = ret[1]
-                            urls = re.findall('https?://.*$', bytes, re.DOTALL)
-                            if bytes not in unescapedBytes:
-                               unescapedBytes.append(bytes)
-                            for url in urls:
-                               if url not in urlsFound:
-                                   urlsFound.append(url)
+                        break
+                    except:                   
+                        if evalFunctionData[2]:
+                            modifiedCode = evalFunctionData[1][0].replace(evalFunctionData[0],'return')
+                            code = originalElement.replace(evalFunctionData[1][0],modifiedCode)
+                        else:
+                            code = originalElement.replace(evalFunctionData[1][0],evalFunctionData[1][1]+';')
+                        try:
+                            executedJS = context.eval_script(code)
+                            if executedJS == None:
+                                raise exception
+                        except:
+                            code = originalElement
+                            continue
                 else:
-                    bytes = bytes[1:-1]
-                    if len(bytes) > 150:
-                        ret = unescape(bytes)
-                        if ret[0] != -1:
-                            bytes = ret[1]
-                            urls = re.findall('https?://.*$', bytes, re.DOTALL)
-                            if bytes not in unescapedBytes:
-                               unescapedBytes.append(bytes)
-                            for url in urls:
-                               if url not in urlsFound:
-                                   urlsFound.append(url)
-    errorFile.close()
-    sys.stderr = oldStdErr
-    errorFileContent = open('jserror.log','rb').read()
-    if errorFileContent != '' and errorFileContent.find('JavaScript error') != -1:
-        lines = errorFileContent.split(newLine)
-        for line in lines:
-            if line.find('JavaScript error') != -1 and line not in errors:
-                errors.append(line)
+                    break
+                if executedJS != originalElement and executedJS != None and executedJS != '':
+                    code = executedJS
+                    JSCode.append(code)                
+                else:                                            
+                    break
+            
+            if code != None:
+                escapedVars = re.findall('(\w*?)\s*?=\s*?(unescape\((.*?)\))', code, re.DOTALL)
+                for var in escapedVars:
+                    bytes = var[2]
+                    if bytes.find('+') != -1:
+                        varContent = getVarContent(code, bytes)
+                        if len(varContent) > 150:
+                            ret = unescape(varContent)
+                            if ret[0] != -1:
+                                bytes = ret[1]
+                                urls = re.findall('https?://.*$', bytes, re.DOTALL)
+                                if bytes not in unescapedBytes:
+                                   unescapedBytes.append(bytes)
+                                for url in urls:
+                                   if url not in urlsFound:
+                                       urlsFound.append(url)
+                    else:
+                        bytes = bytes[1:-1]
+                        if len(bytes) > 150:
+                            ret = unescape(bytes)
+                            if ret[0] != -1:
+                                bytes = ret[1]
+                                urls = re.findall('https?://.*$', bytes, re.DOTALL)
+                                if bytes not in unescapedBytes:
+                                   unescapedBytes.append(bytes)
+                                for url in urls:
+                                   if url not in urlsFound:
+                                       urlsFound.append(url)
+    except:
+        errors.append('Unknown error!!')
+    finally:
+        errorFile.close()
+        sys.stderr = oldStdErr
+        errorFileContent = open('jserror.log','rb').read()
+        if errorFileContent != '' and errorFileContent.find('JavaScript error') != -1:
+            lines = errorFileContent.split(newLine)
+            for line in lines:
+                if line.find('JavaScript error') != -1 and line not in errors:
+                    errors.append(line)
+        for js in JSCode:
+            if js == None or js == '':
+                 JSCode.remove(js)
     return [JSCode,unescapedBytes,urlsFound,errors]
        
 def getVarContent(jsCode, varContent):
@@ -162,8 +177,11 @@ def isJavascript(content):
     minDistinctStringsFound = 5
     results = 0
     
+    if re.findall(reJSscript, content, re.DOTALL | re.IGNORECASE) != []:
+        return True
+    
     for char in content:
-        if (ord(char) < 32 and char not in ['\n','\r','\t','\f','\x00'])  or ord(char) >= 127:
+        if (ord(char) < 32 and char not in ['\n','\r','\t','\f','\x00']) or ord(char) >= 127:
             return False
 
     for string in JSStrings:
