@@ -112,7 +112,8 @@ def computeOwnerPass(ownerPassString, userPassString, keyLength = 128, revision 
 		@param keyLength: The length of the key
 		@param revision: The algorithm revision
 		@return: The computed password in string format
-	'''	
+	'''
+	# TODO: revision 5
 	paddingString = '\x28\xBF\x4E\x5E\x4E\x75\x8A\x41\x64\x00\x4E\x56\xFF\xFA\x01\x08\x2E\x2E\x00\xB6\xD0\x68\x3E\x80\x2F\x0C\xA9\xFE\x64\x53\x69\x7A'
 	keyLength = keyLength/8
 	lenPass = len(ownerPassString)
@@ -143,7 +144,7 @@ def computeOwnerPass(ownerPassString, userPassString, keyLength = 128, revision 
 			counter += 1
 	return ownerPass
 
-def computeUserPass(userPassString, ownerPass, fileID, pElement, keyLength = 128, revision = 3, encryptMetadata = False):
+def computeUserPass(userPassString, dictO, fileID, pElement, keyLength = 128, revision = 3, encryptMetadata = False):
 	'''
 		Compute the user password of the PDF file
 		
@@ -154,11 +155,19 @@ def computeUserPass(userPassString, ownerPass, fileID, pElement, keyLength = 128
 		@param keyLength: The length of the key
 		@param revision: The algorithm revision
 		@param encryptMetadata: A boolean extracted from the standard security handler dictionary to specify if it's necessary to encrypt the document metadata or not
-		@return: The computed password in string format
+		@return: A tuple (status,statusContent), where statusContent is the computed password in case status = 0 or an error message in case status = -1
 	'''
+	# TODO: revision 5
 	userPass = ''
+	dictU = ''
+	dictOE = '' 
+	dictUE = ''
 	paddingString = '\x28\xBF\x4E\x5E\x4E\x75\x8A\x41\x64\x00\x4E\x56\xFF\xFA\x01\x08\x2E\x2E\x00\xB6\xD0\x68\x3E\x80\x2F\x0C\xA9\xFE\x64\x53\x69\x7A'
-	rc4Key = computeEncryptionKey(userPassString, ownerPass, fileID, pElement, keyLength, revision, encryptMetadata)
+	ret = computeEncryptionKey(userPassString, dictO, dictU, dictOE, dictUE, fileID, pElement, keyLength, revision, encryptMetadata)
+	if ret[0] != -1:
+		rc4Key = ret[1]
+	else:
+		return ret
 	if revision == 2:
 		userPass = RC4(paddingString,rc4Key)
 	elif revision > 2:
@@ -176,7 +185,7 @@ def computeUserPass(userPassString, ownerPass, fileID, pElement, keyLength = 128
 		while counter < 16:
 			userPass += chr(random.randint(32,255))
 			counter += 1
-	return userPass
+	return (0, userPass)
 
 def isUserPass(password, computedUserPass, dictU, revision):
 	'''
