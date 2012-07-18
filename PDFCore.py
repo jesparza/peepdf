@@ -5138,7 +5138,14 @@ class PDFFile :
             encryptMetadata = 'true'
         # Checking user password
         if algVersion != 5:
-            computedUserPass = computeUserPass(password, dictO, fileId, perm, keyLength, revision, encryptMetadata)
+            ret = computeUserPass(password, dictO, fileId, perm, keyLength, revision, encryptMetadata)
+            if ret[0] != -1:
+                computedUserPass = ret[1]
+            else:
+                if isForceMode:
+                    self.addError('Decryption error: '+ret[1])
+                else:
+                    return (-1,'Decryption error: '+ret[1])
         else:
             computedUserPass = ''
         if isUserPass(password, computedUserPass, dictU, revision):
@@ -5230,10 +5237,12 @@ class PDFFile :
         return (0,'')
     
     def encrypt(self, password = ''):
-        #TODO: Revision 5, included in Extension Level 3, and AES
+        #TODO: AESV2 and V3
         errorMessage = ''
         encryptDictId = None
         permissionNum = 1073741823
+        dictOE = ''
+        dictUE = ''
         ret = self.getTrailer()
         if ret != None:
             trailer,trailerStream = ret[1]
@@ -5266,9 +5275,16 @@ class PDFFile :
                                 
             dictO = computeOwnerPass(password,password,128,revision = 3)
             self.setOwnerPass(dictO)
-            dictU = computeUserPass(password,dictO,fileId,permissionNum,128,revision = 3)
+            ret = computeUserPass(password,dictO,fileId,permissionNum,128,revision = 3)
+            if ret[0] != -1:
+                dictU = ret[1]
+            else:
+                if isForceMode:
+                    self.addError('Decryption error: '+ret[1])
+                else:
+                    return (-1,'Decryption error: '+ret[1])
             self.setUserPass(dictU)
-            ret = computeEncryptionKey(password,dictO,fileId,permissionNum,128,revision = 3)
+            ret = computeEncryptionKey(password, dictO, dictU, dictOE, dictUE, fileId, permissionNum, 128, revision = 3, encryptMetadata = False, passType = 'USER')
             if ret[0] != -1:
                 encryptionKey = ret[1]
             else:
