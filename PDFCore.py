@@ -4930,6 +4930,9 @@ class PDFFile :
                                             if keyLength % 8 != 0:
                                                 keyLength = defaultKeyLength
                                                 self.addError('Decryption error: Key length not valid!!')
+                                            # Check if the length element contains bytes instead of bits as usual
+                                            if keyLength < 40:
+                                                keyLength *= 8
                                         else:
                                             keyLength = defaultKeyLength
                                             self.addError('Decryption error: Bad format for /Length!!')
@@ -5128,14 +5131,14 @@ class PDFFile :
         if encDict.has_key('/EncryptMetadata'):
             encryptMetadata = encDict['/EncryptMetadata']
             if encryptMetadata != None and encryptMetadata.getType() == 'bool':
-                encryptMetadata = encryptMetadata.getValue()
+                encryptMetadata = encryptMetadata.getValue() != 'false'
             else:
                 if isForceMode:
                     self.addError('Decryption error: Bad format for /EncryptMetadata!!')
                 else:
                     return (-1,'Decryption error: Bad format for /EncryptMetadata!!')
         else:
-            encryptMetadata = 'true'
+            encryptMetadata = True
         # Checking user password
         if algVersion != 5:
             ret = computeUserPass(password, dictO, fileId, perm, keyLength, revision, encryptMetadata)
@@ -5150,7 +5153,7 @@ class PDFFile :
             computedUserPass = ''
         if isUserPass(password, computedUserPass, dictU, revision):
             passType = 'USER'
-        elif isOwnerPass(password, dictO, dictU, algVersion):
+        elif isOwnerPass(password, dictO, dictU, computedUserPass, keyLength, algVersion):
             passType = 'OWNER'
         else:
             if password == '':
@@ -5187,7 +5190,7 @@ class PDFFile :
                     object = indirectObject.getObject()
                     if object != None and not object.isCompressed():
                         objectType = object.getType()
-                        if objectType in ['string','hexstring','array','dictionary'] or (objectType == 'stream' and (object.getElement('/Type') == None or object.getElement('/Type').getValue() != '/XRef' or (object.getElement('/Type').getValue() == '/Metadata' and encryptMetadata == 'true'))):
+                        if objectType in ['string','hexstring','array','dictionary'] or (objectType == 'stream' and (object.getElement('/Type') == None or (object.getElement('/Type').getValue() not in ['/XRef','/Metadata'] or (object.getElement('/Type').getValue() == '/Metadata' and encryptMetadata)))):
                             key = self.encryptionKey
                             if objectType in ['string','hexstring','array','dictionary']:
                                 if algVersion < 5:
@@ -5240,6 +5243,7 @@ class PDFFile :
         #TODO: AESV2 and V3
         errorMessage = ''
         encryptDictId = None
+        encryptMetadata = True
         permissionNum = 1073741823
         dictOE = ''
         dictUE = ''
@@ -5284,7 +5288,7 @@ class PDFFile :
                 else:
                     return (-1,'Decryption error: '+ret[1])
             self.setUserPass(dictU)
-            ret = computeEncryptionKey(password, dictO, dictU, dictOE, dictUE, fileId, permissionNum, 128, revision = 3, encryptMetadata = False, passType = 'USER')
+            ret = computeEncryptionKey(password, dictO, dictU, dictOE, dictUE, fileId, permissionNum, 128, revision = 3, encryptMetadata = encryptMetadata, passType = 'USER')
             if ret[0] != -1:
                 encryptionKey = ret[1]
             else:
@@ -5320,7 +5324,7 @@ class PDFFile :
                         object = indirectObject.getObject()
                         if object != None and not object.isCompressed():
                             objectType = object.getType()
-                            if objectType in ['string','hexstring','array','dictionary'] or (objectType == 'stream' and (object.getElement('/Type') == None or object.getElement('/Type').getValue() != '/XRef')):
+                            if objectType in ['string','hexstring','array','dictionary'] or (objectType == 'stream' and (object.getElement('/Type') == None or (object.getElement('/Type').getValue() not in ['/XRef','/Metadata'] or (object.getElement('/Type').getValue() == '/Metadata' and encryptMetadata)))):
                                 key = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes)
                                 ret = object.encrypt(key)
                                 if ret[0] == -1:
@@ -6479,7 +6483,7 @@ class PDFParser :
                 psHeaderIndex = line.find('%!PS-Adobe-')
                 if pdfHeaderIndex != -1 or psHeaderIndex != -1:
                     index = line.find('\r')
-                    if index != -1 and line[index+1] != '\n':
+                    if index != -1 and index+1 < len(line) and line[index+1] != '\n':
                         index += 1
                         versionLine = line[:index]
                         binaryLine = line[index:]
