@@ -728,7 +728,18 @@ def crypt(stream, parameters):
 		@return: A tuple (status,statusContent), where statusContent is the encrypted PDF stream in case status = 0 or an error in case status = -1
 	'''
 	decodedStream = ''
-	return (-1,'Crypt not supported yet')
+	if parameters == None or parameters == {}:
+		return (0, stream)
+	else:
+		if not parameters.has_key('/Name') or parameters['/Name'] == None:
+			return (0, stream)
+		else:
+			cryptFilterName = parameters['/Name'].getValue()
+			if cryptFilterName == 'Identity':
+				return (0, stream)
+			else:
+				#TODO: algorithm is cryptFilterName, specified in the /CF dictionary
+				return (-1,'Crypt not supported yet')
 
 def decrypt(stream, parameters):
 	'''
@@ -738,7 +749,18 @@ def decrypt(stream, parameters):
 		@return: A tuple (status,statusContent), where statusContent is the decrypted PDF stream in case status = 0 or an error in case status = -1
 	'''
 	encodedStream = ''
-	return (-1,'Decrypt not supported yet')
+	if parameters == None or parameters == {}:
+		return (0, stream)
+	else:
+		if not parameters.has_key('/Name') or parameters['/Name'] == None:
+			return (0, stream)
+		else:
+			cryptFilterName = parameters['/Name'].getValue()
+			if cryptFilterName == 'Identity':
+				return (0, stream)
+			else:
+				#TODO: algorithm is cryptFilterName, specified in the /CF dictionary
+				return (-1,'Decrypt not supported yet')
 
 def dctDecode(stream, parameters):
 	'''
