@@ -5288,7 +5288,7 @@ class PDFFile :
                 else:
                     return (-1,'Decryption error: '+ret[1])
             self.setUserPass(dictU)
-            ret = computeEncryptionKey(password, dictO, dictU, dictOE, dictUE, fileId, permissionNum, 128, revision = 3, encryptMetadata = encryptMetadata, passType = 'USER')
+            ret = computeEncryptionKey(password, dictO, dictU, dictOE, dictUE, fileId, permissionNum, 128, revision = 3, encryptMetadata = encryptMetadata, passwordType = 'USER')
             if ret[0] != -1:
                 encryptionKey = ret[1]
             else:
