@@ -29,6 +29,7 @@ import hashlib,struct,random,warnings,aes
 from itertools import cycle, izip
 warnings.filterwarnings("ignore")
 
+paddingString = '\x28\xBF\x4E\x5E\x4E\x75\x8A\x41\x64\x00\x4E\x56\xFF\xFA\x01\x08\x2E\x2E\x00\xB6\xD0\x68\x3E\x80\x2F\x0C\xA9\xFE\x64\x53\x69\x7A'
 
 def computeEncryptionKey(password, dictOwnerPass, dictUserPass, dictOE, dictUE, fileID, pElement, dictKeyLength = 128, revision = 3, encryptMetadata = False, passwordType = None):
 	'''
@@ -48,7 +49,6 @@ def computeEncryptionKey(password, dictOwnerPass, dictUserPass, dictOE, dictUE, 
 		@return: A tuple (status,statusContent), where statusContent is the encryption key in case status = 0 or an error message in case status = -1
 	'''
 	if revision != 5:
-		paddingString = '\x28\xBF\x4E\x5E\x4E\x75\x8A\x41\x64\x00\x4E\x56\xFF\xFA\x01\x08\x2E\x2E\x00\xB6\xD0\x68\x3E\x80\x2F\x0C\xA9\xFE\x64\x53\x69\x7A'
 		keyLength = dictKeyLength/8
 		lenPass = len(password)
 		if lenPass > 32:
@@ -114,7 +114,6 @@ def computeOwnerPass(ownerPassString, userPassString, keyLength = 128, revision 
 		@return: The computed password in string format
 	'''
 	# TODO: revision 5
-	paddingString = '\x28\xBF\x4E\x5E\x4E\x75\x8A\x41\x64\x00\x4E\x56\xFF\xFA\x01\x08\x2E\x2E\x00\xB6\xD0\x68\x3E\x80\x2F\x0C\xA9\xFE\x64\x53\x69\x7A'
 	keyLength = keyLength/8
 	lenPass = len(ownerPassString)
 	if lenPass > 32:
@@ -162,7 +161,6 @@ def computeUserPass(userPassString, dictO, fileID, pElement, keyLength = 128, re
 	dictU = ''
 	dictOE = '' 
 	dictUE = ''
-	paddingString = '\x28\xBF\x4E\x5E\x4E\x75\x8A\x41\x64\x00\x4E\x56\xFF\xFA\x01\x08\x2E\x2E\x00\xB6\xD0\x68\x3E\x80\x2F\x0C\xA9\xFE\x64\x53\x69\x7A'
 	ret = computeEncryptionKey(userPassString, dictO, dictU, dictOE, dictUE, fileID, pElement, keyLength, revision, encryptMetadata)
 	if ret[0] != -1:
 		rc4Key = ret[1]
@@ -215,17 +213,19 @@ def isUserPass(password, computedUserPass, dictU, revision):
 		else:
 			return False
 
-def isOwnerPass(password, dictO, dictU, algorithmVersion):
+def isOwnerPass(password, dictO, dictU, computedUserPass, keyLength, revision):
 	'''
 		Checks if the given password is the owner password of the file
 		
 		@param password: The given password or the empty password
 		@param dictO: The /O element of the /Encrypt dictionary
 		@param dictU: The /U element of the /Encrypt dictionary
-		@param algorithmVersion: The algorithm version
+		@param computedUserPass: The computed user password of the file
+		@param keyLength: The length of the key
+		@param revision: The algorithm revision
 		@return The boolean telling if the given password is the owner password or not
 	'''
-	if algorithmVersion == 5:
+	if revision == 5:
 		vSalt = dictO[32:40]
 		inputHash = hashlib.sha256(password + vSalt + dictU).digest()
 		if inputHash == dictO[:32]:
@@ -233,8 +233,31 @@ def isOwnerPass(password, dictO, dictU, algorithmVersion):
 		else:
 			return False 
 	else:
-		#TODO
-		return False
+		keyLength = keyLength/8
+		lenPass = len(password)
+		if lenPass > 32:
+			password = password[:32]
+		elif lenPass < 32:
+			password += paddingString[:32-lenPass]
+		rc4Key = hashlib.md5(password).digest()
+		if revision > 2:
+			counter = 0
+			while counter < 50:
+				rc4Key = hashlib.md5(rc4Key).digest()
+				counter += 1
+		rc4Key = rc4Key[:keyLength]
+		if revision == 2:
+			userPass = RC4(dictO, rc4Key)
+		elif revision > 2:
+			counter = 19
+			while counter >= 0:
+				newKey = ''
+				for i in range(len(rc4Key)):
+					newKey += chr(ord(rc4Key[i]) ^ counter)
+				dictO = RC4(dictO,newKey)
+				counter -= 1
+			userPass = dictO
+		return isUserPass(userPass, computedUserPass, dictU, revision)
 	
 def RC4(data, key):
 	'''
