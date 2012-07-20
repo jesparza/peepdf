@@ -2815,9 +2815,9 @@ class PDFObjectStream (PDFStream) :
                                         if decrypt:
                                             try:
                                                 if algorithm == 'RC4':
-                                                    self.encodedStream = RC4(self.encodedStream,self.encryptionKey)
+                                                    self.encodedStream = RC4(self.rawStream,self.encryptionKey)
                                                 elif algorithm == 'AES':
-                                                    ret = AES.decryptData(self.encodedStream,self.encryptionKey)
+                                                    ret = AES.decryptData(self.rawStream,self.encryptionKey)
                                                     if ret[0] != -1:
                                                         self.encodedStream = ret[1]
                                                     else:
@@ -2916,9 +2916,9 @@ class PDFObjectStream (PDFStream) :
                             if self.isEncodedStream:
                                 try:
                                     if algorithm == 'RC4':
-                                        self.encodedStream = RC4(self.encodedStream,self.encryptionKey)
+                                        self.encodedStream = RC4(self.rawStream,self.encryptionKey)
                                     elif algorithm == 'AES':
-                                        ret = AES.decryptData(self.encodedStream,self.encryptionKey)
+                                        ret = AES.decryptData(self.rawStream,self.encryptionKey)
                                         if ret[0] != -1:
                                             self.encodedStream = ret[1]
                                         else:
@@ -4849,6 +4849,7 @@ class PDFFile :
         strAlgorithm = None
         embedAlgorithm = None
         fileId = self.getFileId()
+        self.removeError(errorType = 'Decryption error')
         if self.encryptDict == None or self.encryptDict[1] == []:
             if isForceMode:
                 self.addError('Decryption error: /Encrypt dictionary not found!!')
@@ -6163,6 +6164,21 @@ class PDFFile :
             return (-1,errorMessage)
         else:
             return (0,'')
+
+    def removeError(self, errorMessage = '', errorType = None):
+        '''
+            Removes the error message from the errors array. If an errorType is given, then all the error messages belonging to this type are removed.
+        
+            @param errorMessage: The error message to be removed (string)
+            @param errorType: All the error messages of this type will be removed (string) 
+        '''
+        if errorMessage in self.errors:
+            self.errors.remove(errorMessage)
+        if errorType != None:
+            lenErrorType = len(errorType)
+            for error in self.errors:
+                if error[:lenErrorType] == errorType:
+                    self.errors.remove(error)
                 
     def save(self, filename, version = None, malformedOptions = [], headerFile = None):
         maxId = 0
