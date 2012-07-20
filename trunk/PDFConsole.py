@@ -420,6 +420,33 @@ class PDFConsole(cmd.Cmd):
                     return False
                 decodedContent = ret[1]
         self.log_output('decode ' + argv, decodedContent, decodedContent, storeOutput = True, bytesOutput = True)
+
+    def do_decrypt(self, argv):
+        if self.pdfFile == None:
+            message = '*** Error: You must open a file!!'
+            self.log_output('decrypt ' + argv, message)
+            return False
+        args = self.parseArgs(argv)
+        if args == None:
+            message = '*** Error: parsing arguments!!'
+            self.log_output('decrypt ' + argv, message)
+            return False
+        numArgs = len(args)
+        if numArgs == 1:
+            password = args[0]
+        else:
+            self.help_decrypt()
+            return False
+        ret = self.pdfFile.decrypt(password)
+        if ret[0] == -1:
+            message = '*** Error: '+ret[1]+'!!'
+        else:
+            message = 'File decrypted successfully!!'
+        self.log_output('decrypt ' + argv, message)                    
+        
+    def help_decrypt(self):
+        print newLine + 'Usage: decrypt $password'
+        print newLine + 'Decrypts the file with the specified password' + newLine
                                 
     def help_decode(self):
         print newLine + 'Usage: decode variable $var_name $filter1 [$filter2 ...]'
