@@ -36,7 +36,17 @@ try:
 	JS_MODULE = True 
 except:
 	JS_MODULE = False
-
+try:
+	import pylibemu
+	EMU_MODULE = True 
+except:
+	EMU_MODULE = False
+try:
+    from colorama import init, Fore, Back, Style
+    init()
+    COLORIZED_OUTPUT = True
+except:
+    COLORIZED_OUTPUT = False
 
 def getRepPaths(url, path = ''):
 	paths = []
@@ -218,12 +228,15 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.2'
-revision = '151'   
+revision = '154'   
 stats = ''
 pdf = None
 fileName = None
 statsDict = None
 newLine = os.linesep
+warningColor = Fore.YELLOW
+errorColor = Fore.RED
+staticColor = Fore.BLUE
 
 versionHeader = 'Version: peepdf ' + version + ' r' + revision
 peepdfHeader =  versionHeader + newLine*2 +\
@@ -239,6 +252,7 @@ argsParser.add_option('-s', '--load-script', action='store', type='string', dest
 argsParser.add_option('-f', '--force-mode', action='store_true', dest='isForceMode', default=False, help='Sets force parsing mode to ignore errors.')
 argsParser.add_option('-l', '--loose-mode', action='store_true', dest='isLooseMode', default=False, help='Sets loose parsing mode to catch malformed objects.')
 argsParser.add_option('-u', '--update', action='store_true', dest='update', default=False, help='Updates peepdf with the latest files from the repository.')
+argsParser.add_option('-g', '--grinch-mode', action='store_true', dest='avoidColors', default=False, help='Avoids colorized output in the interactive console.')
 argsParser.add_option('-v', '--version', action='store_true', dest='version', default=False, help='Shows program\'s version number.')
 argsParser.add_option('-x', '--xml', action='store_true', dest='xmlOutput', default=False, help='Shows the document information in XML format.')
 (options, args) = argsParser.parse_args()
@@ -330,100 +344,125 @@ else:
 		else:
 			if statsDict != None:
 				if not JS_MODULE:
-					stats += 'Warning: Spidermonkey is not installed!!'+newLine
+					if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
+						stats += warningColor + 'Warning: Spidermonkey is not installed!!' + Style.RESET_ALL
+					else:
+						stats += 'Warning: Spidermonkey is not installed!!'
+					stats += newLine
+				if not EMU_MODULE:
+					if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
+						stats += warningColor + 'Warning: pylibemu is not installed!!' + Style.RESET_ALL
+					else:
+						stats += 'Warning: pylibemu is not installed!!'
+					stats += newLine
 				errors = statsDict['Errors']
 				for error in errors:
 					if error.find('Decryption error') != -1:
-						stats += error + newLine
+						if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
+							stats += errorColor + error + Style.RESET_ALL
+						else:
+							stats += error
+						stats += newLine
 				if stats != '':
 					stats += newLine
 				statsDict = pdf.getStats()
-				stats += 'File: ' + statsDict['File'] + newLine
-				stats += 'MD5: ' + statsDict['MD5'] + newLine
-				stats += 'SHA1: ' + statsDict['SHA1'] + newLine
-				#stats += 'SHA256: ' + statsDict['SHA256'] + newLine
-				stats += 'Size: ' + statsDict['Size'] + ' bytes' + newLine
-				stats += 'Version: ' + statsDict['Version'] + newLine
-				stats += 'Binary: ' + statsDict['Binary'] + newLine
-				stats += 'Linearized: ' + statsDict['Linearized'] + newLine
-				stats += 'Encrypted: ' + statsDict['Encrypted']
+				if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
+					beforeStaticLabel = staticColor
+					afterStaticLabel = Style.RESET_ALL
+				else:
+					beforeStaticLabel = ''
+					afterStaticLabel = ''								
+				stats += beforeStaticLabel + 'File: ' + afterStaticLabel + statsDict['File'] + newLine
+				stats += beforeStaticLabel + 'MD5: ' + afterStaticLabel + statsDict['MD5'] + newLine
+				stats += beforeStaticLabel + 'SHA1: ' + afterStaticLabel + statsDict['SHA1'] + newLine
+				#stats += beforeStaticLabel + 'SHA256: ' + afterStaticLabel + statsDict['SHA256'] + newLine
+				stats += beforeStaticLabel + 'Size: ' + afterStaticLabel + statsDict['Size'] + ' bytes' + newLine
+				stats += beforeStaticLabel + 'Version: ' + afterStaticLabel + statsDict['Version'] + newLine
+				stats += beforeStaticLabel + 'Binary: ' + afterStaticLabel + statsDict['Binary'] + newLine
+				stats += beforeStaticLabel + 'Linearized: ' + afterStaticLabel + statsDict['Linearized'] + newLine
+				stats += beforeStaticLabel + 'Encrypted: ' + afterStaticLabel + statsDict['Encrypted']
 				if statsDict['Encryption Algorithms'] != []:
 					stats += ' ('
 					for algorithmInfo in statsDict['Encryption Algorithms']:
 						stats += algorithmInfo[0] + ' ' + str(algorithmInfo[1]) + ' bits, '
 					stats = stats[:-2] + ')'
 				stats += newLine
-				stats += 'Updates: ' + statsDict['Updates'] + newLine
-				stats += 'Objects: ' + statsDict['Objects'] + newLine
-				stats += 'Streams: ' + statsDict['Streams'] + newLine
-				stats += 'Comments: ' + statsDict['Comments'] + newLine
-				stats += 'Errors: ' + str(len(statsDict['Errors'])) + newLine*2
+				stats += beforeStaticLabel + 'Updates: ' + afterStaticLabel + statsDict['Updates'] + newLine
+				stats += beforeStaticLabel + 'Objects: ' + afterStaticLabel + statsDict['Objects'] + newLine
+				stats += beforeStaticLabel + 'Streams: ' + afterStaticLabel + statsDict['Streams'] + newLine
+				stats += beforeStaticLabel + 'Comments: ' + afterStaticLabel + statsDict['Comments'] + newLine
+				stats += beforeStaticLabel + 'Errors: ' + afterStaticLabel + str(len(statsDict['Errors'])) + newLine*2					
 				for version in range(len(statsDict['Versions'])):
 					statsVersion = statsDict['Versions'][version]
-					stats += 'Version ' + str(version) + ':' + newLine
+					stats += beforeStaticLabel + 'Version ' + afterStaticLabel + str(version) + ':' + newLine
 					if statsVersion['Catalog'] != None:
-						stats += '\tCatalog: ' + statsVersion['Catalog'] + newLine
+						stats += beforeStaticLabel + '\tCatalog: ' + afterStaticLabel + statsVersion['Catalog'] + newLine
 					else:
-						stats += '\tCatalog: No' + newLine
+						stats += beforeStaticLabel + '\tCatalog: ' + afterStaticLabel + 'No' + newLine
 					if statsVersion['Info'] != None:
-						stats += '\tInfo: ' + statsVersion['Info'] + newLine
+						stats += beforeStaticLabel + '\tInfo: ' + afterStaticLabel + statsVersion['Info'] + newLine
 					else:
-						stats += '\tInfo: No' + newLine
-					stats += '\tObjects ('+statsVersion['Objects'][0]+'): ' + str(statsVersion['Objects'][1]) + newLine
+						stats += beforeStaticLabel + '\tInfo: ' + afterStaticLabel + 'No' + newLine
+					stats += beforeStaticLabel + '\tObjects ('+statsVersion['Objects'][0]+'): ' + afterStaticLabel + str(statsVersion['Objects'][1]) + newLine
 					if statsVersion['Compressed Objects'] != None:
-						stats += '\tCompressed objects ('+statsVersion['Compressed Objects'][0]+'): ' + str(statsVersion['Compressed Objects'][1]) + newLine
+						stats += beforeStaticLabel + '\tCompressed objects ('+statsVersion['Compressed Objects'][0]+'): ' + afterStaticLabel + str(statsVersion['Compressed Objects'][1]) + newLine
 					if statsVersion['Errors'] != None:
-						stats += '\t\tErrors ('+statsVersion['Errors'][0]+'): ' + str(statsVersion['Errors'][1]) + newLine
-					stats += '\tStreams ('+statsVersion['Streams'][0]+'): ' + str(statsVersion['Streams'][1])
+						stats += beforeStaticLabel + '\t\tErrors ('+statsVersion['Errors'][0]+'): ' + afterStaticLabel + str(statsVersion['Errors'][1]) + newLine
+					stats += beforeStaticLabel + '\tStreams ('+statsVersion['Streams'][0]+'): ' + afterStaticLabel + str(statsVersion['Streams'][1])
 					if statsVersion['Xref Streams'] != None:
-						stats += newLine + '\t\tXref streams ('+statsVersion['Xref Streams'][0]+'): ' + str(statsVersion['Xref Streams'][1])
+						stats += newLine + beforeStaticLabel + '\t\tXref streams ('+statsVersion['Xref Streams'][0]+'): ' + afterStaticLabel + str(statsVersion['Xref Streams'][1])
 					if statsVersion['Object Streams'] != None:
-						stats += newLine + '\t\tObject streams ('+statsVersion['Object Streams'][0]+'): ' + str(statsVersion['Object Streams'][1])
+						stats += newLine + beforeStaticLabel + '\t\tObject streams ('+statsVersion['Object Streams'][0]+'): ' + afterStaticLabel + str(statsVersion['Object Streams'][1])
 					if int(statsVersion['Streams'][0]) > 0:
-						stats += newLine + '\t\tEncoded ('+statsVersion['Encoded'][0]+'): ' + str(statsVersion['Encoded'][1])
+						stats += newLine + beforeStaticLabel + '\t\tEncoded ('+statsVersion['Encoded'][0]+'): ' + afterStaticLabel + str(statsVersion['Encoded'][1])
 						if statsVersion['Decoding Errors'] != None:
-							stats += newLine + '\t\tDecoding errors ('+statsVersion['Decoding Errors'][0]+'): ' + str(statsVersion['Decoding Errors'][1])
+							stats += newLine + beforeStaticLabel + '\t\tDecoding errors ('+statsVersion['Decoding Errors'][0]+'): ' + afterStaticLabel + str(statsVersion['Decoding Errors'][1])
+					if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
+						beforeStaticLabel = warningColor
 					if statsVersion['Objects with JS code'] != None:
-						stats += newLine + '\tObjects with JS code ('+statsVersion['Objects with JS code'][0]+'): ' + str(statsVersion['Objects with JS code'][1])
+						stats += newLine + beforeStaticLabel + '\tObjects with JS code ('+statsVersion['Objects with JS code'][0]+'): ' + afterStaticLabel + str(statsVersion['Objects with JS code'][1])
 					actions = statsVersion['Actions']
 					events = statsVersion['Events']
 					vulns = statsVersion['Vulns']
 					elements = statsVersion['Elements']
 					if events != None or actions != None or vulns != None or elements != None:
-						stats += newLine + '\tSuspicious elements:' + newLine
+						stats += newLine + beforeStaticLabel + '\tSuspicious elements:' + afterStaticLabel + newLine
 						if events != None:
 							for event in events:
-								stats += '\t\t' + event + ': ' + str(events[event]) + newLine
+								stats += '\t\t' + beforeStaticLabel + event + ': ' + afterStaticLabel + str(events[event]) + newLine
 						if actions != None:
 							for action in actions:
-								stats += '\t\t' + action + ': ' + str(actions[action]) + newLine
+								stats += '\t\t' + beforeStaticLabel + action + ': ' + afterStaticLabel + str(actions[action]) + newLine
 						if vulns != None:
 							for vuln in vulns:
 								if vulnsDict.has_key(vuln):
-									stats += '\t\t' + vuln + ' ('
+									stats += '\t\t' + beforeStaticLabel + vuln + ' ('
 									for vulnCVE in vulnsDict[vuln]: 
 										stats += vulnCVE + ',' 
-									stats = stats[:-1] + '): ' + str(vulns[vuln]) + newLine
+									stats = stats[:-1] + '): ' + afterStaticLabel + str(vulns[vuln]) + newLine
 								else:
-									stats += '\t\t' + vuln + ': ' + str(vulns[vuln]) + newLine
+									stats += '\t\t' + beforeStaticLabel + vuln + ': ' + afterStaticLabel + str(vulns[vuln]) + newLine
 						if elements != None:
 							for element in elements:
 								if vulnsDict.has_key(element):
-									stats += '\t\t' + element + ' ('
+									stats += '\t\t' + beforeStaticLabel + element + ' ('
 									for vulnCVE in vulnsDict[element]: 
 										stats += vulnCVE + ',' 
-									stats = stats[:-1] + '): ' + str(elements[element]) + newLine
+									stats = stats[:-1] + '): ' + afterStaticLabel + str(elements[element]) + newLine
 								else:
-									stats += '\t\t' + element + ': ' + str(elements[element]) + newLine
+									stats += '\t\t' + beforeStaticLabel + element + ': ' + afterStaticLabel + str(elements[element]) + newLine
 					urls = statsVersion['URLs']
 					if urls != None:
-						newLine + '\tFound URLs:' + newLine
+						if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
+							stats += newLine + staticColor + '\tFound URLs:' + afterStaticLabel + newLine
+						else:
+							stats += newLine + '\tFound URLs:' + newLine
 						for url in urls:
 							stats += '\t\t' + url + newLine
 					stats += newLine * 2
 			if options.isInteractive:
 				from PDFConsole import PDFConsole
-				console = PDFConsole(pdf)
+				console = PDFConsole(pdf, options.avoidColors)
 				console.cmdloop(stats + newLine)
 			elif fileName != None:
 				print stats

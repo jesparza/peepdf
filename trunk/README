@@ -11,13 +11,10 @@ http://twitter.com/peepdf
     http://code.google.com/p/python-spidermonkey
 
 
-- The "sctest" command is a wrapper of "sctest" (libemu):
+- The "sctest" command is a wrapper of "sctest" (libemu). Besides libemu pylibemu is used and must be installed:
 
     http://libemu.carnivore.it
-
-The "sctest" executable must be placed in the root directory or specify the "sctest" path through the "set" command:
-
-    PPDF> set sctest "/opt/libemu/bin/sctest"
+    https://github.com/buffer/pylibemu
 
 
 - To support XML output "lxml" is needed:
@@ -25,7 +22,7 @@ The "sctest" executable must be placed in the root directory or specify the "sct
     http://lxml.de/installation.html
     
 
-- Included modules: lzw, colorama, ccitt, pythonaes
+- Included modules: lzw, colorama, jsbeautifier, ccitt, pythonaes (Thanks to all the developers!!)
 
 
 
