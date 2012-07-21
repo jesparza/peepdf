@@ -42,6 +42,11 @@ try:
     JS_MODULE = True
 except ImportError, e:
     JS_MODULE = False
+try:
+    import pylibemu
+    EMU_MODULE = True
+except:
+    EMU_MODULE = False
     
 FILE_WRITE = 1
 FILE_ADD = 2
@@ -49,6 +54,10 @@ VAR_WRITE = 3
 VAR_ADD = 4
 newLine = os.linesep
 filter2RealFilterDict = {'b64':'base64','base64':'base64','asciihex':'/ASCIIHexDecode','ahx':'/ASCIIHexDecode','ascii85':'/ASCII85Decode','a85':'/ASCII85Decode','lzw':'/LZWDecode','flatedecode':'/FlateDecode','fl':'/FlateDecode','runlength':'/RunLengthDecode','rl':'/RunLengthDecode','ccittfax':'/CCITTFaxDecode','ccf':'/CCITTFaxDecode','jbig2':'/JBIG2Decode','dct':'/DCTDecode','jpx':'/JPXDecode'}
+warningColor = Fore.YELLOW
+errorColor = Fore.RED
+staticColor = Fore.BLUE
+
 try:
     init()
     COLORIZED_OUTPUT = True
@@ -59,7 +68,7 @@ class PDFConsole(cmd.Cmd):
     '''
         Class of the peepdf interactive console. To see details about commands: http://code.google.com/p/peepdf/wiki/Commands
     '''
-    def __init__(self, pdfFile, stdin = None):
+    def __init__(self, pdfFile, outputColors = False, stdin = None):
         cmd.Cmd.__init__(self, stdin = stdin)
         if COLORIZED_OUTPUT:
             self.prompt = Fore.GREEN + 'PPDF> ' + Style.RESET_ALL
@@ -73,8 +82,7 @@ class PDFConsole(cmd.Cmd):
         self.variables = {'output':['stdout','stdout'], # value and default value
                           'output_limit':[None,None],
                           'malformed_options':[[],[]],
-                          'header_file':[None,None],
-                          'sctest':[None,None]} 
+                          'header_file':[None,None]} 
         self.validVariableValues = {'output':['stdout','file','variable']}
         self.readOnlyVariables = ['malformed_options','header_file']
         self.loggingFile = None
@@ -82,6 +90,7 @@ class PDFConsole(cmd.Cmd):
         self.redirect = None
         self.outputVarName = None
         self.outputFileName = None
+        self.avoidOutputColors = outputColors
         
     def emptyline(self):
         return
@@ -953,9 +962,14 @@ class PDFConsole(cmd.Cmd):
         if len(args) == 0:
             errorsArray = self.pdfFile.getErrors()
             for error in errorsArray:
-                errors += error + newLine
+                errors += error
+                if error != errorsArray[-1]:
+                    errors += newLine
             if errors == '':
                 errors = 'No errors!!'
+            else:
+                if COLORIZED_OUTPUT and not self.avoidOutputColors:
+                    errors = errorColor + errors + Style.RESET_ALL
             self.log_output('errors ' + argv, errors)
             return False
         elif len(args) == 1:
@@ -1012,6 +1026,9 @@ class PDFConsole(cmd.Cmd):
             errors += messages[i] + ' ('+ str(counters[i]) +') ' + newLine
         if errors == '':
             errors = 'No errors!!'
+        else:
+            if COLORIZED_OUTPUT and not self.avoidOutputColors:
+                errors = errorColor + errors + Style.RESET_ALL
         self.log_output('errors ' + argv, errors)            
         
     def help_errors(self):
@@ -1280,91 +1297,102 @@ class PDFConsole(cmd.Cmd):
             message = '*** Error: parsing arguments!!'
             self.log_output('info ' + argv, message)
             return False
+        if COLORIZED_OUTPUT and not self.avoidOutputColors:
+            beforeStaticLabel = staticColor
+            afterStaticLabel = Style.RESET_ALL
+        else:
+            beforeStaticLabel = ''
+            afterStaticLabel = ''            
         if len(args) == 0:
-            statsDict = self.pdfFile.getStats()
-            stats += 'File: ' + statsDict['File'] + newLine
-            stats += 'MD5: ' + statsDict['MD5'] + newLine
-            stats += 'SHA1: ' + statsDict['SHA1'] + newLine
-            #stats += 'SHA256: ' + statsDict['SHA256'] + newLine
-            stats += 'Size: ' + statsDict['Size'] + ' bytes' + newLine
-            stats += 'Version: ' + statsDict['Version'] + newLine
-            stats += 'Binary: ' + statsDict['Binary'] + newLine
-            stats += 'Linearized: ' + statsDict['Linearized'] + newLine
-            stats += 'Encrypted: ' + statsDict['Encrypted']
+            statsDict = self.pdfFile.getStats()            
+            stats += beforeStaticLabel + 'File: ' + afterStaticLabel + statsDict['File'] + newLine
+            stats += beforeStaticLabel + 'MD5: ' + afterStaticLabel + statsDict['MD5'] + newLine
+            stats += beforeStaticLabel + 'SHA1: ' + afterStaticLabel + statsDict['SHA1'] + newLine
+            #stats += beforeStaticLabel + 'SHA256: ' + afterStaticLabel + statsDict['SHA256'] + newLine
+            stats += beforeStaticLabel + 'Size: ' + afterStaticLabel + statsDict['Size'] + ' bytes' + newLine
+            stats += beforeStaticLabel + 'Version: ' + afterStaticLabel + statsDict['Version'] + newLine
+            stats += beforeStaticLabel + 'Binary: ' + afterStaticLabel + statsDict['Binary'] + newLine
+            stats += beforeStaticLabel + 'Linearized: ' + afterStaticLabel + statsDict['Linearized'] + newLine
+            stats += beforeStaticLabel + 'Encrypted: ' + afterStaticLabel + statsDict['Encrypted']
             if statsDict['Encryption Algorithms'] != []:
                 stats += ' ('
                 for algorithmInfo in statsDict['Encryption Algorithms']:
                     stats += algorithmInfo[0] + ' ' + str(algorithmInfo[1]) + ' bits, '
                 stats = stats[:-2] + ')'
             stats += newLine
-            stats += 'Updates: ' + statsDict['Updates'] + newLine
-            stats += 'Objects: ' + statsDict['Objects'] + newLine
-            stats += 'Streams: ' + statsDict['Streams'] + newLine
-            stats += 'Comments: ' + statsDict['Comments'] + newLine
-            stats += 'Errors: ' + str(len(statsDict['Errors'])) + newLine*2
+            stats += beforeStaticLabel + 'Updates: ' + afterStaticLabel + statsDict['Updates'] + newLine
+            stats += beforeStaticLabel + 'Objects: ' + afterStaticLabel + statsDict['Objects'] + newLine
+            stats += beforeStaticLabel + 'Streams: ' + afterStaticLabel + statsDict['Streams'] + newLine
+            stats += beforeStaticLabel + 'Comments: ' + afterStaticLabel + statsDict['Comments'] + newLine
+            stats += beforeStaticLabel + 'Errors: ' + afterStaticLabel + str(len(statsDict['Errors'])) + newLine*2                    
             for version in range(len(statsDict['Versions'])):
                 statsVersion = statsDict['Versions'][version]
-                stats += 'Version ' + str(version) + ':' + newLine
+                stats += beforeStaticLabel + 'Version ' + afterStaticLabel + str(version) + ':' + newLine
                 if statsVersion['Catalog'] != None:
-                    stats += '\tCatalog: ' + statsVersion['Catalog'] + newLine
+                    stats += beforeStaticLabel + '\tCatalog: ' + afterStaticLabel + statsVersion['Catalog'] + newLine
                 else:
-                    stats += '\tCatalog: No' + newLine
+                    stats += beforeStaticLabel + '\tCatalog: ' + afterStaticLabel + 'No' + newLine
                 if statsVersion['Info'] != None:
-                    stats += '\tInfo: ' + statsVersion['Info'] + newLine
+                    stats += beforeStaticLabel + '\tInfo: ' + afterStaticLabel + statsVersion['Info'] + newLine
                 else:
-                    stats += '\tInfo: No' + newLine
-                stats += '\tObjects ('+statsVersion['Objects'][0]+'): ' + str(statsVersion['Objects'][1]) + newLine
+                    stats += beforeStaticLabel + '\tInfo: ' + afterStaticLabel + 'No' + newLine
+                stats += beforeStaticLabel + '\tObjects ('+statsVersion['Objects'][0]+'): ' + afterStaticLabel + str(statsVersion['Objects'][1]) + newLine
                 if statsVersion['Compressed Objects'] != None:
-                    stats += '\tCompressed objects ('+statsVersion['Compressed Objects'][0]+'): ' + str(statsVersion['Compressed Objects'][1]) + newLine
+                    stats += beforeStaticLabel + '\tCompressed objects ('+statsVersion['Compressed Objects'][0]+'): ' + afterStaticLabel + str(statsVersion['Compressed Objects'][1]) + newLine
                 if statsVersion['Errors'] != None:
-                    stats += '\t\tErrors ('+statsVersion['Errors'][0]+'): ' + str(statsVersion['Errors'][1]) + newLine
-                stats += '\tStreams ('+statsVersion['Streams'][0]+'): ' + str(statsVersion['Streams'][1])
+                    stats += beforeStaticLabel + '\t\tErrors ('+statsVersion['Errors'][0]+'): ' + afterStaticLabel + str(statsVersion['Errors'][1]) + newLine
+                stats += beforeStaticLabel + '\tStreams ('+statsVersion['Streams'][0]+'): ' + afterStaticLabel + str(statsVersion['Streams'][1])
                 if statsVersion['Xref Streams'] != None:
-                    stats += newLine + '\t\tXref streams ('+statsVersion['Xref Streams'][0]+'): ' + str(statsVersion['Xref Streams'][1])
+                    stats += newLine + beforeStaticLabel + '\t\tXref streams ('+statsVersion['Xref Streams'][0]+'): ' + afterStaticLabel + str(statsVersion['Xref Streams'][1])
                 if statsVersion['Object Streams'] != None:
-                    stats += newLine + '\t\tObject streams ('+statsVersion['Object Streams'][0]+'): ' + str(statsVersion['Object Streams'][1])
+                    stats += newLine + beforeStaticLabel + '\t\tObject streams ('+statsVersion['Object Streams'][0]+'): ' + afterStaticLabel + str(statsVersion['Object Streams'][1])
                 if int(statsVersion['Streams'][0]) > 0:
-                    stats += newLine + '\t\tEncoded ('+statsVersion['Encoded'][0]+'): ' + str(statsVersion['Encoded'][1])
+                    stats += newLine + beforeStaticLabel + '\t\tEncoded ('+statsVersion['Encoded'][0]+'): ' + afterStaticLabel + str(statsVersion['Encoded'][1])
                     if statsVersion['Decoding Errors'] != None:
-                        stats += newLine + '\t\tDecoding errors ('+statsVersion['Decoding Errors'][0]+'): ' + str(statsVersion['Decoding Errors'][1])
+                        stats += newLine + beforeStaticLabel + '\t\tDecoding errors ('+statsVersion['Decoding Errors'][0]+'): ' + afterStaticLabel + str(statsVersion['Decoding Errors'][1])
+                if COLORIZED_OUTPUT and not self.avoidOutputColors:
+                    beforeStaticLabel = warningColor
                 if statsVersion['Objects with JS code'] != None:
-                    stats += newLine + '\tObjects with JS code ('+statsVersion['Objects with JS code'][0]+'): ' + str(statsVersion['Objects with JS code'][1])
+                    stats += newLine + beforeStaticLabel + '\tObjects with JS code ('+statsVersion['Objects with JS code'][0]+'): ' + afterStaticLabel + str(statsVersion['Objects with JS code'][1])
                 actions = statsVersion['Actions']
                 events = statsVersion['Events']
                 vulns = statsVersion['Vulns']
                 elements = statsVersion['Elements']
                 if events != None or actions != None or vulns != None or elements != None:
-                    stats += newLine + '\tSuspicious elements:' + newLine
+                    stats += newLine + beforeStaticLabel + '\tSuspicious elements:' + afterStaticLabel + newLine
                     if events != None:
                         for event in events:
-                            stats += '\t\t' + event + ': ' + str(events[event]) + newLine
+                            stats += '\t\t' + beforeStaticLabel + event + ': ' + afterStaticLabel + str(events[event]) + newLine
                     if actions != None:
                         for action in actions:
-                            stats += '\t\t' + action + ': ' + str(actions[action]) + newLine
+                            stats += '\t\t' + beforeStaticLabel + action + ': ' + afterStaticLabel + str(actions[action]) + newLine
                     if vulns != None:
                         for vuln in vulns:
                             if vulnsDict.has_key(vuln):
-                                stats += '\t\t' + vuln + ' ('
+                                stats += '\t\t' + beforeStaticLabel + vuln + ' ('
                                 for vulnCVE in vulnsDict[vuln]: 
                                     stats += vulnCVE + ',' 
-                                stats = stats[:-1] + '): ' + str(vulns[vuln]) + newLine
+                                stats = stats[:-1] + '): ' + afterStaticLabel + str(vulns[vuln]) + newLine
                             else:
-                                stats += '\t\t' + vuln + ': ' + str(vulns[vuln]) + newLine
+                                stats += '\t\t' + beforeStaticLabel + vuln + ': ' + afterStaticLabel + str(vulns[vuln]) + newLine
                     if elements != None:
                         for element in elements:
                             if vulnsDict.has_key(element):
-                                stats += '\t\t' + element + ' ('
+                                stats += '\t\t' + beforeStaticLabel + element + ' ('
                                 for vulnCVE in vulnsDict[element]: 
                                     stats += vulnCVE + ',' 
-                                stats = stats[:-1] + '): ' + str(elements[element]) + newLine
+                                stats = stats[:-1] + '): ' + afterStaticLabel + str(elements[element]) + newLine
                             else:
-                                stats += '\t\t' + element + ': ' + str(elements[element]) + newLine
+                                stats += '\t\t' + beforeStaticLabel + element + ': ' + afterStaticLabel + str(elements[element]) + newLine
                 urls = statsVersion['URLs']
                 if urls != None:
-                    newLine + '\tFound URLs:' + newLine
+                    if COLORIZED_OUTPUT and not self.avoidOutputColors:
+                        stats += newLine + staticColor + '\tFound URLs:' + afterStaticLabel + newLine
+                    else:
+                        stats += newLine + '\tFound URLs:' + newLine
                     for url in urls:
                         stats += '\t\t' + url + newLine
-                stats += newLine * 2
+                stats += newLine * 2           
             self.log_output('info ' + argv, stats, storeOutput = True)
             return False
         elif len(args) == 1:
@@ -1400,23 +1428,42 @@ class PDFConsole(cmd.Cmd):
                 for key in statsStream:
                     if not statsDict.has_key(key):
                         statsDict[key] = statsStream[key]
-            if statsDict['Offset'] != None:
-                stats += 'Offset: ' + statsDict['Offset'] + newLine
-            stats += 'Size: ' + statsDict['Size'] + newLine
-            if statsDict['Stream'] != None:
-                stats += 'Stream: ' + statsDict['Stream'] + newLine
+            if COLORIZED_OUTPUT and not self.avoidOutputColors:
+                if statsDict['Offset'] != None:
+                    stats += beforeStaticLabel + 'Offset: ' + afterStaticLabel + statsDict['Offset'] + newLine
+                stats += beforeStaticLabel + 'Size: ' + afterStaticLabel + statsDict['Size'] + newLine
+                if statsDict['Stream'] != None:
+                    stats += beforeStaticLabel + 'Stream: ' + afterStaticLabel + statsDict['Stream'] + newLine
+                else:
+                    stats += beforeStaticLabel + 'Stream: ' + afterStaticLabel + 'No' + newLine
+                numSubSections = len(statsDict['Subsections'])
+                stats += beforeStaticLabel + 'Subsections: ' + afterStaticLabel + str(numSubSections) + newLine
+                for i in range(numSubSections):
+                    subStats = statsDict['Subsections'][i]
+                    stats += beforeStaticLabel + '\tSubsection ' + afterStaticLabel + str(i+1) + ':' + newLine
+                    stats += beforeStaticLabel + '\t\tEntries: ' + afterStaticLabel + subStats['Entries'] + newLine
+                    if subStats['Errors'] != None:
+                        stats += beforeStaticLabel + '\t\tErrors: ' + afterStaticLabel + subStats['Errors'] + newLine
+                if statsDict['Errors'] != None:
+                    stats += beforeStaticLabel + 'Errors: ' + afterStaticLabel + statsDict['Errors'] + newLine
             else:
-                stats += 'Stream: No' + newLine
-            numSubSections = len(statsDict['Subsections'])
-            stats += 'Subsections: ' + str(numSubSections) + newLine
-            for i in range(numSubSections):
-                subStats = statsDict['Subsections'][i]
-                stats += '\tSubsection ' + str(i+1) + ':' + newLine
-                stats += '\t\tEntries: ' + subStats['Entries'] + newLine
-                if subStats['Errors'] != None:
-                    stats += '\t\tErrors: ' + subStats['Errors'] + newLine
-            if statsDict['Errors'] != None:
-                stats += 'Errors: ' + statsDict['Errors'] + newLine
+                if statsDict['Offset'] != None:
+                    stats += 'Offset: ' + statsDict['Offset'] + newLine
+                stats += 'Size: ' + statsDict['Size'] + newLine
+                if statsDict['Stream'] != None:
+                    stats += 'Stream: ' + statsDict['Stream'] + newLine
+                else:
+                    stats += 'Stream: No' + newLine
+                numSubSections = len(statsDict['Subsections'])
+                stats += 'Subsections: ' + str(numSubSections) + newLine
+                for i in range(numSubSections):
+                    subStats = statsDict['Subsections'][i]
+                    stats += '\tSubsection ' + str(i+1) + ':' + newLine
+                    stats += '\t\tEntries: ' + subStats['Entries'] + newLine
+                    if subStats['Errors'] != None:
+                        stats += '\t\tErrors: ' + subStats['Errors'] + newLine
+                if statsDict['Errors'] != None:
+                    stats += 'Errors: ' + statsDict['Errors'] + newLine
         elif id == 'trailer':
             statsDict = {}
             ret = self.pdfFile.getTrailer(version)
@@ -1433,30 +1480,56 @@ class PDFConsole(cmd.Cmd):
                 for key in statsStream:
                     if not statsDict.has_key(key):
                         statsDict[key] = statsStream[key]
-            if statsDict['Offset'] != None:
-                stats += 'Offset: ' + statsDict['Offset'] + newLine
-            stats += 'Size: ' + statsDict['Size'] + newLine
-            if statsDict['Stream'] != None:
-                stats += 'Stream: ' + statsDict['Stream'] + newLine
+            if COLORIZED_OUTPUT and not self.avoidOutputColors:
+                if statsDict['Offset'] != None:
+                    stats += beforeStaticLabel + 'Offset: ' + afterStaticLabel + statsDict['Offset'] + newLine
+                stats += beforeStaticLabel + 'Size: ' + afterStaticLabel + statsDict['Size'] + newLine
+                if statsDict['Stream'] != None:
+                    stats += beforeStaticLabel + 'Stream: ' + afterStaticLabel + statsDict['Stream'] + newLine
+                else:
+                    stats += beforeStaticLabel + 'Stream: ' + afterStaticLabel + 'No' + newLine
+                stats += beforeStaticLabel + 'Objects: ' + statsDict['Objects'] + newLine
+                if statsDict['Root Object'] != None:
+                    stats += beforeStaticLabel + 'Root Object: ' + afterStaticLabel + statsDict['Root Object'] + newLine
+                else:
+                    stats += beforeStaticLabel + 'Root Object: ' + afterStaticLabel + 'No' + newLine
+                if statsDict['Info Object'] != None:
+                    stats += beforeStaticLabel + 'Info Object: ' + afterStaticLabel + statsDict['Info Object'] + newLine
+                else:
+                    stats += beforeStaticLabel + 'Info Object: ' + afterStaticLabel + 'No' + newLine
+                if statsDict['ID'] != None:
+                    stats += beforeStaticLabel + 'ID: ' + afterStaticLabel + statsDict['ID'] + newLine
+                if statsDict['Encrypted']:
+                    stats += beforeStaticLabel + 'Encrypted: ' + afterStaticLabel + 'Yes' + newLine
+                else:
+                    stats += beforeStaticLabel + 'Encrypted: ' + afterStaticLabel + 'No' + newLine
+                if statsDict['Errors'] != None:
+                    stats += beforeStaticLabel + 'Errors: ' + afterStaticLabel + statsDict['Errors'] + newLine 
             else:
-                stats += 'Stream: No' + newLine
-            stats += 'Objects: ' + statsDict['Objects'] + newLine
-            if statsDict['Root Object'] != None:
-                stats += 'Root Object: ' + statsDict['Root Object'] + newLine
-            else:
-                stats += 'Root Object: No' + newLine
-            if statsDict['Info Object'] != None:
-                stats += 'Info Object: ' + statsDict['Info Object'] + newLine
-            else:
-                stats += 'Info Object: No' + newLine
-            if statsDict['ID'] != None:
-                stats += 'ID: ' + statsDict['ID'] + newLine
-            if statsDict['Encrypted']:
-                stats += 'Encrypted: Yes' + newLine
-            else:
-                stats += 'Encrypted: No' + newLine
-            if statsDict['Errors'] != None:
-                stats += 'Errors: ' + statsDict['Errors'] + newLine            
+                if statsDict['Offset'] != None:
+                    stats += 'Offset: ' + statsDict['Offset'] + newLine
+                stats += 'Size: ' + statsDict['Size'] + newLine
+                if statsDict['Stream'] != None:
+                    stats += 'Stream: ' + statsDict['Stream'] + newLine
+                else:
+                    stats += 'Stream: No' + newLine
+                stats += 'Objects: ' + statsDict['Objects'] + newLine
+                if statsDict['Root Object'] != None:
+                    stats += 'Root Object: ' + statsDict['Root Object'] + newLine
+                else:
+                    stats += 'Root Object: No' + newLine
+                if statsDict['Info Object'] != None:
+                    stats += 'Info Object: ' + statsDict['Info Object'] + newLine
+                else:
+                    stats += 'Info Object: No' + newLine
+                if statsDict['ID'] != None:
+                    stats += 'ID: ' + statsDict['ID'] + newLine
+                if statsDict['Encrypted']:
+                    stats += 'Encrypted: Yes' + newLine
+                else:
+                    stats += 'Encrypted: No' + newLine
+                if statsDict['Errors'] != None:
+                    stats += 'Errors: ' + statsDict['Errors'] + newLine            
         else:
             id = int(id)
             indirectObject = self.pdfFile.getObject(id, version, indirect = True)
@@ -1465,56 +1538,57 @@ class PDFConsole(cmd.Cmd):
                 self.log_output('info ' + argv, message)
                 return False
             statsDict = indirectObject.getStats()
+            #if COLORIZED_OUTPUT and not self.avoidOutputColors:
             if statsDict['Offset'] != None:
-                stats += 'Offset: ' + statsDict['Offset'] + newLine
-            stats += 'Size: ' + statsDict['Size'] + newLine
-            stats += 'MD5: ' + statsDict['MD5'] + newLine
-            stats += 'Object: ' + statsDict['Object'] + newLine
+                stats += beforeStaticLabel + 'Offset: ' + afterStaticLabel  + statsDict['Offset'] + newLine
+            stats += beforeStaticLabel + 'Size: ' + afterStaticLabel  + statsDict['Size'] + newLine
+            stats += beforeStaticLabel + 'MD5: ' + afterStaticLabel  + statsDict['MD5'] + newLine
+            stats += beforeStaticLabel + 'Object: ' + afterStaticLabel  + statsDict['Object'] + newLine
             if statsDict['Object'] in ['dictionary','stream']:
                 if statsDict['Type'] != None:
-                    stats += 'Type: ' + statsDict['Type'] + newLine
+                    stats += beforeStaticLabel + 'Type: ' + afterStaticLabel  + statsDict['Type'] + newLine
                 if statsDict['Subtype'] != None:
-                    stats += 'Subtype: ' + statsDict['Subtype'] + newLine
+                    stats += beforeStaticLabel + 'Subtype: ' + afterStaticLabel  + statsDict['Subtype'] + newLine
                 if statsDict['Object'] == 'stream':
-                    stats += 'Stream MD5: ' + statsDict['Stream MD5'] + newLine
+                    stats += beforeStaticLabel + 'Stream MD5: ' + afterStaticLabel  + statsDict['Stream MD5'] + newLine
                     if statsDict['Stream MD5'] != statsDict['Raw Stream MD5']:
-                        stats += 'Raw Stream MD5: ' + statsDict['Raw Stream MD5'] + newLine
-                    stats += 'Length: ' + statsDict['Length'] + newLine
+                        stats += beforeStaticLabel + 'Raw Stream MD5: ' + afterStaticLabel  + statsDict['Raw Stream MD5'] + newLine
+                    stats += beforeStaticLabel + 'Length: ' + afterStaticLabel  + statsDict['Length'] + newLine
                     if statsDict['Real Length'] != None:
-                        stats += 'Real length: ' + statsDict['Real Length'] + newLine
+                        stats += beforeStaticLabel + 'Real length: ' + afterStaticLabel  + statsDict['Real Length'] + newLine
                     if statsDict['Encoded']:
-                        stats += 'Encoded: Yes' + newLine
+                        stats += beforeStaticLabel + 'Encoded: ' + afterStaticLabel + 'Yes' + newLine
                         if statsDict['Stream File'] != None:
-                            stats += 'Stream File: ' + statsDict['Stream File'] + newLine
-                        stats += 'Filters: ' + statsDict['Filters'] + newLine
+                            stats += beforeStaticLabel + 'Stream File: ' + afterStaticLabel  + statsDict['Stream File'] + newLine
+                        stats += beforeStaticLabel + 'Filters: ' + afterStaticLabel  + statsDict['Filters'] + newLine
                         if statsDict['Filter Parameters']:
-                            stats += 'Filter Parameters: Yes' + newLine
+                            stats += beforeStaticLabel + 'Filter Parameters: ' + afterStaticLabel + 'Yes' + newLine
                         else:
-                            stats += 'Filter Parameters: No' + newLine
+                            stats += beforeStaticLabel + 'Filter Parameters: ' + afterStaticLabel + 'No' + newLine
                         if statsDict['Decoding Errors']:
-                            stats += 'Decoding errors: Yes' + newLine
+                            stats += beforeStaticLabel + 'Decoding errors: ' + afterStaticLabel + 'Yes' + newLine
                         else:
-                            stats += 'Decoding errors: No' + newLine
+                            stats += beforeStaticLabel + 'Decoding errors: ' + afterStaticLabel + 'No' + newLine
                     else:
-                        stats += 'Encoded: No' + newLine
+                        stats += beforeStaticLabel + 'Encoded: ' + afterStaticLabel + 'No' + newLine
             if statsDict['Object'] != 'stream':
                 if statsDict['Compressed in'] != None:
-                    stats += 'Compressed in: ' + statsDict['Compressed in'] + newLine
+                    stats += beforeStaticLabel + 'Compressed in: ' + afterStaticLabel  + statsDict['Compressed in'] + newLine
             if statsDict['Object'] == 'dictionary':
                 if statsDict['Action type'] != None:
-                    stats += 'Action type: ' + statsDict['Action type'] + newLine
-            stats += 'References: ' + statsDict['References'] + newLine
+                    stats += beforeStaticLabel + 'Action type: ' + afterStaticLabel  + statsDict['Action type'] + newLine
+            stats += beforeStaticLabel + 'References: ' + afterStaticLabel  + statsDict['References'] + newLine
             if statsDict['JSCode']:
-                stats += 'JSCode: Yes' + newLine
+                stats += beforeStaticLabel + 'JSCode: ' + afterStaticLabel + 'Yes' + newLine
                 if statsDict['Escaped Bytes']:
-                    stats += 'Escaped bytes: Yes' + newLine
+                    stats += beforeStaticLabel + 'Escaped bytes: ' + afterStaticLabel + 'Yes' + newLine
                 if statsDict['URLs']:
-                    stats += 'URLs: Yes' + newLine
+                    stats += beforeStaticLabel + 'URLs: ' + afterStaticLabel + 'Yes' + newLine
             if statsDict['Errors']:
                 if statsDict['Object'] == 'stream':
-                    stats += 'Parsing Errors: ' + statsDict['Errors'] + newLine
+                    stats += beforeStaticLabel + 'Parsing Errors: ' + afterStaticLabel  + statsDict['Errors'] + newLine
                 else:
-                    stats += 'Errors: ' + statsDict['Errors'] + newLine
+                    stats += beforeStaticLabel + 'Errors: ' + afterStaticLabel  + statsDict['Errors'] + newLine
         self.log_output('info ' + argv, stats, storeOutput = True)        
         
     def help_info(self):
@@ -2832,6 +2906,12 @@ class PDFConsole(cmd.Cmd):
         print newLine + 'Saves the selected file version to disk' + newLine
 
     def do_sctest(self, argv):
+        if not EMU_MODULE:
+            message = '*** Error: pylibemu is not installed!!'
+            self.log_output('sctest ' + argv, message)
+            return False
+        outputBuffer = 2048
+        verboseMode = False
         validTypes = ['variable','file','raw']
         bytes = ''
         src = ''
@@ -2842,35 +2922,38 @@ class PDFConsole(cmd.Cmd):
             message = '*** Error: parsing arguments!!'
             self.log_output('sctest ' + argv, message)
             return False
-        if len(args) < 2 or len(args) > 3 or (len(args) == 3 and args[0] != 'raw'):
+        if len(args) < 2 or len(args) > 4:
             self.help_sctest()
             return False
-        type = args[0]
+        if args[0] == '-v':
+            verboseMode = True
+            type = args[1]
+            if len(args) == 2:
+                self.help_sctest()
+                return False
+        else:
+            type = args[0]
         if type not in validTypes:
             self.help_sctest()
             return False
-        if not self.variables.has_key('sctest') or not os.path.exists(str(self.variables['sctest'][0])):
-            if os.path.exists('sctest'):
-                sctestPath = os.path.abspath('sctest')
-                self.variables['sctest'] = [sctestPath, sctestPath]
-            elif os.path.exists('sctest.exe'):
-                sctestPath = os.path.abspath('sctest.exe')
-                self.variables['sctest'] = [sctestPath, sctestPath]
-            else:
-                message = '*** Error: The path for the sctest executable has not been defined correctly!!'
-                self.log_output('sctest ' + argv, message)
-                return False
-        else:
-            sctestPath = os.path.abspath(str(self.variables['sctest'][0]))
-            self.variables['sctest'] = [sctestPath, sctestPath]
             
         if type == 'raw':
             if self.pdfFile == None:
                 message = '*** Error: You must open a file!!'
                 self.log_output('sctest ' + argv, message)
                 return False
-            offset = args[1]
-            size = args[2]
+            if verboseMode:
+                if len(args) != 4:
+                    self.help_sctest()
+                    return False
+                offset = args[2]
+                size = args[3]
+            else:
+                if len(args) != 3:
+                    self.help_sctest()
+                    return False
+                offset = args[1]
+                size = args[2]
             if not offset.isdigit() or not size.isdigit():
                 message = '*** Error: The offset and the number of bytes must be integers!!'
                 self.log_output('sctest ' + argv, message)
@@ -2878,7 +2961,16 @@ class PDFConsole(cmd.Cmd):
             offset = int(offset)
             size = int(size)
         else:
-            src = args[1]
+            if verboseMode:
+                if len(args) != 3:
+                    self.help_sctest()
+                    return False
+                src = args[2]
+            else:
+                if len(args) != 2:
+                    self.help_sctest()
+                    return False
+                src = args[1]
         
         if type == 'variable':
             if not self.variables.has_key(src):
@@ -2901,22 +2993,28 @@ class PDFConsole(cmd.Cmd):
                 self.log_output('sctest ' + argv, message)
                 return False
             bytes = ret[1]
-            
-        # Calling the sctest program (Not smart, true, but useful...)
-        cmd = self.variables['sctest'][0] + ' -Ss 100000'
-        p = subprocess.Popen(cmd, shell=True, bufsize=1024, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
-        p.stdin.write(bytes)
-        p.stdin.close()
-        output = p.stdout.read()
-        p.stdout.close()
-        p.wait()
+        
+        if verboseMode:
+            emu = pylibemu.Emulator()
+        else:
+            emu = pylibemu.Emulator(outputBuffer)
+        try:
+            emu.run(bytes)
+        except:
+            message = '*** Error: shellcode emulation failed!!'
+            self.log_output('sctest ' + argv, message)
+            return False
+        if emu.emu_profile_output:
+            output = emu.emu_profile_output
+        else:
+            output = ''
         self.log_output('sctest ' + argv, output, storeOutput = True)
         
     def help_sctest(self):
-        print newLine + 'Usage: sctest variable $var_name'
-        print 'Usage: sctest file $file_name'
-        print 'Usage: sctest raw $offset $num_bytes'
-        print newLine + 'Wrapper of the sctest tool (libemu) to emulate shellcodes' + newLine
+        print newLine + 'Usage: sctest [-v] variable $var_name'
+        print 'Usage: sctest [-v] file $file_name'
+        print 'Usage: sctest [-v] raw $offset $num_bytes'
+        print newLine + 'Wrapper of the sctest tool (libemu) to emulate shellcodes. With -v the output is verbose, be ready for tons of data ;p' + newLine
 
     def do_search(self, argv):
         if self.pdfFile == None:
@@ -3052,7 +3150,6 @@ class PDFConsole(cmd.Cmd):
         print '\tmalformed_options: READ ONLY. Variable to store the malformed options used to save the file.' + newLine
         print '\toutput: specifies the destination of the commands output. Valid values are: \'stdout\', \'variable\' and \'file\'.' + newLine
         print '\toutput_limit: variable to specify the maximum number of lines to be shown at once when the output is long. By default there is no limit.' + newLine
-        print '\tsctest: path of the sctest binary. If not specified the working directory will be the default path.' + newLine
         print '\tUsage for the \'output\' variable:' + newLine 
         print '\t> set output stdout'
         print '\tNormal console output' + newLine
@@ -3095,8 +3192,7 @@ class PDFConsole(cmd.Cmd):
         print '\theader_file'
         print '\tmalformed_options'
         print '\toutput'
-        print '\toutput_limit'
-        print '\tsctest' + newLine
+        print '\toutput_limit' + newLine
 
     def do_stream(self, argv):
         if self.pdfFile == None:
@@ -3665,6 +3761,8 @@ class PDFConsole(cmd.Cmd):
             @param storeOutput: Boolean to specify if the output will be stored in a variable or file. Default value: False.
             @param bytesOutput: Boolean to specify if the raw bytes of output will be stored or not. Default value: False. 
         '''
+        if output[:11] == '*** Error: ' and COLORIZED_OUTPUT and not self.avoidOutputColors:
+            output = errorColor + output + Style.RESET_ALL
         if bytesOutput and output != '':
             niceOutput = self.printResult(output)
         else:
