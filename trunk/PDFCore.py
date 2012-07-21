@@ -4851,10 +4851,11 @@ class PDFFile :
         fileId = self.getFileId()
         self.removeError(errorType = 'Decryption error')
         if self.encryptDict == None or self.encryptDict[1] == []:
+            errorMessage = 'Decryption error: /Encrypt dictionary not found!!'
             if isForceMode:
-                self.addError('Decryption error: /Encrypt dictionary not found!!')
+                self.addError(errorMessage)
             else:
-                return (-1,'Decryption error: /Encrypt dictionary not found!!')
+                return (-1,errorMessage)
         # Getting /Encrypt elements
         encDict = self.encryptDict[1]
         # Filter
@@ -4863,20 +4864,23 @@ class PDFFile :
             if filter != None and filter.getType() == 'name':
                 filter = filter.getValue()
                 if filter != '/Standard':
+                    errorMessage = 'Decryption error: Filter not supported!!'
                     if isForceMode:
-                        self.addError('Decryption error: Filter not supported!!')
+                        self.addError(errorMessage)
                     else:
-                        return (-1,'Decryption error: Filter not supported!!')
+                        return (-1, errorMessage)
             else:
+                errorMessage = 'Decryption error: Bad format for /Filter!!'
                 if isForceMode:
-                    self.addError('Decryption error: Bad format for /Filter!!')
+                    self.addError(errorMessage)
                 else:
-                    return (-1,'Decryption error: Bad format for /Filter!!')
+                    return (-1, errorMessage)
         else:
+            errorMessage = 'Decryption error: Filter not found!!'
             if isForceMode:
-                self.addError('Decryption error: Filter not found!!')
+                self.addError(errorMessage)
             else:
-                return (-1,'Decryption error: Filter not found!!')
+                return (-1, errorMessage)
         # Algorithm version
         if encDict.has_key('/V'):
             algVersion = encDict['/V']
@@ -4913,16 +4917,18 @@ class PDFFile :
                                                 algorithms[cryptFilter].append('AES')
                                                 defaultKeyLength = 256
                                             else:
+                                                errorMessage = 'Decryption error: Unsupported encryption!!'
                                                 if isForceMode:
-                                                    self.addError('Decryption error: Unsupported encryption!!')
+                                                    self.addError(errorMessage)
                                                 else:
-                                                    return (-1,'Decryption error: Unsupported encryption!!')
+                                                    return (-1, errorMessage)
                                         else:
                                             cfmValue = ''
+                                            errorMessage = 'Decryption error: Bad format for /CFM!!'
                                             if isForceMode:
-                                                self.addError('Decryption error: Bad format for /CFM!!')
+                                                self.addError(errorMessage)
                                             else:
-                                                return (-1,'Decryption error: Bad format for /CFM!!')
+                                                return (-1, errorMessage)
                                     if cryptFilterDict.has_key('/Length') and cfmValue != '/AESV3':
                                         # Length is key length in bits
                                         keyLength = cryptFilterDict['/Length']
@@ -4941,10 +4947,11 @@ class PDFFile :
                                         keyLength = defaultKeyLength
                                     algorithms[cryptFilter].append(keyLength)
                         else:
+                            errorMessage = 'Decryption error: Bad format for /CF!!'
                             if isForceMode:
-                                self.addError('Decryption error: Bad format for /CF!!')
+                                self.addError(errorMessage)
                             else:
-                                return (-1,'Decryption error: Bad format for /CF!!')
+                                return (-1, errorMessage)
                     if encDict.has_key('/StmF'):
                         stmF = encDict['/StmF']
                         if stmF != None and stmF.getType() == 'name':
@@ -4952,10 +4959,11 @@ class PDFFile :
                             if stmF in algorithms:
                                 stmAlgorithm = algorithms[stmF]
                         else:
+                            errorMessage = 'Decryption error: Bad format for /StmF!!'
                             if isForceMode:
-                                self.addError('Decryption error: Bad format for /StmF!!')
+                                self.addError(errorMessage)
                             else:
-                                return (-1,'Decryption error: Bad format for /StmF!!')
+                                return (-1, errorMessage)
                     if encDict.has_key('/StrF'):
                         strF = encDict['/StrF']
                         if strF != None and strF.getType() == 'name':
@@ -4963,10 +4971,11 @@ class PDFFile :
                             if strF in algorithms:
                                 strAlgorithm = algorithms[strF]
                         else:
+                            errorMessage = 'Decryption error: Bad format for /StrF!!'
                             if isForceMode:
-                                self.addError('Decryption error: Bad format for /StrF!!')
+                                self.addError(errorMessage)
                             else:
-                                return (-1,'Decryption error: Bad format for /StrF!!')
+                                return (-1, errorMessage)
                     if encDict.has_key('/EEF'):
                         eeF = encDict['/EEF']
                         if eeF != None and eeF.getType() == 'name':
@@ -4975,10 +4984,11 @@ class PDFFile :
                                 embedAlgorithm = algorithms[eeF]
                         else:
                             embedAlgorithm = stmAlgorithm
+                            errorMessage = 'Decryption error: Bad format for /EEF!!'
                             if isForceMode:
-                                self.addError('Decryption error: Bad format for /EEF!!')
+                                self.addError(errorMessage)
                             else:
-                                return (-1,'Decryption error: Bad format for /EEF!!')
+                                return (-1, errorMessage)
                     else:
                         embedAlgorithm = stmAlgorithm
                     if stmAlgorithm not in encryptionAlgorithms:
@@ -4989,16 +4999,18 @@ class PDFFile :
                         encryptionAlgorithms.append(embedAlgorithm) 
             else:
                 algVersion = 0
+                errorMessage = 'Decryption error: Bad format for /V!!'
                 if isForceMode:
-                    self.addError('Decryption error: Bad format for /V!!')
+                    self.addError(errorMessage)
                 else:
-                    return (-1,'Decryption error: Bad format for /V!!')
+                    return (-1, errorMessage)
         else:
             algVersion = 0
+            errorMessage = 'Decryption error: Algorithm version not found!!'
             if isForceMode:
-                self.addError('Decryption error: Algorithm version not found!!')
+                self.addError(errorMessage)
             else:
-                return (-1,'Decryption error: Algorithm version not found!!')
+                return (-1, errorMessage)
         
         # Key length
         if encDict.has_key('/Length'):
@@ -5019,10 +5031,11 @@ class PDFFile :
         elif algVersion == 3:
             algorithm = ['Unpublished',keyLength]
             stmAlgorithm = strAlgorithm = embedAlgorithm = algorithm
+            errorMessage = 'Decryption error: Algorithm not supported!!'
             if isForceMode:
-                self.addError('Decryption error: Algorithm not supported!!')
+                self.addError(errorMessage)
             else:
-                return (-1,'Decryption error: Algorithm not supported!!')
+                return (-1, errorMessage)
         elif algVersion == 5:
             algorithm = ['AES',256]
         if algorithm != None and algorithm not in encryptionAlgorithms:
@@ -5035,109 +5048,123 @@ class PDFFile :
             if revision != None and revision.getType() == 'integer':
                 revision = revision.getRawValue()
                 if revision < 2 or revision > 5:
+                    errorMessage = 'Decryption error: Algorithm revision not supported!!'
                     if isForceMode:
-                        self.addError('Decryption error: Algorithm revision not supported!!')
+                        self.addError(errorMessage)
                     else:
-                        return (-1,'Decryption error: Algorithm revision not supported!!')
+                        return (-1, errorMessage)
             else:
+                errorMessage = 'Decryption error: Bad format for /R!!'
                 if isForceMode:
-                    self.addError('Decryption error: Bad format for /R!!')
+                    self.addError(errorMessage)
                 else:
-                    return (-1,'Decryption error: Bad format for /R!!')
+                    return (-1, errorMessage)
         else:
+            errorMessage = 'Decryption error: Algorithm revision not found!!'
             if isForceMode:
-                self.addError('Decryption error: Algorithm revision not found!!')
+                self.addError(errorMessage)
             else:
-                return (-1,'Decryption error: Algorithm revision not found!!')
+                return (-1, errorMessage)
         # Permission
         if encDict.has_key('/P'):
             perm = encDict['/P']
             if perm != None and perm.getType() == 'integer':
                 perm = perm.getRawValue()
             else:
+                errorMessage = 'Decryption error: Bad format for /P!!'
                 if isForceMode:
-                    self.addError('Decryption error: Bad format for /P!!')
+                    self.addError(errorMessage)
                 else:
-                    return (-1,'Decryption error: Bad format for /P!!')
+                    return (-1, errorMessage)
         else:
+            errorMessage = 'Decryption error: Permission number not found!!'
             if isForceMode:
-                self.addError('Decryption error: Permission number not found!!')
+                self.addError(errorMessage)
             else:
-                return (-1,'Decryption error: Permission number not found!!')
+                return (-1, errorMessage)
         # Owner pass
         if encDict.has_key('/O'):
             dictO = encDict['/O']
             if dictO != None and dictO.getType() == 'string':
                 dictO = dictO.getValue()
             else:
+                errorMessage = 'Decryption error: Bad format for /O!!'
                 if isForceMode:
-                    self.addError('Decryption error: Bad format for /O!!')
+                    self.addError(errorMessage)
                 else:
-                    return (-1,'Decryption error: Bad format for /O!!')
+                    return (-1, errorMessage)
         else:
+            errorMessage = 'Decryption error: Owner password not found!!'
             if isForceMode:
-                self.addError('Decryption error: Owner password not found!!')
+                self.addError(errorMessage)
             else:
-                return (-1,'Decryption error: Owner password not found!!')
+                return (-1, errorMessage)
         # Owner encrypted string
         if encDict.has_key('/OE'):
             dictOE = encDict['/OE']
             if dictOE != None and dictOE.getType() == 'string':
                 dictOE = dictOE.getValue()
             else:
+                errorMessage = 'Decryption error: Bad format for /OE!!'
                 if isForceMode:
-                    self.addError('Decryption error: Bad format for /OE!!')
+                    self.addError(errorMessage)
                 else:
-                    return (-1,'Decryption error: Bad format for /OE!!')
+                    return (-1, errorMessage)
         else:
             dictOE = ''
             if algVersion == 5:
+                errorMessage = 'Decryption error: /OE not found!!'
                 if isForceMode:
-                    self.addError('Decryption error: /OE not found!!')
+                    self.addError(errorMessage)
                 else:
-                    return (-1,'Decryption error: /OE not found!!')
+                    return (-1, errorMessage)
         # User pass
         if encDict.has_key('/U'):
             dictU = encDict['/U']
             if dictU != None and dictU.getType() == 'string':
                 dictU = dictU.getValue()
             else:
+                errorMessage = 'Decryption error: Bad format for /U!!'
                 if isForceMode:
-                    self.addError('Decryption error: Bad format for /U!!')
+                    self.addError(errorMessage)
                 else:
-                    return (-1,'Decryption error: Bad format for /U!!')
+                    return (-1, errorMessage)
         else:
+            errorMessage = 'Decryption error: User password not found!!'
             if isForceMode:
-                self.addError('Decryption error: User password not found!!')
+                self.addError(errorMessage)
             else:
-                return (-1,'Decryption error: User password not found!!')
+                return (-1, errorMessage)
         # User encrypted string
         if encDict.has_key('/UE'):
             dictUE = encDict['/UE']
             if dictUE != None and dictUE.getType() == 'string':
                 dictUE = dictUE.getValue()
             else:
+                errorMessage = 'Decryption error: Bad format for /UE!!'
                 if isForceMode:
-                    self.addError('Decryption error: Bad format for /UE!!')
+                    self.addError(errorMessage)
                 else:
-                    return (-1,'Decryption error: Bad format for /UE!!')
+                    return (-1, errorMessage)
         else:
             dictUE = ''
             if algVersion == 5:
+                errorMessage = 'Decryption error: /UE not found!!'
                 if isForceMode:
-                    self.addError('Decryption error: /UE not found!!')
+                    self.addError(errorMessage)
                 else:
-                    return (-1,'Decryption error: /UE not found!!')
+                    return (-1, errorMessage)
         # Metadata encryption
         if encDict.has_key('/EncryptMetadata'):
             encryptMetadata = encDict['/EncryptMetadata']
             if encryptMetadata != None and encryptMetadata.getType() == 'bool':
                 encryptMetadata = encryptMetadata.getValue() != 'false'
             else:
+                errorMessage = 'Decryption error: Bad format for /EncryptMetadata!!'
                 if isForceMode:
-                    self.addError('Decryption error: Bad format for /EncryptMetadata!!')
+                    self.addError(errorMessage)
                 else:
-                    return (-1,'Decryption error: Bad format for /EncryptMetadata!!')
+                    return (-1, errorMessage)
         else:
             encryptMetadata = True
         # Checking user password
@@ -5146,10 +5173,11 @@ class PDFFile :
             if ret[0] != -1:
                 computedUserPass = ret[1]
             else:
+                errorMessage = 'Decryption error: '+ret[1]
                 if isForceMode:
-                    self.addError('Decryption error: '+ret[1])
+                    self.addError(errorMessage)
                 else:
-                    return (-1,'Decryption error: '+ret[1])
+                    return (-1, errorMessage)
         else:
             computedUserPass = ''
         if isUserPass(password, computedUserPass, dictU, revision):
@@ -5158,15 +5186,17 @@ class PDFFile :
             passType = 'OWNER'
         else:
             if password == '':
+                errorMessage = 'Decryption error: Default user password not working here!!'
                 if isForceMode:
-                    self.addError('Decryption error: Default user password not working here!!')
+                    self.addError(errorMessage)
                 else:
-                    return (-1,'Decryption error: Default user password not working here!!')
+                    return (-1, errorMessage)
             else:
+                errorMessage = 'Decryption error: User password not working here!!'
                 if isForceMode:
-                    self.addError('Decryption error: User password not working here!!')
+                    self.addError(errorMessage)
                 else:
-                    return (-1,'Decryption error: User password not working here!!')
+                    return (-1, errorMessage)
         self.setOwnerPass(dictO)
         self.setUserPass(dictU)
         ret = computeEncryptionKey(password, dictO, dictU, dictOE, dictUE, fileId, perm, keyLength, revision, encryptMetadata, passType)
@@ -5174,10 +5204,11 @@ class PDFFile :
             encryptionKey = ret[1]
         else:
             encryptionKey = ''
+            errorMessage = 'Decryption error: '+ret[1]
             if isForceMode:
-                self.addError('Decryption error: '+ret[1])
+                self.addError(errorMessage)
             else:
-                return (-1,'Decryption error: '+ret[1])
+                return (-1, errorMessage)
         self.setEncryptionKey(encryptionKey)
         self.setEncryptionKeyLength(keyLength)
         # Computing objects passwords and decryption
@@ -5215,7 +5246,7 @@ class PDFFile :
                                 errorMessage = ret[1]
                                 self.addError(ret[1])
         if errorMessage != '':
-            return (-1,errorMessage)
+            return (-1, errorMessage)
         return (0,'')
 
     def deleteObject (self, id) :
@@ -5237,7 +5268,7 @@ class PDFFile :
                     self.addError(errorMessage)
                 self.trailer[i] = trailerArray
         if errorMessage != '':
-            return (-1,errorMessage)
+            return (-1, errorMessage)
         return (0,'')
     
     def encrypt(self, password = ''):
@@ -5307,7 +5338,7 @@ class PDFFile :
                 if ret[0] == -1:
                     errorMessage = '/Encrypt dictionary has not been created/modified'
                     self.addError(errorMessage)
-                    return (-1,errorMessage)
+                    return (-1, errorMessage)
             else:
                 if trailerStream != None:
                     trailerStream.setDictEntry('/Encrypt',encryptDict)
@@ -5339,7 +5370,7 @@ class PDFFile :
             errorMessage = 'Trailer not found'
             self.addError(errorMessage)
         if errorMessage != '':
-            return (-1,errorMessage)
+            return (-1, errorMessage)
         self.setEncrypted(True)
         return (0,'')                
     
@@ -6099,7 +6130,7 @@ class PDFFile :
                 errorMessage = 'Error creating PDFStream'
                 if e.message != '':
                     errorMessage += ': '+e.message
-                return (-1,errorMessage)
+                return (-1, errorMessage)
             ret = jsStream.setElement('/Filter',PDFName('FlateDecode'))
             if ret[0] == -1:
                 self.addError(ret[1])
@@ -6161,7 +6192,7 @@ class PDFFile :
         if not stringFound:
             return (-1,'String not found')
         if errorMessage != '':
-            return (-1,errorMessage)
+            return (-1, errorMessage)
         else:
             return (0,'')
 
@@ -6366,7 +6397,7 @@ class PDFFile :
                         self.setLinearized(True)
                     return ret
             else:
-                return (-1,errorMessage)
+                return (-1, errorMessage)
         else:
             if version > self.updates or version < 0:
                 return (-1,'Bad file version')
@@ -6409,7 +6440,7 @@ class PDFFile :
                 return (-1,'Bad file version')
             self.trailer[version] = trailerArray
         if errorMessage != '':
-            return (-1,errorMessage)
+            return (-1, errorMessage)
         return (0,'')
 
     def setUpdates(self, num):
@@ -6848,7 +6879,7 @@ class PDFParser :
         except:
             errorMessage = 'Unspecified parsing error'
             pdfFile.addError(errorMessage)
-            return (-1,errorMessage)
+            return (-1, errorMessage)
         pdfFile.setMaxObjectId(id)
         return (0,pdfIndirectObject)
 
@@ -6894,7 +6925,7 @@ class PDFParser :
             errorMessage = 'Error creating PDFArray'
             if e.message != '':
                 errorMessage += ': '+e.message
-            return (-1,errorMessage)
+            return (-1, errorMessage)
         self.charCounter = realCounter
         return (0,pdfArray)
         
@@ -6957,14 +6988,14 @@ class PDFParser :
                         pdfFile.addError(errorMessage)
                         name = None
                     else:
-                        return (-1,errorMessage)
+                        return (-1, errorMessage)
         try:
             pdfDictionary = PDFDictionary(rawContent, elements, rawNames)
         except Exception,e:
             errorMessage = 'Error creating PDFDictionary'
             if e.message != '':
                 errorMessage += ': '+e.message
-            return (-1,errorMessage)
+            return (-1, errorMessage)
         self.charCounter = realCounter
         return (0,pdfDictionary)
 
@@ -7026,7 +7057,7 @@ class PDFParser :
                 errorMessage = 'Error creating PDFObjectStream'
                 if e.message != '':
                     errorMessage += ': '+e.message
-                return (-1,errorMessage)
+                return (-1, errorMessage)
         else:
             try:
                 pdfStream = PDFStream(dict, stream, elements, rawNames)
@@ -7034,7 +7065,7 @@ class PDFParser :
                 errorMessage = 'Error creating PDFStream'
                 if e.message != '':
                     errorMessage += ': '+e.message
-                return (-1,errorMessage)
+                return (-1, errorMessage)
         self.charCounter = realCounter
         return (0,pdfStream)
 
@@ -7137,13 +7168,13 @@ class PDFParser :
                         if isForceMode:
                             pdfCrossRefSection.addError(errorMessage)
                         else:
-                            return (-1,errorMessage)
+                            return (-1, errorMessage)
                 else:
                     errorMessage = 'Element /Size not found'
                     if isForceMode:
                         pdfCrossRefSection.addError(errorMessage)
                     else:
-                        return (-1,errorMessage)
+                        return (-1, errorMessage)
                     
                 if xrefObject.hasElement('/W'):
                     bytesPerFieldObject = xrefObject.getElementByName('/W')
@@ -7154,7 +7185,7 @@ class PDFParser :
                             if isForceMode:
                                 pdfCrossRefSection.addError(errorMessage)
                             else:
-                                return (-1,errorMessage)
+                                return (-1, errorMessage)
                         else:
                             entrySize = 0
                             for num in bytesPerField:
@@ -7164,13 +7195,13 @@ class PDFParser :
                         if isForceMode:
                             pdfCrossRefSection.addError(errorMessage)
                         else:
-                            return (-1,errorMessage)
+                            return (-1, errorMessage)
                 else:
                     errorMessage = 'Element /W not found'
                     if isForceMode:
                         pdfCrossRefSection.addError(errorMessage)
                     else:
-                        return (-1,errorMessage)
+                        return (-1, errorMessage)
                     
                 if xrefObject.hasElement('/Index'):
                     subsectionIndexesObject = xrefObject.getElementByName('/Index')
@@ -7181,7 +7212,7 @@ class PDFParser :
                             if isForceMode:
                                 pdfCrossRefSection.addError(errorMessage)
                             else:
-                                return (-1,errorMessage)
+                                return (-1, errorMessage)
                         else:
                             numSubsections = len(subsectionIndexes) / 2
                     else:
@@ -7189,7 +7220,7 @@ class PDFParser :
                         if isForceMode:
                             pdfCrossRefSection.addError(errorMessage)
                         else:
-                            return (-1,errorMessage)
+                            return (-1, errorMessage)
         
                 pdfCrossRefSection.setBytesPerField(bytesPerField)
                 stream = xrefObject.getStream()
@@ -7213,7 +7244,7 @@ class PDFParser :
                         if isForceMode:
                             pdfCrossRefSection.addError(errorMessage)
                         else:
-                            return (-1,errorMessage)
+                            return (-1, errorMessage)
                     try:
                         pdfCrossRefEntry = PDFCrossRefEntry(f2,f3,f1)
                     except:
@@ -7221,7 +7252,7 @@ class PDFParser :
                         if isForceMode:
                             pdfCrossRefSection.addError(errorMessage)
                         else:
-                            return (-1,errorMessage)
+                            return (-1, errorMessage)
                     entries.append(pdfCrossRefEntry)
                 for i in range(numSubsections):
                     firstObject = subsectionIndexes[index]
@@ -7233,7 +7264,7 @@ class PDFParser :
                         if isForceMode:
                             pdfCrossRefSection.addError(errorMessage)
                         else:
-                            return (-1,errorMessage)
+                            return (-1, errorMessage)
                     pdfCrossRefSubSection.setEntries(entries[firstEntry:firstEntry+numObjectsInSubsection])
                     pdfCrossRefSection.addSubsection(pdfCrossRefSubSection)
                     firstentry = numObjectsInSubsection
@@ -7272,7 +7303,7 @@ class PDFParser :
                 errorMessage = 'Error creating PDFTrailer'
                 if e.message != '':
                     errorMessage += ': '+e.message
-                return (-1,errorMessage)
+                return (-1, errorMessage)
         else:
             ret = self.readUntilEndOfLine(rawContent)
             if ret[0] == -1:
@@ -7289,7 +7320,7 @@ class PDFParser :
                 errorMessage = 'Error creating PDFTrailer'
                 if e.message != '':
                     errorMessage += ': '+e.message
-                return (-1,errorMessage)
+                return (-1, errorMessage)
         trailer.setOffset(offset)
         eofOffset = rawContent.find('%%EOF')
         if eofOffset == -1:
@@ -7326,7 +7357,7 @@ class PDFParser :
                         errorMessage = 'Error creating PDFDictionary'
                         if e.message != '':
                             errorMessage += ': '+e.message
-                        return (-1,errorMessage)
+                        return (-1, errorMessage)
                 if not isinstance(rawContent,str):
                     if isForceMode:
                         lastXrefSection = -1
@@ -7352,7 +7383,7 @@ class PDFParser :
                     errorMessage = 'Error creating PDFTrailer'
                     if e.message != '':
                         errorMessage += ': '+e.message
-                    return (-1,errorMessage)
+                    return (-1, errorMessage)
                 trailer.setXrefStreamObject(indirectObject.getId())
             else:
                 return (-1,'Object stream is None')
@@ -7582,7 +7613,7 @@ class PDFParser :
         if self.charCounter > len(string)-1:
             errorMessage = 'EOF while looking for symbol "'+symbol+'"'
             pdfFile.addError(errorMessage)
-            return (-1,errorMessage)
+            return (-1, errorMessage)
         while string[self.charCounter] == '%':
             ret = self.readUntilEndOfLine(string)
             if ret[0] == -1:
@@ -7593,7 +7624,7 @@ class PDFParser :
         if symbolToRead != symbol:
             errorMessage = 'Symbol "'+symbol+'" not found while parsing'
             #pdfFile.addError(errorMessage)
-            return (-1,errorMessage)
+            return (-1, errorMessage)
         self.charCounter += len(symbol)
         if deleteSpaces:
             self.readSpaces(string)
@@ -7616,7 +7647,7 @@ class PDFParser :
         if numClosingDelims == 0:
             errorMessage = 'No closing delimiter found'
             pdfFile.addError(errorMessage)
-            return (-1,errorMessage)
+            return (-1, errorMessage)
         elif numClosingDelims == 1:
             index = newContent.rfind(delim[1])
             self.charCounter += index
@@ -7669,7 +7700,7 @@ class PDFParser :
             else:
                 errorMessage = 'No closing delimiter found'
                 pdfFile.addError(errorMessage)
-                return (-1,errorMessage)
+                return (-1, errorMessage)
     
     def readUntilEndOfLine(self, content):
         '''
@@ -7690,7 +7721,7 @@ class PDFParser :
         else:
             errorMessage = 'EOL not found'
             pdfFile.addError(errorMessage)
-            return (-1,errorMessage)
+            return (-1, errorMessage)
 
     def readUntilLastSymbol(self, string, symbol):
         '''
@@ -7707,7 +7738,7 @@ class PDFParser :
         if index == -1:
             errorMessage = 'Symbol "'+symbol+'" not found'
             pdfFile.addError(errorMessage)
-            return (-1,errorMessage)
+            return (-1, errorMessage)
         self.charCounter += index
         return (0,newString[:index])
             
@@ -7743,6 +7774,6 @@ class PDFParser :
         index = newString.find(symbol)
         if index == -1:
             errorMessage = 'Symbol "'+symbol+'" not found'
-            return (-1,errorMessage)
+            return (-1, errorMessage)
         self.charCounter += index
         return (0,newString[:index])
