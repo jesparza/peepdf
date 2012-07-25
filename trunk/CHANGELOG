@@ -1,4 +1,29 @@
 -----------------------------------------------
+peepdf Black Hat Vegas (0.2 r156), 2012-07-25
+-----------------------------------------------
+
+    * New features:
+
+        - Added "grinch mode" execution to avoid colorized output
+        - Added more colors in the interactive console output: warning, errors, important information...
+        - Changed sctest command, now it's implemented with pylibemu
+        - Added decrypt command to parse password protected documents
+        - Modified analyseJS() to extract JS code from XDP packets and unescape HTML entities
+        - Added function unescapeHTMLEntities() to unescape HTML entities
+        - Added AES decryption support (128 and 256 bits).
+        - Added hashes in objects information (info $object_id)
+        - Added support for decoding CCITTFaxDecode filters (Thanks to @binjo)
+
+    * Fixes:
+
+        - Fix to show decrypt errors
+        - Fixed silly bug with /EncryptMetadata element
+        - Added missing binary file operations
+        - Fixed Issue 5: Resolved false positives when monitoring some elements like actions, events, etc. (Thanks to @hiddenillusion)
+        - Bug in PDFStream.decode and PDFStream.encode, dealing with an array of filter parameters (Thanks to @binjo)
+
+
+-----------------------------------------------
 peepdf Black Hat Arsenal (0.1 r92), 2012-03-16
 -----------------------------------------------
 
