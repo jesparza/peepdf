@@ -25,7 +25,7 @@
     This module contains some functions to analyse Javascript code inside the PDF file
 '''
 
-import sys,re,os
+import sys, re , os, jsbeautifier
 from PDFUtils import unescapeHTMLEntities
 try:
 	from spidermonkey import Runtime
@@ -56,6 +56,7 @@ def analyseJS(code):
         if scriptCode != []:
             code = scriptCode[0]
         code = unescapeHTMLEntities(code)
+        code = jsbeautifier.beautify(code)
         JSCode.append(code)
     
         if code != None and JS_MODULE:
