@@ -1384,12 +1384,11 @@ class PDFConsole(cmd.Cmd):
                                 stats = stats[:-1] + '): ' + afterStaticLabel + str(elements[element]) + newLine
                             else:
                                 stats += '\t\t' + beforeStaticLabel + element + ': ' + afterStaticLabel + str(elements[element]) + newLine
+                if COLORIZED_OUTPUT and not self.avoidOutputColors:
+                    beforeStaticLabel = staticColor
                 urls = statsVersion['URLs']
                 if urls != None:
-                    if COLORIZED_OUTPUT and not self.avoidOutputColors:
-                        stats += newLine + staticColor + '\tFound URLs:' + afterStaticLabel + newLine
-                    else:
-                        stats += newLine + '\tFound URLs:' + newLine
+                    stats += newLine + beforeStaticLabel + '\tFound URLs:' + afterStaticLabel + newLine
                     for url in urls:
                         stats += '\t\t' + url + newLine
                 stats += newLine * 2           

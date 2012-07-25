@@ -228,7 +228,7 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.2'
-revision = '154'   
+revision = '156'   
 stats = ''
 pdf = None
 fileName = None
@@ -451,12 +451,11 @@ else:
 									stats = stats[:-1] + '): ' + afterStaticLabel + str(elements[element]) + newLine
 								else:
 									stats += '\t\t' + beforeStaticLabel + element + ': ' + afterStaticLabel + str(elements[element]) + newLine
+					if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
+						beforeStaticLabel = staticColor
 					urls = statsVersion['URLs']
 					if urls != None:
-						if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
-							stats += newLine + staticColor + '\tFound URLs:' + afterStaticLabel + newLine
-						else:
-							stats += newLine + '\tFound URLs:' + newLine
+						stats += newLine + beforeStaticLabel + '\tFound URLs:' + afterStaticLabel + newLine
 						for url in urls:
 							stats += '\t\t' + url + newLine
 					stats += newLine * 2
