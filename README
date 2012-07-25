@@ -13,7 +13,7 @@ http://twitter.com/peepdf
 
 - The "sctest" command is a wrapper of "sctest" (libemu). Besides libemu pylibemu is used and must be installed:
 
-    http://libemu.carnivore.it
+    http://libemu.carnivore.it (latest version from git repository, Sourceforge package is outdated)
     https://github.com/buffer/pylibemu
 
 
