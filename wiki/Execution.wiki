@@ -16,6 +16,7 @@ Options:
   -l, --loose-mode      Sets loose parsing mode to catch malformed objects.
   -u, --update          Updates peepdf with the latest files from the
                         repository.
+  -g, --grinch-mode     Avoids colorized output in the interactive console.
   -v, --version         Shows program's version number.
   -x, --xml             Shows the document information in XML format.
 
@@ -108,13 +109,14 @@ PPDF> help
 
 Documented commands (type help <topic>):
 ========================================
-bytes           encrypt  js_analyse        modify     references    set   
-changelog       errors   js_code           object     replace       show  
-create          exit     js_join           offsets    reset         stream
-decode          filters  js_unescape       open       save          tree  
-embed           help     log               quit       save_version
-encode          info     malformed_output  rawobject  sctest      
-encode_strings  js       metadata          rawstream  search  
+bytes           encrypt  js_analyse        modify      replace       stream    
+changelog       errors   js_beautify       object      reset         tree      
+create          exit     js_code           offsets     save          xor       
+decode          filters  js_join           open        save_version  xor_search
+decrypt         hash     js_unescape       quit        sctest      
+embed           help     log               rawobject   search      
+encode          info     malformed_output  rawstream   set         
+encode_strings  js       metadata          references  show   
 }}}
 <br/>
 Also, it's possible to launch the interactive console wihout specifying any PDF file:
