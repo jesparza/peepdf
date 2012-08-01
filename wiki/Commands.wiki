@@ -22,6 +22,7 @@ There are a lot of commands that can be used in the interactive console of peepd
 ===Creation/Modification===
   * [#create create]
   * [#decode decode]
+  * [#decrypt decrypt]
   * [#embed embed]
   * [#encode encode]
   * [#encode_strings encode_strings]
@@ -144,7 +145,7 @@ Decode the content of the specified variable, file or raw bytes using the follow
 	lzw: /LZWDecode
 	flatedecode,fl: /FlateDecode
 	runlength,rl: /RunLengthDecode
-	ccittfax,ccf: /CCITTFaxDecode (Not implemented)
+	ccittfax,ccf: /CCITTFaxDecode
 	jbig2: /JBIG2Decode (Not implemented)
 	dct: /DCTDecode (Not implemented)
 	jpx: /JPXDecode (Not implemented)
@@ -161,6 +162,13 @@ PPDF> decode raw 70 37 fl
 app.alert("Hello World!!",3);
 }}}
 [#Console_commands Index]
+<br/>
+===decrypt===
+{{{
+Usage: decrypt $password
+
+Decrypts the file with the specified password
+}}}
 <br/>
 ===embed===
 {{{
@@ -447,7 +455,7 @@ This command perform some substitutions in the code in order to obtain the last 
 for escaped bytes and shellcodes. It's not always possible to be successful with this analysis, so maybe a manual
 approach with other commands will be necessary.
 {{{
-PPDF> js_analyze object 13
+PPDF> js_analyse object 13
 
 Javascript code:
 
@@ -547,6 +555,7 @@ function datagood(a, b) {
     return a;
 }
 }}}
+<br/>
 ===js_code===
 {{{
 Usage: js_code object_id [version]
@@ -1075,12 +1084,9 @@ Usage: sctest file file_name
 Usage: sctest raw offset num_bytes
 
 Wrapper of the sctest tool (libemu) to emulate shellcodes
-}}}
-If the _sctest_ executable is not in the _peepdf_ directory it's necessary to specify the path with
-the [#set set] command. 
+}}} 
 {{{
-PPDF> set sctest /opt/libemu/bin/sctest
-PPDF> set sctestctest file /tmp/shellcode
+PPDF> sctest file /tmp/shellcode
 
 verbose = 0
 Hook me Captain Cook!
@@ -1184,8 +1190,6 @@ Special variables:
 
 	output_limit: variable to specify the maximum number of lines to be shown at once when the output is long. 
 By default there is no limit.
-
-	sctest: path of the sctest binary. If not specified the working directory will be the default path.
 
 	Usage for the 'output' variable:
 
@@ -1307,10 +1311,10 @@ Special variables:
 	sctest
 }}}
 {{{
-PPDF> set sctest /opt/libemu/bin/sctest
-PPDF> show sctest
+PPDF> set myHelloVar "Hello World!!"
+PPDF> show myHelloVar
 
-/opt/libemu/bin/sctest
+Hello World!!
 }}}
 [#Console_commands Index]
 <br/>
