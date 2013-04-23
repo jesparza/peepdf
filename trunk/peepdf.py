@@ -5,7 +5,7 @@
 #	http://peepdf.eternal-todo.com
 #	By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#	Copyright (C) 2012 Jose Miguel Esparza
+#	Copyright (C) 2011-2013 Jose Miguel Esparza
 #
 #	This file is part of peepdf.
 #
@@ -27,7 +27,7 @@
 	Initial script to launch the tool
 '''
 
-import sys, os, optparse, re, urllib2, datetime, hashlib
+import sys, os, optparse, re, urllib2, datetime, hashlib, traceback
 from datetime import datetime
 from PDFCore import PDFParser,vulnsDict
 
@@ -42,11 +42,11 @@ try:
 except:
 	EMU_MODULE = False
 try:
-    from colorama import init, Fore, Back, Style
-    init()
-    COLORIZED_OUTPUT = True
+	from colorama import init, Fore, Back, Style
+	init()
+	COLORIZED_OUTPUT = True
 except:
-    COLORIZED_OUTPUT = False
+	COLORIZED_OUTPUT = False
 
 def getRepPaths(url, path = ''):
 	paths = []
@@ -119,8 +119,8 @@ def getPeepXML(statsDict, version, revision):
 	comments.text = statsDict['Comments']
 	errors = etree.SubElement(basicInfo, 'errors', num = str(len(statsDict['Errors'])))
 	for error in statsDict['Errors']:
-		errorMessage = etree.SubElement(errors, 'error_message')
-		errorMessage.text = error
+		errorMessageXML = etree.SubElement(errors, 'error_message')
+		errorMessageXML.text = error
 	advancedInfo = etree.SubElement(root, 'advanced')
 	for version in range(len(statsDict['Versions'])):
 		statsVersion = statsDict['Versions'][version]
@@ -223,28 +223,29 @@ def getPeepXML(statsDict, version, revision):
 
 	
 author = 'Jose Miguel Esparza' 
-email = 'jesparza AT eternal-todo.com'
+email = 'peepdf AT eternal-todo.com'
 url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.2'
-revision = '158'   
+revision = '159'   
 stats = ''
 pdf = None
 fileName = None
 statsDict = None
 newLine = os.linesep
+errorsFile = 'errors.txt'
 warningColor = Fore.YELLOW
 errorColor = Fore.RED
 staticColor = Fore.BLUE
 
 versionHeader = 'Version: peepdf ' + version + ' r' + revision
 peepdfHeader =  versionHeader + newLine*2 +\
-               url + newLine +\
-               peepTwitter + newLine*2 +\
-               author + newLine +\
-               email + newLine +\
-               twitter + newLine
+			   url + newLine +\
+			   peepTwitter + newLine +\
+			   email + newLine*2 +\
+			   author + newLine +\
+			   twitter + newLine
 
 argsParser = optparse.OptionParser(usage='Usage: '+sys.argv[0]+' [options] PDF_file',description=versionHeader)
 argsParser.add_option('-i', '--interactive', action='store_true', dest='isInteractive', default=False, help='Sets console mode.')
@@ -257,211 +258,256 @@ argsParser.add_option('-v', '--version', action='store_true', dest='version', de
 argsParser.add_option('-x', '--xml', action='store_true', dest='xmlOutput', default=False, help='Shows the document information in XML format.')
 (options, args) = argsParser.parse_args()
 
-if options.version:
-	print peepdfHeader
-elif options.update:
-	updated = False
-	newVersion = ''
-	localVersion = 'v'+version+' r'+revision
-	reVersion = 'version = \'(\d\.\d)\'\s*?revision = \'(\d+)\''
-	repURL = 'http://peepdf.googlecode.com/svn/trunk/'
-	print '[-] Checking if there are new updates...'
-	try:
-		remotePeepContent = urllib2.urlopen(repURL+'peepdf.py').read()
-	except:
-		sys.exit('[x] Connection error while getting file "'+path+'"')
-	repVer = re.findall(reVersion, remotePeepContent)
-	if repVer != []:
-		newVersion = 'v'+repVer[0][0]+' r'+repVer[0][1]
-	else:
-		sys.exit('[x] Error getting the version number from the repository')
-	if localVersion == newVersion:
-		print '[+] No changes! ;)'
-	else:
-		print '[+] There are new updates!!'
-		print '[-] Getting paths from the repository...'
-		pathNames = getRepPaths(repURL,'')
-		print '[+] Done'
-		localFilesInfo = getLocalFilesInfo(pathNames)
-		print '[-] Checking files...'
-		for path in pathNames:
-			try:
-				fileContent = urllib2.urlopen(repURL+path).read()
-			except:
-				sys.exit('[x] Connection error while getting file "'+path+'"')
-			if localFilesInfo.has_key(path):
-				# File exists
-				# Checking hash
-				shaHash = hashlib.sha256(fileContent).hexdigest()
-				if shaHash != localFilesInfo[path]:
-					open(path,'wb').write(fileContent)
-					print '[+] File "'+path+'" updated successfully'
-			else:
-				# File does not exist
-				index = path.rfind('/')
-				if index != -1:
-					dirsPath = path[:index]
-					if not os.path.exists(dirsPath):
-						print '[+] New directory "'+dirsPath+'" created successfully'
-						os.makedirs(dirsPath)
-				open(path,'wb').write(fileContent)
-				print '[+] New file "'+path+'" created successfully'
-		message = '[+] peepdf updated successfully'
-		if newVersion != '':
-			message += ' to '+newVersion
-		print message
-		
-else:
-	if len(args) == 1:
-		fileName = args[0]
-		if not os.path.exists(fileName):
-			sys.exit('Error: The file "'+fileName+'" does not exist!!')
-	elif len(args) > 1 or (len(args) == 0 and not options.isInteractive):
-		sys.exit(argsParser.print_help())
-		
-	if options.scriptFile != None:
-		if not os.path.exists(options.scriptFile):
-			sys.exit('Error: The script file "'+options.scriptFile+'" does not exist!!')
-		
-	if fileName != None:
-		pdfParser = PDFParser()
-		ret,pdf = pdfParser.parse(fileName, options.isForceMode, options.isLooseMode)
-		statsDict = pdf.getStats()
-	
-	if options.scriptFile != None:
-		from PDFConsole import PDFConsole
-		scriptFileObject = open(options.scriptFile,'rb')
-		console = PDFConsole(pdf,stdin=scriptFileObject)
+try:
+	if options.version:
+		print peepdfHeader
+	elif options.update:
+		updated = False
+		newVersion = ''
+		localVersion = 'v'+version+' r'+revision
+		reVersion = 'version = \'(\d\.\d)\'\s*?revision = \'(\d+)\''
+		repURL = 'http://peepdf.googlecode.com/svn/trunk/'
+		print '[-] Checking if there are new updates...'
 		try:
-			console.cmdloop()
-		finally:
-			scriptFileObject.close()
-	else:
-		if options.xmlOutput:
-			from lxml import etree
-			xml = getPeepXML(statsDict, version, revision)
-			print xml
+			remotePeepContent = urllib2.urlopen(repURL+'peepdf.py').read()
+		except:
+			sys.exit('[x] Connection error while getting file "'+path+'"')
+		repVer = re.findall(reVersion, remotePeepContent)
+		if repVer != []:
+			newVersion = 'v'+repVer[0][0]+' r'+repVer[0][1]
 		else:
-			if statsDict != None:
-				if not JS_MODULE:
-					if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
-						stats += warningColor + 'Warning: Spidermonkey is not installed!!' + Style.RESET_ALL
-					else:
-						stats += 'Warning: Spidermonkey is not installed!!'
-					stats += newLine
-				if not EMU_MODULE:
-					if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
-						stats += warningColor + 'Warning: pylibemu is not installed!!' + Style.RESET_ALL
-					else:
-						stats += 'Warning: pylibemu is not installed!!'
-					stats += newLine
-				errors = statsDict['Errors']
-				for error in errors:
-					if error.find('Decryption error') != -1:
-						if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
-							stats += errorColor + error + Style.RESET_ALL
-						else:
-							stats += error
-						stats += newLine
-				if stats != '':
-					stats += newLine
-				statsDict = pdf.getStats()
-				if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
-					beforeStaticLabel = staticColor
-					afterStaticLabel = Style.RESET_ALL
+			sys.exit('[x] Error getting the version number from the repository')
+		if localVersion == newVersion:
+			print '[+] No changes! ;)'
+		else:
+			print '[+] There are new updates!!'
+			print '[-] Getting paths from the repository...'
+			pathNames = getRepPaths(repURL,'')
+			print '[+] Done'
+			localFilesInfo = getLocalFilesInfo(pathNames)
+			print '[-] Checking files...'
+			for path in pathNames:
+				try:
+					fileContent = urllib2.urlopen(repURL+path).read()
+				except:
+					sys.exit('[x] Connection error while getting file "'+path+'"')
+				if localFilesInfo.has_key(path):
+					# File exists
+					# Checking hash
+					shaHash = hashlib.sha256(fileContent).hexdigest()
+					if shaHash != localFilesInfo[path]:
+						open(path,'wb').write(fileContent)
+						print '[+] File "'+path+'" updated successfully'
 				else:
-					beforeStaticLabel = ''
-					afterStaticLabel = ''								
-				stats += beforeStaticLabel + 'File: ' + afterStaticLabel + statsDict['File'] + newLine
-				stats += beforeStaticLabel + 'MD5: ' + afterStaticLabel + statsDict['MD5'] + newLine
-				stats += beforeStaticLabel + 'SHA1: ' + afterStaticLabel + statsDict['SHA1'] + newLine
-				#stats += beforeStaticLabel + 'SHA256: ' + afterStaticLabel + statsDict['SHA256'] + newLine
-				stats += beforeStaticLabel + 'Size: ' + afterStaticLabel + statsDict['Size'] + ' bytes' + newLine
-				stats += beforeStaticLabel + 'Version: ' + afterStaticLabel + statsDict['Version'] + newLine
-				stats += beforeStaticLabel + 'Binary: ' + afterStaticLabel + statsDict['Binary'] + newLine
-				stats += beforeStaticLabel + 'Linearized: ' + afterStaticLabel + statsDict['Linearized'] + newLine
-				stats += beforeStaticLabel + 'Encrypted: ' + afterStaticLabel + statsDict['Encrypted']
-				if statsDict['Encryption Algorithms'] != []:
-					stats += ' ('
-					for algorithmInfo in statsDict['Encryption Algorithms']:
-						stats += algorithmInfo[0] + ' ' + str(algorithmInfo[1]) + ' bits, '
-					stats = stats[:-2] + ')'
-				stats += newLine
-				stats += beforeStaticLabel + 'Updates: ' + afterStaticLabel + statsDict['Updates'] + newLine
-				stats += beforeStaticLabel + 'Objects: ' + afterStaticLabel + statsDict['Objects'] + newLine
-				stats += beforeStaticLabel + 'Streams: ' + afterStaticLabel + statsDict['Streams'] + newLine
-				stats += beforeStaticLabel + 'Comments: ' + afterStaticLabel + statsDict['Comments'] + newLine
-				stats += beforeStaticLabel + 'Errors: ' + afterStaticLabel + str(len(statsDict['Errors'])) + newLine*2					
-				for version in range(len(statsDict['Versions'])):
-					statsVersion = statsDict['Versions'][version]
-					stats += beforeStaticLabel + 'Version ' + afterStaticLabel + str(version) + ':' + newLine
-					if statsVersion['Catalog'] != None:
-						stats += beforeStaticLabel + '\tCatalog: ' + afterStaticLabel + statsVersion['Catalog'] + newLine
-					else:
-						stats += beforeStaticLabel + '\tCatalog: ' + afterStaticLabel + 'No' + newLine
-					if statsVersion['Info'] != None:
-						stats += beforeStaticLabel + '\tInfo: ' + afterStaticLabel + statsVersion['Info'] + newLine
-					else:
-						stats += beforeStaticLabel + '\tInfo: ' + afterStaticLabel + 'No' + newLine
-					stats += beforeStaticLabel + '\tObjects ('+statsVersion['Objects'][0]+'): ' + afterStaticLabel + str(statsVersion['Objects'][1]) + newLine
-					if statsVersion['Compressed Objects'] != None:
-						stats += beforeStaticLabel + '\tCompressed objects ('+statsVersion['Compressed Objects'][0]+'): ' + afterStaticLabel + str(statsVersion['Compressed Objects'][1]) + newLine
-					if statsVersion['Errors'] != None:
-						stats += beforeStaticLabel + '\t\tErrors ('+statsVersion['Errors'][0]+'): ' + afterStaticLabel + str(statsVersion['Errors'][1]) + newLine
-					stats += beforeStaticLabel + '\tStreams ('+statsVersion['Streams'][0]+'): ' + afterStaticLabel + str(statsVersion['Streams'][1])
-					if statsVersion['Xref Streams'] != None:
-						stats += newLine + beforeStaticLabel + '\t\tXref streams ('+statsVersion['Xref Streams'][0]+'): ' + afterStaticLabel + str(statsVersion['Xref Streams'][1])
-					if statsVersion['Object Streams'] != None:
-						stats += newLine + beforeStaticLabel + '\t\tObject streams ('+statsVersion['Object Streams'][0]+'): ' + afterStaticLabel + str(statsVersion['Object Streams'][1])
-					if int(statsVersion['Streams'][0]) > 0:
-						stats += newLine + beforeStaticLabel + '\t\tEncoded ('+statsVersion['Encoded'][0]+'): ' + afterStaticLabel + str(statsVersion['Encoded'][1])
-						if statsVersion['Decoding Errors'] != None:
-							stats += newLine + beforeStaticLabel + '\t\tDecoding errors ('+statsVersion['Decoding Errors'][0]+'): ' + afterStaticLabel + str(statsVersion['Decoding Errors'][1])
-					if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
-						beforeStaticLabel = warningColor
-					if statsVersion['Objects with JS code'] != None:
-						stats += newLine + beforeStaticLabel + '\tObjects with JS code ('+statsVersion['Objects with JS code'][0]+'): ' + afterStaticLabel + str(statsVersion['Objects with JS code'][1])
-					actions = statsVersion['Actions']
-					events = statsVersion['Events']
-					vulns = statsVersion['Vulns']
-					elements = statsVersion['Elements']
-					if events != None or actions != None or vulns != None or elements != None:
-						stats += newLine + beforeStaticLabel + '\tSuspicious elements:' + afterStaticLabel + newLine
-						if events != None:
-							for event in events:
-								stats += '\t\t' + beforeStaticLabel + event + ': ' + afterStaticLabel + str(events[event]) + newLine
-						if actions != None:
-							for action in actions:
-								stats += '\t\t' + beforeStaticLabel + action + ': ' + afterStaticLabel + str(actions[action]) + newLine
-						if vulns != None:
-							for vuln in vulns:
-								if vulnsDict.has_key(vuln):
-									stats += '\t\t' + beforeStaticLabel + vuln + ' ('
-									for vulnCVE in vulnsDict[vuln]: 
-										stats += vulnCVE + ',' 
-									stats = stats[:-1] + '): ' + afterStaticLabel + str(vulns[vuln]) + newLine
-								else:
-									stats += '\t\t' + beforeStaticLabel + vuln + ': ' + afterStaticLabel + str(vulns[vuln]) + newLine
-						if elements != None:
-							for element in elements:
-								if vulnsDict.has_key(element):
-									stats += '\t\t' + beforeStaticLabel + element + ' ('
-									for vulnCVE in vulnsDict[element]: 
-										stats += vulnCVE + ',' 
-									stats = stats[:-1] + '): ' + afterStaticLabel + str(elements[element]) + newLine
-								else:
-									stats += '\t\t' + beforeStaticLabel + element + ': ' + afterStaticLabel + str(elements[element]) + newLine
+					# File does not exist
+					index = path.rfind('/')
+					if index != -1:
+						dirsPath = path[:index]
+						if not os.path.exists(dirsPath):
+							print '[+] New directory "'+dirsPath+'" created successfully'
+							os.makedirs(dirsPath)
+					open(path,'wb').write(fileContent)
+					print '[+] New file "'+path+'" created successfully'
+			message = '[+] peepdf updated successfully'
+			if newVersion != '':
+				message += ' to '+newVersion
+			print message
+			
+	else:
+		if len(args) == 1:
+			fileName = args[0]
+			if not os.path.exists(fileName):
+				sys.exit('Error: The file "'+fileName+'" does not exist!!')
+		elif len(args) > 1 or (len(args) == 0 and not options.isInteractive):
+			sys.exit(argsParser.print_help())
+			
+		if options.scriptFile != None:
+			if not os.path.exists(options.scriptFile):
+				sys.exit('Error: The script file "'+options.scriptFile+'" does not exist!!')
+			
+		if fileName != None:
+			pdfParser = PDFParser()
+			ret,pdf = pdfParser.parse(fileName, options.isForceMode, options.isLooseMode)
+			statsDict = pdf.getStats()
+		
+		if options.scriptFile != None:
+			from PDFConsole import PDFConsole
+			scriptFileObject = open(options.scriptFile,'rb')
+			console = PDFConsole(pdf,stdin=scriptFileObject)
+			try:
+				console.cmdloop()
+			except:
+				errorMessage = '*** Error: Exception not handled using the batch mode!!'
+				'''
+				if COLORIZED_OUTPUT and not options.avoidColors:
+					errorMessage = errorColor + errorMessage + Style.RESET_ALL
+				print errorMessage + newLine
+				traceback.print_exc(file=open(errorsFile,'a'))
+				'''
+				scriptFileObject.close()
+				traceback.print_exc(file=open(errorsFile,'a'))
+				raise Exception('PeepException','Send me an email ;)')	
+		else:
+			if options.xmlOutput:
+				try:
+					from lxml import etree
+					xml = getPeepXML(statsDict, version, revision)
+					print xml
+				except:
+					errorMessage = '*** Error: Exception while generating the XML file!!'
+					traceback.print_exc(file=open(errorsFile,'a'))
+					'''
+					if COLORIZED_OUTPUT and not options.avoidColors:
+						errorMessage = errorColor + errorMessage + Style.RESET_ALL
+					print errorMessage + newLine
+					traceback.print_exc(file=open(errorsFile,'a'))
+					'''
+					raise Exception('PeepException','Send me an email ;)')
+			else:
+				if statsDict != None:
+					if not JS_MODULE:
+						if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
+							stats += warningColor + 'Warning: Spidermonkey is not installed!!' + Style.RESET_ALL
+						else:
+							stats += 'Warning: Spidermonkey is not installed!!'
+						stats += newLine
+					if not EMU_MODULE:
+						if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
+							stats += warningColor + 'Warning: pylibemu is not installed!!' + Style.RESET_ALL
+						else:
+							stats += 'Warning: pylibemu is not installed!!'
+						stats += newLine
+					errors = statsDict['Errors']
+					for error in errors:
+						if error.find('Decryption error') != -1:
+							if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
+								stats += errorColor + error + Style.RESET_ALL
+							else:
+								stats += error
+							stats += newLine
+					if stats != '':
+						stats += newLine
+					statsDict = pdf.getStats()
 					if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
 						beforeStaticLabel = staticColor
-					urls = statsVersion['URLs']
-					if urls != None:
-						stats += newLine + beforeStaticLabel + '\tFound URLs:' + afterStaticLabel + newLine
-						for url in urls:
-							stats += '\t\t' + url + newLine
-					stats += newLine * 2
-			if options.isInteractive:
-				from PDFConsole import PDFConsole
-				console = PDFConsole(pdf, options.avoidColors)
-				console.cmdloop(stats + newLine)
-			elif fileName != None:
-				print stats
+						afterStaticLabel = Style.RESET_ALL
+					else:
+						beforeStaticLabel = ''
+						afterStaticLabel = ''								
+					stats += beforeStaticLabel + 'File: ' + afterStaticLabel + statsDict['File'] + newLine
+					stats += beforeStaticLabel + 'MD5: ' + afterStaticLabel + statsDict['MD5'] + newLine
+					stats += beforeStaticLabel + 'SHA1: ' + afterStaticLabel + statsDict['SHA1'] + newLine
+					#stats += beforeStaticLabel + 'SHA256: ' + afterStaticLabel + statsDict['SHA256'] + newLine
+					stats += beforeStaticLabel + 'Size: ' + afterStaticLabel + statsDict['Size'] + ' bytes' + newLine
+					stats += beforeStaticLabel + 'Version: ' + afterStaticLabel + statsDict['Version'] + newLine
+					stats += beforeStaticLabel + 'Binary: ' + afterStaticLabel + statsDict['Binary'] + newLine
+					stats += beforeStaticLabel + 'Linearized: ' + afterStaticLabel + statsDict['Linearized'] + newLine
+					stats += beforeStaticLabel + 'Encrypted: ' + afterStaticLabel + statsDict['Encrypted']
+					if statsDict['Encryption Algorithms'] != []:
+						stats += ' ('
+						for algorithmInfo in statsDict['Encryption Algorithms']:
+							stats += algorithmInfo[0] + ' ' + str(algorithmInfo[1]) + ' bits, '
+						stats = stats[:-2] + ')'
+					stats += newLine
+					stats += beforeStaticLabel + 'Updates: ' + afterStaticLabel + statsDict['Updates'] + newLine
+					stats += beforeStaticLabel + 'Objects: ' + afterStaticLabel + statsDict['Objects'] + newLine
+					stats += beforeStaticLabel + 'Streams: ' + afterStaticLabel + statsDict['Streams'] + newLine
+					stats += beforeStaticLabel + 'Comments: ' + afterStaticLabel + statsDict['Comments'] + newLine
+					stats += beforeStaticLabel + 'Errors: ' + afterStaticLabel + str(len(statsDict['Errors'])) + newLine*2					
+					for version in range(len(statsDict['Versions'])):
+						statsVersion = statsDict['Versions'][version]
+						stats += beforeStaticLabel + 'Version ' + afterStaticLabel + str(version) + ':' + newLine
+						if statsVersion['Catalog'] != None:
+							stats += beforeStaticLabel + '\tCatalog: ' + afterStaticLabel + statsVersion['Catalog'] + newLine
+						else:
+							stats += beforeStaticLabel + '\tCatalog: ' + afterStaticLabel + 'No' + newLine
+						if statsVersion['Info'] != None:
+							stats += beforeStaticLabel + '\tInfo: ' + afterStaticLabel + statsVersion['Info'] + newLine
+						else:
+							stats += beforeStaticLabel + '\tInfo: ' + afterStaticLabel + 'No' + newLine
+						stats += beforeStaticLabel + '\tObjects ('+statsVersion['Objects'][0]+'): ' + afterStaticLabel + str(statsVersion['Objects'][1]) + newLine
+						if statsVersion['Compressed Objects'] != None:
+							stats += beforeStaticLabel + '\tCompressed objects ('+statsVersion['Compressed Objects'][0]+'): ' + afterStaticLabel + str(statsVersion['Compressed Objects'][1]) + newLine
+						if statsVersion['Errors'] != None:
+							stats += beforeStaticLabel + '\t\tErrors ('+statsVersion['Errors'][0]+'): ' + afterStaticLabel + str(statsVersion['Errors'][1]) + newLine
+						stats += beforeStaticLabel + '\tStreams ('+statsVersion['Streams'][0]+'): ' + afterStaticLabel + str(statsVersion['Streams'][1])
+						if statsVersion['Xref Streams'] != None:
+							stats += newLine + beforeStaticLabel + '\t\tXref streams ('+statsVersion['Xref Streams'][0]+'): ' + afterStaticLabel + str(statsVersion['Xref Streams'][1])
+						if statsVersion['Object Streams'] != None:
+							stats += newLine + beforeStaticLabel + '\t\tObject streams ('+statsVersion['Object Streams'][0]+'): ' + afterStaticLabel + str(statsVersion['Object Streams'][1])
+						if int(statsVersion['Streams'][0]) > 0:
+							stats += newLine + beforeStaticLabel + '\t\tEncoded ('+statsVersion['Encoded'][0]+'): ' + afterStaticLabel + str(statsVersion['Encoded'][1])
+							if statsVersion['Decoding Errors'] != None:
+								stats += newLine + beforeStaticLabel + '\t\tDecoding errors ('+statsVersion['Decoding Errors'][0]+'): ' + afterStaticLabel + str(statsVersion['Decoding Errors'][1])
+						if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
+							beforeStaticLabel = warningColor
+						if statsVersion['Objects with JS code'] != None:
+							stats += newLine + beforeStaticLabel + '\tObjects with JS code ('+statsVersion['Objects with JS code'][0]+'): ' + afterStaticLabel + str(statsVersion['Objects with JS code'][1])
+						actions = statsVersion['Actions']
+						events = statsVersion['Events']
+						vulns = statsVersion['Vulns']
+						elements = statsVersion['Elements']
+						if events != None or actions != None or vulns != None or elements != None:
+							stats += newLine + beforeStaticLabel + '\tSuspicious elements:' + afterStaticLabel + newLine
+							if events != None:
+								for event in events:
+									stats += '\t\t' + beforeStaticLabel + event + ': ' + afterStaticLabel + str(events[event]) + newLine
+							if actions != None:
+								for action in actions:
+									stats += '\t\t' + beforeStaticLabel + action + ': ' + afterStaticLabel + str(actions[action]) + newLine
+							if vulns != None:
+								for vuln in vulns:
+									if vulnsDict.has_key(vuln):
+										stats += '\t\t' + beforeStaticLabel + vuln + ' ('
+										for vulnCVE in vulnsDict[vuln]: 
+											stats += vulnCVE + ',' 
+										stats = stats[:-1] + '): ' + afterStaticLabel + str(vulns[vuln]) + newLine
+									else:
+										stats += '\t\t' + beforeStaticLabel + vuln + ': ' + afterStaticLabel + str(vulns[vuln]) + newLine
+							if elements != None:
+								for element in elements:
+									if vulnsDict.has_key(element):
+										stats += '\t\t' + beforeStaticLabel + element + ' ('
+										for vulnCVE in vulnsDict[element]: 
+											stats += vulnCVE + ',' 
+										stats = stats[:-1] + '): ' + afterStaticLabel + str(elements[element]) + newLine
+									else:
+										stats += '\t\t' + beforeStaticLabel + element + ': ' + afterStaticLabel + str(elements[element]) + newLine
+						if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
+							beforeStaticLabel = staticColor
+						urls = statsVersion['URLs']
+						if urls != None:
+							stats += newLine + beforeStaticLabel + '\tFound URLs:' + afterStaticLabel + newLine
+							for url in urls:
+								stats += '\t\t' + url + newLine
+						stats += newLine * 2
+				if fileName != None:
+					print stats
+				if options.isInteractive:
+					from PDFConsole import PDFConsole
+					console = PDFConsole(pdf, options.avoidColors)
+					while not console.leaving:
+						try:
+							console.cmdloop()
+						except:
+							errorMessage = '*** Error: Exception not handled using the interactive console!! Please, report it to the author!!'
+							if COLORIZED_OUTPUT and not options.avoidColors:
+								errorMessage = errorColor + errorMessage + Style.RESET_ALL
+							print errorMessage + newLine
+							traceback.print_exc(file=open(errorsFile,'a'))
+except Exception as e:
+	excName,excReason = e.args
+	if excName != 'PeepException':
+		errorMessage = '*** Error: Exception not handled!!'
+		traceback.print_exc(file=open(errorsFile,'a'))
+	if COLORIZED_OUTPUT and not options.avoidColors:
+		errorMessage = errorColor + errorMessage + Style.RESET_ALL
+	print errorMessage + newLine
+finally:
+	if os.path.exists(errorsFile):
+		message = newLine + 'Please, don\'t forget to report the errors found:' + newLine*2 
+		message += '\t- Sending the file "errors.txt" to the author (mailto:peepdfREMOVETHIS@eternal-todo.com)"' + newLine
+		message += '\t- And/Or creating an issue on the project webpage (https://code.google.com/p/peepdf/issues/list)' + newLine
+		if COLORIZED_OUTPUT and not options.avoidColors:
+			message = errorColor + message + Style.RESET_ALL
+		sys.exit(message)
