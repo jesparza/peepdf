@@ -3,7 +3,7 @@
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2012 Jose Miguel Esparza
+#    Copyright (C) 2011-2013 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
@@ -53,6 +53,7 @@ FILE_ADD = 2
 VAR_WRITE = 3
 VAR_ADD = 4
 newLine = os.linesep
+errorsFile = 'errors.txt'
 filter2RealFilterDict = {'b64':'base64','base64':'base64','asciihex':'/ASCIIHexDecode','ahx':'/ASCIIHexDecode','ascii85':'/ASCII85Decode','a85':'/ASCII85Decode','lzw':'/LZWDecode','flatedecode':'/FlateDecode','fl':'/FlateDecode','runlength':'/RunLengthDecode','rl':'/RunLengthDecode','ccittfax':'/CCITTFaxDecode','ccf':'/CCITTFaxDecode','jbig2':'/JBIG2Decode','dct':'/DCTDecode','jpx':'/JPXDecode'}
 warningColor = Fore.YELLOW
 errorColor = Fore.RED
@@ -68,6 +69,7 @@ class PDFConsole(cmd.Cmd):
     '''
         Class of the peepdf interactive console. To see details about commands: http://code.google.com/p/peepdf/wiki/Commands
     '''
+
     def __init__(self, pdfFile, outputColors = False, stdin = None):
         cmd.Cmd.__init__(self, stdin = stdin)
         if COLORIZED_OUTPUT:
@@ -88,6 +90,7 @@ class PDFConsole(cmd.Cmd):
         self.loggingFile = None
         self.output = None
         self.redirect = None
+        self.leaving = False
         self.outputVarName = None
         self.outputFileName = None
         self.avoidOutputColors = outputColors
@@ -100,6 +103,10 @@ class PDFConsole(cmd.Cmd):
             return 'exit'
         else:
             return line
+
+    def postloop(self):
+        print newLine + 'Leaving the Peepdf interactive console...Bye! ;)' + newLine
+        self.leaving = True
 
     def do_bytes(self, argv):
         if self.pdfFile == None:
