@@ -2294,11 +2294,13 @@ class PDFConsole(cmd.Cmd):
                         object = self.pdfFile.getObject(id, v)
                         objectType = object.getType()
                         if objectType == 'dictionary' or objectType == 'stream':
-                            type = object.getElementByName('/Type').getValue()
-                            if type == '/Metadata':
-                                value = object.getValue()
-                                if value != '':
-                                    output += 'Object '+str(id)+' in version '+str(v)+':' + newLine*2+value+newLine*2
+                            subType = object.getElementByName('/Type')
+                            if subType != []:
+	                            subType = subType.getValue()
+	                            if subType == '/Metadata':
+	                                value = object.getValue()
+	                                if value != '':
+	                                    output += 'Object '+str(id)+' in version '+str(v)+':' + newLine*2+value+newLine*2
             self.log_output('metadata ' + argv, output, storeOutput = True)
         else:
             message = '*** No metadata found!!'
