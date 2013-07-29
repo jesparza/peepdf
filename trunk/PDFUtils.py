@@ -3,7 +3,7 @@
 #	http://peepdf.eternal-todo.com
 #	By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#	Copyright (C) 2012 Jose Miguel Esparza
+#	Copyright (C) 2011-2013 Jose Miguel Esparza
 #
 #	This file is part of peepdf.
 #
@@ -25,7 +25,7 @@
     Module with some misc functions
 '''
 
-import os,re,htmlentitydefs
+import os, re, htmlentitydefs, simplejson, urllib, urllib2
 
 def clearScreen():
 	'''
@@ -414,3 +414,26 @@ def unescapeString(string):
 			unescapedValue += string[i]
 		i += 1
 	return unescapedValue
+    
+def vtcheck(md5, vtKey):
+    '''
+        Function to check a hash on VirusTotal and get the report summary
+        
+        @param md5: The MD5 to check (hexdigest)
+        @param vtKey: The VirusTotal API key needed to perform the request
+        @return: A dictionary with the result of the request
+    '''
+    vtUrl = 'https://www.virustotal.com/vtapi/v2/file/report'
+    parameters = {'resource':md5,'apikey':vtKey}
+    try:
+        data = urllib.urlencode(parameters)
+        req = urllib2.Request(vtUrl, data)
+        response = urllib2.urlopen(req)
+        json = response.read()
+    except:
+        return (-1, 'The request to VirusTotal has not been successful')
+    try:
+        jsonDict = simplejson.loads(json)
+    except:
+        return (-1, 'An error has occurred while parsing the JSON response from VirusTotal')
+    return (0, jsonDict)
