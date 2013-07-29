@@ -3,7 +3,7 @@
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2012 Jose Miguel Esparza
+#    Copyright (C) 2011-2013 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
@@ -40,6 +40,7 @@ MAL_BAD_HEAD = 6
 pdfFile = None
 newLine = os.linesep
 isForceMode = False
+isManualAnalysis = False
 spacesChars = ['\x00','\x09','\x0a','\x0c','\x0d','\x20']
 delimiterChars = ['<<','(','<','[','{','/','%']
 monitorizedEvents = ['/OpenAction ','/AA ','/Names ','/AcroForm ']
@@ -47,6 +48,7 @@ monitorizedActions = ['/JS ','/JavaScript','/Launch','/SubmitForm','/ImportData'
 monitorizedElements = ['/EmbeddedFiles ','/EmbeddedFile','/JBIG2Decode','getPageNthWord','arguments.callee','/U3D','/PRC']
 jsVulns = ['mailto','Collab.collectEmailInfo','util.printf','getAnnots','getIcon','spell.customDictionaryOpen','media.newPlayer','doc.printSeps']
 vulnsDict = {'/JBIG2Decode':['CVE-2009-0658'],'mailto':['CVE-2007-5020'],'Collab.collectEmailInfo':['CVE-2007-5659'],'util.printf':['CVE-2008-2992'],'getAnnots':['CVE-2009-1492'],'getIcon':['CVE-2009-0927'],'spell.customDictionaryOpen':['CVE-2009-1493'],'media.newPlayer':['CVE-2009-4324'],'doc.printSeps':['CVE-2010-4091'],'/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462'],'/PRC':['CVE-2011-4369']}
+jsContexts = {'global':None}
 
 class PDFObject :
     '''
@@ -550,7 +552,7 @@ class PDFString (PDFObject) :
             return (-1,errorMessage)
         if isJavascript(self.value):
             self.containsJScode = True
-            self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.value)
+            self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.value, jsContexts['global'], isManualAnalysis)
             if jsErrors != []:
                 for jsError in jsErrors:
                     errorMessage = 'Error analysing Javascript: '+jsError
@@ -697,7 +699,7 @@ class PDFHexString (PDFObject) :
             return (-1,errorMessage)
         if isJavascript(self.value):
             self.containsJScode = True
-            self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.value)
+            self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.value, jsContexts['global'], isManualAnalysis)
             if jsErrors != []:
                 for jsError in jsErrors:
                     errorMessage = 'Error analysing Javascript: '+jsError
@@ -908,8 +910,8 @@ class PDFArray (PDFObject) :
                     self.unescapedBytes += element.getUnescapedBytes()
                     self.urlsFound += element.getURLs()
                 if element.isFaulty():
-                    errorMessage = 'Children element is faulty'
-                    self.addError(errorMessage)
+                    for error in valueObject.getErrors():
+                        self.addError('Children element contains errors: ' + error)
                 if type in ['string','hexstring','array','dictionary'] and self.encrypted and not decrypt:
                     ret = element.encrypt(self.encryptionKey)
                     if ret[0] == -1:
@@ -1195,8 +1197,8 @@ class PDFDictionary (PDFObject):
                 self.unescapedBytes += valueObject.getUnescapedBytes()
                 self.urlsFound += valueObject.getURLs()
             if valueObject.isFaulty():
-                errorMessage = 'Children element is faulty'
-                self.addError(errorMessage)
+                for error in valueObject.getErrors():
+                    self.addError('Children element contains errors: ' + error)
             if self.rawNames.has_key(keys[i]):
                 rawName = self.rawNames[keys[i]]
                 rawValue = rawName.getRawValue()
@@ -1659,8 +1661,8 @@ class PDFStream (PDFDictionary) :
                 self.unescapedBytes = list(set(self.unescapedBytes + valueElement.getUnescapedBytes()))
                 self.urlsFound = list(set(self.urlsFound + valueElement.getURLs()))
             if valueElement.isFaulty():
-                errorMessage = 'Children element is faulty'
-                self.addError(errorMessage)
+                for error in valueObject.getErrors():
+                    self.addError('Children element contains errors: ' + error)
             if self.rawNames.has_key(keys[i]):
                 rawName = self.rawNames[keys[i]]
                 rawValue = rawName.getRawValue()
@@ -1717,7 +1719,7 @@ class PDFStream (PDFDictionary) :
                         self.references = list(set(self.references))
                     if isJavascript(self.decodedStream):
                         self.containsJScode = True
-                        self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.decodedStream)
+                        self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
                         if jsErrors != []:
                             for jsError in jsErrors:
                                 errorMessage = 'Error analysing Javascript: '+jsError
@@ -1816,7 +1818,7 @@ class PDFStream (PDFDictionary) :
                                 self.references = list(set(self.references))
                             if isJavascript(self.decodedStream):
                                 self.containsJScode = True
-                                self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.decodedStream)
+                                self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
                                 if jsErrors != []:
                                     for jsError in jsErrors:
                                         errorMessage = 'Error analysing Javascript: '+jsError
@@ -1887,7 +1889,7 @@ class PDFStream (PDFDictionary) :
                                 self.references = list(set(self.references))
                             if isJavascript(self.decodedStream):
                                 self.containsJScode = True
-                                self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.decodedStream)
+                                self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
                                 if jsErrors != []:
                                     for jsError in jsErrors:
                                         errorMessage = 'Error analysing Javascript: '+jsError
@@ -1950,12 +1952,14 @@ class PDFStream (PDFDictionary) :
                     break
         '''
         streamLength = len(stream)
+        '''
         if streamLength > 1 and stream[:2] == '\r\n':
             stream = stream[2:]
             streamLength -= 2
         elif streamLength > 0 and (stream[0] == '\r' or stream[0] == '\n'):
             stream = stream[1:]
             streamLength -= 1
+        '''
         if streamLength > 1 and stream[-2:] == '\r\n':
             stream = stream[:-2]
         elif streamLength > 0 and (stream[-1] == '\r' or stream[-1] == '\n'):
@@ -2476,7 +2480,7 @@ class PDFStream (PDFDictionary) :
             self.references = list(set(self.references))
         if isJavascript(self.decodedStream):
             self.containsJScode = True
-            self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.decodedStream)
+            self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
             if jsErrors != []:
                 for jsError in jsErrors:
                     errorMessage = 'Error analysing Javascript: '+jsError
@@ -2937,9 +2941,9 @@ class PDFObjectStream (PDFStream) :
                             else:
                                 try:
                                     if algorithm == 'RC4':
-                                        self.decodedStream = RC4(self.decodedStream,self.encryptionKey)
+                                        self.decodedStream = RC4(self.rawStream,self.encryptionKey)
                                     elif algorithm == 'AES':
-                                        ret = AES.decryptData(self.decodedStream,self.encryptionKey)
+                                        ret = AES.decryptData(self.rawStream,self.encryptionKey)
                                         if ret[0] != -1:
                                             self.decodedStream = ret[1]
                                         else:
@@ -2984,7 +2988,7 @@ class PDFObjectStream (PDFStream) :
                             self.references = list(set(self.references))
                         if isJavascript(self.decodedStream):
                             self.containsJScode = True
-                            self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors = analyseJS(self.decodedStream)
+                            self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
                             if jsErrors != []:
                                 for jsError in jsErrors:
                                     errorMessage = 'Error analysing Javascript: '+jsError
@@ -4525,6 +4529,8 @@ class PDFFile :
         self.md5 = ''
         self.sha1 = ''
         self.sha256 = ''
+        self.detectionRate = []
+        self.detectionReport = ''
         self.body = [] # PDFBody[]
         self.binary = False
         self.binaryChars = ''
@@ -4841,6 +4847,7 @@ class PDFFile :
         return (0,lastId)
 
     def decrypt(self, password = ''):
+        badPassword = False
         errorMessage = ''
         passType = None
         encryptionAlgorithms = []
@@ -5112,7 +5119,7 @@ class PDFFile :
                     return (-1, errorMessage)
         else:
             dictOE = ''
-            if algVersion == 5:
+            if revision == 5:
                 errorMessage = 'Decryption error: /OE not found!!'
                 if isForceMode:
                     self.addError(errorMessage)
@@ -5148,7 +5155,7 @@ class PDFFile :
                     return (-1, errorMessage)
         else:
             dictUE = ''
-            if algVersion == 5:
+            if revision == 5:
                 errorMessage = 'Decryption error: /UE not found!!'
                 if isForceMode:
                     self.addError(errorMessage)
@@ -5168,7 +5175,7 @@ class PDFFile :
         else:
             encryptMetadata = True
         # Checking user password
-        if algVersion != 5:
+        if revision != 5:
             ret = computeUserPass(password, dictO, fileId, perm, keyLength, revision, encryptMetadata)
             if ret[0] != -1:
                 computedUserPass = ret[1]
@@ -5182,9 +5189,10 @@ class PDFFile :
             computedUserPass = ''
         if isUserPass(password, computedUserPass, dictU, revision):
             passType = 'USER'
-        elif isOwnerPass(password, dictO, dictU, computedUserPass, keyLength, algVersion):
+        elif isOwnerPass(password, dictO, dictU, computedUserPass, keyLength, revision):
             passType = 'OWNER'
         else:
+            badPassword = True
             if password == '':
                 errorMessage = 'Decryption error: Default user password not working here!!'
                 if isForceMode:
@@ -5199,52 +5207,53 @@ class PDFFile :
                     return (-1, errorMessage)
         self.setOwnerPass(dictO)
         self.setUserPass(dictU)
-        ret = computeEncryptionKey(password, dictO, dictU, dictOE, dictUE, fileId, perm, keyLength, revision, encryptMetadata, passType)
-        if ret[0] != -1:
-            encryptionKey = ret[1]
-        else:
-            encryptionKey = ''
-            errorMessage = 'Decryption error: '+ret[1]
-            if isForceMode:
-                self.addError(errorMessage)
+        if not badPassword:
+            ret = computeEncryptionKey(password, dictO, dictU, dictOE, dictUE, fileId, perm, keyLength, revision, encryptMetadata, passType)
+            if ret[0] != -1:
+                encryptionKey = ret[1]
             else:
-                return (-1, errorMessage)
-        self.setEncryptionKey(encryptionKey)
-        self.setEncryptionKeyLength(keyLength)
-        # Computing objects passwords and decryption
-        numKeyBytes = self.encryptionKeyLength/8
-        for v in range(self.updates+1):
-            indirectObjectsIds = list(set(self.body[v].getObjectsIds()))
-            for id in indirectObjectsIds:
-                indirectObject = self.body[v].getObject(id, indirect = True)
-                if indirectObject != None:
-                    generationNum = indirectObject.getGenerationNumber()
-                    object = indirectObject.getObject()
-                    if object != None and not object.isCompressed():
-                        objectType = object.getType()
-                        if objectType in ['string','hexstring','array','dictionary'] or (objectType == 'stream' and (object.getElement('/Type') == None or (object.getElement('/Type').getValue() not in ['/XRef','/Metadata'] or (object.getElement('/Type').getValue() == '/Metadata' and encryptMetadata)))):
-                            key = self.encryptionKey
-                            if objectType in ['string','hexstring','array','dictionary']:
-                                if algVersion < 5:
-                                    key = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes,strAlgorithm[0])
-                                ret = object.decrypt(key, strAlgorithm[0])
-                            else:
-                                if object.getElement('/Type') != None and object.getElement('/Type').getValue() == '/EmbeddedFile':
-                                    if algVersion < 5:
-                                        key = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes,embedAlgorithm[0])
-                                    altAlgorithm = embedAlgorithm[0]
+                encryptionKey = ''
+                errorMessage = 'Decryption error: '+ret[1]
+                if isForceMode:
+                    self.addError(errorMessage)
+                else:
+                    return (-1, errorMessage)
+            self.setEncryptionKey(encryptionKey)
+            self.setEncryptionKeyLength(keyLength)
+            # Computing objects passwords and decryption
+            numKeyBytes = self.encryptionKeyLength/8
+            for v in range(self.updates+1):
+                indirectObjectsIds = list(set(self.body[v].getObjectsIds()))
+                for id in indirectObjectsIds:
+                    indirectObject = self.body[v].getObject(id, indirect = True)
+                    if indirectObject != None:
+                        generationNum = indirectObject.getGenerationNumber()
+                        object = indirectObject.getObject()
+                        if object != None and not object.isCompressed():
+                            objectType = object.getType()
+                            if objectType in ['string','hexstring','array','dictionary'] or (objectType == 'stream' and (object.getElement('/Type') == None or (object.getElement('/Type').getValue() not in ['/XRef','/Metadata'] or (object.getElement('/Type').getValue() == '/Metadata' and encryptMetadata)))):
+                                key = self.encryptionKey
+                                if objectType in ['string','hexstring','array','dictionary']:
+                                    if revision < 5:
+                                        key = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes,strAlgorithm[0])
+                                    ret = object.decrypt(key, strAlgorithm[0])
                                 else:
-                                    if algVersion < 5:
-                                        key = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes,stmAlgorithm[0])
-                                    altAlgorithm = stmAlgorithm[0]
-                                ret = object.decrypt(key,strAlgorithm[0], altAlgorithm)
-                            if ret[0] == -1:
-                                errorMessage = ret[1]
-                                self.addError(ret[1])
-                            ret = self.body[v].setObject(id,object)
-                            if ret[0] == -1:
-                                errorMessage = ret[1]
-                                self.addError(ret[1])
+                                    if object.getElement('/Type') != None and object.getElement('/Type').getValue() == '/EmbeddedFile':
+                                        if revision < 5:
+                                            key = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes,embedAlgorithm[0])
+                                        altAlgorithm = embedAlgorithm[0]
+                                    else:
+                                        if revision < 5:
+                                            key = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes,stmAlgorithm[0])
+                                        altAlgorithm = stmAlgorithm[0]
+                                    ret = object.decrypt(key,strAlgorithm[0], altAlgorithm)
+                                if ret[0] == -1:
+                                    errorMessage = ret[1]
+                                    self.addError(ret[1])
+                                ret = self.body[v].setObject(id,object)
+                                if ret[0] == -1:
+                                    errorMessage = ret[1]
+                                    self.addError(ret[1])
         if errorMessage != '':
             return (-1, errorMessage)
         return (0,'')
@@ -5547,6 +5556,12 @@ class PDFFile :
                 lastVersionObjects = actualVersionObjects
         return changes
 
+    def getDetectionRate(self):
+        return self.detectionRate
+
+    def getDetectionReport(self):
+        return self.detectionReport
+
     def getEndLine(self):
         return self.endLine
         
@@ -5838,6 +5853,8 @@ class PDFFile :
         stats['SHA1'] = self.sha1
         stats['SHA256'] = self.sha256
         stats['Size'] = str(self.size)
+        stats['Detection'] = self.detectionRate
+        stats['Detection report'] = self.detectionReport
         stats['Version'] = self.version
         stats['Binary'] = str(self.binary)
         stats['Linearized'] = str(self.linearized)
@@ -6342,6 +6359,12 @@ class PDFFile :
             return (-1,'Unspecified error')
         return (0,'')
 
+    def setDetectionRate(self, newRate):
+        self.detectionRate = newRate
+
+    def setDetectionReport(self, detectionReportLink):
+        self.detectionReport = detectionReportLink
+        
     def setEncryptDict(self, dict):
         self.encryptDict = dict
 
@@ -6501,7 +6524,7 @@ class PDFParser :
         self.fileParts = []
         self.charCounter = 0    
     
-    def parse (self, fileName, forceMode = False, looseMode = False) :
+    def parse (self, fileName, forceMode = False, looseMode = False, manualAnalysis = False) :
         '''
             Main method to parse a PDF document
             @param fileName The name of the file to be parsed
@@ -6509,7 +6532,7 @@ class PDFParser :
             @param looseMode Boolean to set the loose mode when parsing objects. Default value: False.
             @return A PDFFile instance
         '''
-        global isForceMode,pdfFile
+        global isForceMode, pdfFile, isManualAnalysis
         isFirstBody = True
         linearizedFound = False
         errorMessage = ''
@@ -6521,6 +6544,7 @@ class PDFParser :
         pdfFile.setPath(fileName)
         pdfFile.setFileName(os.path.basename(fileName))
         isForceMode = forceMode
+        isManualAnalysis = manualAnalysis
         
         # Reading the file header
         file = open(fileName,'rb')
@@ -6707,17 +6731,17 @@ class PDFParser :
                                         xrefStreamSection = ret[1]    
                             else:
                                 if not forceMode:
-                                    sys.exit('Error: parsing indirect object!!')
+                                    sys.exit('Error: An error has occurred while parsing an indirect object!!')
                                 else:
                                     pdfFile.addError('Object is None')        
                         else:
                             if not forceMode:
-                                sys.exit('Error: bad indirect object!!')
+                                sys.exit('Error: Bad indirect object!!')
                             else:
                                 pdfFile.addError('Indirect object is None')    
                     else:
                         if not forceMode:
-                            sys.exit('Error: parsing indirect object!!')
+                            sys.exit('Error: An error has occurred while parsing an indirect object!!')
                         else:
                             pdfFile.addError('Error parsing object: '+str(objectHeader))
             else:
@@ -6795,7 +6819,9 @@ class PDFParser :
                             pdfFile.setFileId(fileId)
             pdfFile.addTrailer([trailer, streamTrailer])
         if pdfFile.isEncrypted() and pdfFile.getEncryptDict() != None:
-            pdfFile.decrypt()
+            ret = pdfFile.decrypt()
+            if ret[0] == -1:
+                pdfFile.addError(ret[1])
         return (0,pdfFile)
 
     def parsePDFSections(self, content, forceMode = False, looseMode = False):
