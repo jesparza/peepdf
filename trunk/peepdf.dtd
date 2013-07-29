@@ -7,7 +7,7 @@
 <!ELEMENT date ( #PCDATA ) >
 
 
-<!ELEMENT basic ( filename, md5, sha1, sha256, size, version, binary, linearized, encrypted, updates, num_objects, num_streams, comments, errors ) >
+<!ELEMENT basic ( filename, md5, sha1, sha256, size, detection, pdf_version, binary, linearized, encrypted, updates, num_objects, num_streams, comments, errors ) >
 
 <!ELEMENT filename ( #PCDATA ) >
 
@@ -18,6 +18,12 @@
 <!ELEMENT sha256 ( #PCDATA ) >
 
 <!ELEMENT size ( #PCDATA ) >
+
+<!ELEMENT detection ( rate?, report_link? ) >
+
+<!ELEMENT rate ( #PCDATA ) >
+
+<!ELEMENT report_link ( #PCDATA ) >
 
 <!ELEMENT pdf_version ( #PCDATA ) >
 
@@ -51,7 +57,7 @@
 
 <!ELEMENT advanced ( version* ) >
 
-<!ELEMENT version ( catalog , info , objects , streams , js_objects, suspicious_elements , suspicious_urls ) >
+<!ELEMENT version ( catalog, info, objects, streams ,js_objects, suspicious_elements, suspicious_urls ) >
 <!ATTLIST version num NMTOKEN #REQUIRED >
 <!ATTLIST version type ( original | update ) #REQUIRED >
 
