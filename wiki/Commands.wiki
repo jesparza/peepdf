@@ -32,10 +32,10 @@ There are a lot of commands that can be used in the interactive console of peepd
   * [#modify modify]
   * [#save save]
 ===Javascript analysis===
-  * [#js js]
   * [#js_analyse js_analyse]
   * [#js_beautify js_beautify]
   * [#js_code js_code]
+  * [#js_eval js_eval]
   * [#js_join js_join]
   * [#js_unescape js_unescape]
 ===Shellcode analysis===
@@ -45,6 +45,7 @@ There are a lot of commands that can be used in the interactive console of peepd
   * [#search search]
   * [#set set]
   * [#show show]
+  * [#vtcheck vtcheck]
   * [#xor xor]
   * [#xor_search xor_search]
 ===Console===
@@ -426,23 +427,6 @@ Encrypted: No
 }}}
 [#Console_commands Index]
 <br/>
-===js===
-{{{
-Usage: js variable var_name
-Usage: js file file_name
-Usage: js object object_id [version]
-
-Executes the Javascript code stored in the specified variable, file or object
-}}}
-{{{
-PPDF> set jscode "var a = 8; a = a + 2; print('The content of the variable is '+a);"
-PPDF> js variable jscode
-The variable may not contain Javascript code, do you want to continue? (y/n) y
-The content of the variable is 10
-}}}
-First, we put Javascript code in a variable. After that we can use the _js_ command to execute it. There is a warning
-because the code is very short to be identified as Javascript code.
-<br/>
 ===js_analyse===
 {{{
 Usage: js_analyse variable var_name
@@ -607,6 +591,23 @@ if (bBeUHg == 1){NTLv7BP = 0x30303030;}
 ===================================================================
 }}}
 [#Console_commands Index]
+<br/>
+===js_eval===
+{{{
+Usage: js_eval variable var_name
+Usage: js_eval file file_name
+Usage: js_eval object object_id [version]
+
+Executes the Javascript code stored in the specified variable, file or object
+}}}
+{{{
+PPDF> set jscode "var a = 8; a = a + 2; print('The content of the variable is '+a);"
+PPDF> js_eval variable jscode
+The variable may not contain Javascript code, do you want to continue? (y/n) y
+The content of the variable is 10
+}}}
+First, we put Javascript code in a variable. After that we can use the _js_eval_ command to execute it. There is a warning
+because the code is very short to be identified as Javascript code.
 <br/>
 ===js_join===
 {{{
@@ -1382,6 +1383,55 @@ PPDF> tree
 /Info (14)
 }}}
 [#Console_commands Index]
+===vtcheck===
+{{{
+Usage: vtcheck
+Usage: vtcheck object|rawobject|stream|rawstream $object_id [$version]
+Usage: vtcheck raw $offset $num_bytes
+Usage: vtcheck file $file_name
+Usage: vtcheck variable $var_name
+
+Checks the hash of the specified source on VirusTotal: raw bytes of the file, objects and streams, and the content of files or variables.
+If no parameters are specified then the hash of the PDF document will be checked.
+
+*** NOTE: NO CONTENT IS SENT TO VIRUSTOTAL, JUST HASHES!!
+
+*** NOTE: You need a VirusTotal API key to use this command.
+}}}
+With this command you can check the hash of the PDF file on VirusTotal. But not only the PDF file itself but also the hash of any object, rawobject, stream, rawstream, raw bytes, files or variable. It is important to say that no content is sent to VirusTotal, just the hashes. Also, you will need a VirusTotal API key to use this command.
+{{{
+Detection rate: 26/47
+Last analysis date: 2013-07-01 05:43:24
+Report link: https://www.virustotal.com/file/ba3c7c763f7910ef956e27be054e9271b00d05aab9fb153cdf30001ce422d68a/analysis/1372657404/
+Scan results:
+
+                 nProtect	     2013-07-01.01	  20130701	Exploit.TIFF.Gen
+                   McAfee	      5.400.0.1158	  20130701	Artemis!7101F6998958
+              K7AntiVirus	        9.170.8927	  20130628	Exploit
+                   F-Prot	         4.7.1.166	  20130630	CVE-0188
+                 Symantec	     20131.1.0.101	  20130701	Trojan.Pidief.I
+                   Norman	           7.01.04	  20130701	Exploit_Gen.KDB
+     TrendMicro-HouseCall	      9.700.0.1001	  20130701	TROJ_GEN.R4FH1KI
+                    Avast	      8.0.1489.320	  20130701	JS:Pdfka-gen [Expl]
+                Kaspersky	         9.0.0.837	  20130701	HEUR:Exploit.Script.Generic
+              BitDefender	               7.2	  20130701	Exploit.TIFF.Gen
+                  Agnitum	           5.5.1.3	  20130630	Exploit.CVE-2010-0188
+                 Emsisoft	         3.0.0.583	  20130701	Exploit.TIFF.Gen (B)
+                   Comodo	             16523	  20130701	UnclassifiedMalware
+                 F-Secure	     11.0.19100.45	  20130701	Exploit.TIFF.Gen
+                    DrWeb	                  	  20130701	SCRIPT.Virus
+                  AntiVir	        7.11.88.12	  20130701	EXP/Pdfjsc.EH.14
+               TrendMicro	      9.740.0.1012	  20130701	EXPL_CVE20100188
+                   Sophos	            4.90.0	  20130701	Troj/PDFJs-II
+                Microsoft	            1.9607	  20130701	Exploit:Win32/Pdfjsc.EX
+                    GData	                22	  20130701	Exploit.TIFF.Gen
+                Commtouch	           5.4.1.7	  20130630	CVE-0188
+                  PCTools	           9.0.0.2	  20130701	Trojan.Pidief
+                   Ikarus	        T3.1.4.3.0	  20130701	Exploit.Win32.CVE-2010-0188
+                 Fortinet	         5.1.146.0	  20130701	W32/PDFJs.II!tr
+                      AVG	       10.0.0.1190	  20130630	Exploit
+                    Panda	          10.0.3.5	  20130630	Exploit/PDF.Gen.B
+}}}
 ===xor===
 {{{
 Usage: xor stream|rawstream $object_id [$version] [$key]
