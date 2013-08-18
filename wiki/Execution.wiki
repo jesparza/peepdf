@@ -12,8 +12,12 @@ Options:
   -s SCRIPTFILE, --load-script=SCRIPTFILE
                         Loads the commands stored in the specified file and
                         execute them.
+  -c, --check-vt        Checks the hash of the PDF file on VirusTotal.
   -f, --force-mode      Sets force parsing mode to ignore errors.
   -l, --loose-mode      Sets loose parsing mode to catch malformed objects.
+  -m, --manual-analysis
+                        Avoids automatic Javascript analysis. Useful with
+                        eternal loops like heap spraying.
   -u, --update          Updates peepdf with the latest files from the
                         repository.
   -g, --grinch-mode     Avoids colorized output in the interactive console.
@@ -33,6 +37,35 @@ All of them accept two parameters to ignore errors and continue with the analysi
 
   * _-f_: ignores errors and continues with the analysis of the document. It's useful to analyse malicious documents.
   * _-l_: does not search for the _endobj_ tag during the parsing process, so it can be useful when the analysed document is malformed.
+<br/>
+Also, there are three more parameters:
+
+  * _-g_: avoids colorized output.
+  * _-c_: checks the hash of the PDF file on VirusTotal.
+  * _-m_: avoids performing any automatic Javascript analysis. This can be helpful when the analysis does not end due to a endless loop in the Javascript code.
+<br/>
+In order to update the tool you can just use the _-u_ parameter:
+{{{
+$ ./peepdf.py -u
+
+[-] Checking if there are new updates...
+[+] There are new updates!!
+[-] Getting paths from the repository...
+[+] Done
+[-] Getting local files information...
+[+] Done
+[-] Checking files...
+[+] File "JSAnalysis.py" updated successfully
+[+] File "PDFConsole.py" updated successfully
+[+] File "PDFCore.py" updated successfully
+[+] File "PDFCrypto.py" updated successfully
+[+] File "PDFFilters.py" updated successfully
+[+] File "PDFUtils.py" updated successfully
+[+] File "README" updated successfully
+[+] File "peepdf.dtd" updated successfully
+[+] File "peepdf.py" updated successfully
+[+] peepdf updated successfully to v0.2 r191
+}}}
 <br/>
 
 ===Basic execution===
@@ -109,14 +142,15 @@ PPDF> help
 
 Documented commands (type help <topic>):
 ========================================
-bytes           encrypt  js_analyse        modify      replace       stream    
-changelog       errors   js_beautify       object      reset         tree      
-create          exit     js_code           offsets     save          xor       
-decode          filters  js_join           open        save_version  xor_search
-decrypt         hash     js_unescape       quit        sctest      
-embed           help     log               rawobject   search      
-encode          info     malformed_output  rawstream   set         
-encode_strings  js       metadata          references  show   
+bytes           errors       js_eval           open          sctest    
+changelog       exit         js_join           quit          search    
+create          filters      js_unescape       rawobject     set       
+decode          hash         log               rawstream     show      
+decrypt         help         malformed_output  references    stream    
+embed           info         metadata          replace       tree      
+encode          js_analyse   modify            reset         vtcheck   
+encode_strings  js_beautify  object            save          xor       
+encrypt         js_code      offsets           save_version  xor_search  
 }}}
 <br/>
 Also, it's possible to launch the interactive console wihout specifying any PDF file:
@@ -129,12 +163,12 @@ PPDF>
 <br/>
 But now we cannot launch all the commands until one PDF file has been opened, but we can execute Javascript and shellcodes, encode/decode contents, etc. The available commands will be the following:
 {{{
-create              js_analyse          quit
-decode              js_join             replace
-encode              js_unescape         reset
-exit                log                 sctest
-help                malformed_output    set
-js                  open                show 
+create              js_beautify             open              show
+decode              js_eval                 quit              vtcheck
+encode              js_join                 replace           xor
+exit                js_unescape             reset             xor_search
+help                log                     sctest            
+js_analyse          malformed_output        set      
 }}} 
 <br/>
 ===Batch mode===
