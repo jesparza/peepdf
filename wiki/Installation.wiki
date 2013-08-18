@@ -8,14 +8,18 @@ It's not necessary to install anything to execute the tool, just executing the P
 The packages and libraries needed to have a full installation of peepdf are the following:
 
   * _lxml_ (external in Windows): creation of XML otuput. Only needed with -x.
-  * _python-spidermonkey_ (external): execution of Javascript code.
+  * _PyV8_ (external): execution of Javascript code.
   * _pylibemu_ (external): Libemu Python wrapper to emulate the shellcode execution.
 <br>
-=== python-spidermonkey ===
+=== PyV8 ===
 
 You can download the package from this URL and follow the instructions:
 
-http://code.google.com/p/python-spidermonkey
+http://code.google.com/p/pyv8/
+
+Also, this is a useful link to accomplish the task:
+
+http://andrewwilkinson.wordpress.com/2012/01/23/integrating-python-and-javascript-with-pyv8/
 <br>
 <br>
  
