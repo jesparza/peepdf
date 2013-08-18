@@ -1398,7 +1398,7 @@ If no parameters are specified then the hash of the PDF document will be checked
 
 *** NOTE: You need a VirusTotal API key to use this command.
 }}}
-With this command you can check the hash of the PDF file on !VirusTotal. But not only the PDF file itself but also the hash of any object, rawobject, stream, rawstream, raw bytes, files or variable. It is important to say that no content is sent to !VirusTotal, just the hashes. Also, you will need a !VirusTotal API key to use this command.
+With this command you can check the hash of the PDF file on [https://www.virustotal.com VirusTotal]. But not only the PDF file itself but also the hash of any object, rawobject, stream, rawstream, raw bytes, files or variable. It is important to say that no content is sent to !VirusTotal, just the hashes. Also, you will need a !VirusTotal API key to use this command.
 {{{
 Detection rate: 26/47
 Last analysis date: 2013-07-01 05:43:24
