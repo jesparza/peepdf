@@ -8,10 +8,10 @@ It's not necessary to install anything to execute the tool, just executing the P
 The packages and libraries needed to have a full installation of peepdf are the following:
 
   * _lxml_ (external in Windows): creation of XML otuput. Only needed with -x.
-  * _PyV8_ (external): execution of Javascript code.
+  * _!PyV8_ (external): execution of Javascript code.
   * _pylibemu_ (external): Libemu Python wrapper to emulate the shellcode execution.
 <br>
-=== PyV8 ===
+=== !PyV8 ===
 
 You can download the package from this URL and follow the instructions:
 
