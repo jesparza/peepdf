@@ -33,6 +33,10 @@ You can download the _libemu_ files directly from the _git_ repository (Sourcefo
 Once _libemu_ is installed you have to install _pylibemu_ too:
 
 [https://github.com/buffer/pylibemu https://github.com/buffer/pylibemu]
+
+Another useful link related to the installation of pylibemu:
+
+http://blog.xanda.org/2012/05/16/installation-of-libemu-and-pylibemu-on-ubuntu/
 <br>
 <br>
  
