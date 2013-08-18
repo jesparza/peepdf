@@ -34,7 +34,7 @@ Once _libemu_ is installed you have to install _pylibemu_ too:
 
 [https://github.com/buffer/pylibemu https://github.com/buffer/pylibemu]
 
-Another useful link related to the installation of pylibemu:
+Another useful link related to the installation of _pylibemu_:
 
 http://blog.xanda.org/2012/05/16/installation-of-libemu-and-pylibemu-on-ubuntu/
 <br>
