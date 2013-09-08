@@ -29,16 +29,19 @@ import sys, re , os, jsbeautifier, traceback
 from PDFUtils import unescapeHTMLEntities, escapeString
 try:
     import PyV8
-    JS_MODULE = True 
+    
+    JS_MODULE = True
+    
+    class Global(PyV8.JSClass):
+        evalCode = ''
+        
+        def evalOverride(self, expression):
+            self.evalCode += '\n\n// New evaluated code\n' + expression
+            return
+        
 except:
     JS_MODULE = False
 
-class Global(PyV8.JSClass):
-    evalCode = ''
-    
-    def evalOverride(self, expression):
-        self.evalCode += '\n\n// New evaluated code\n' + expression
-        return
 
 newLine = os.linesep         
 reJSscript = '<script[^>]*?contentType\s*?=\s*?[\'"]application/x-javascript[\'"][^>]*?>(.*?)</script>'

@@ -33,7 +33,6 @@ from PDFCore import PDFParser, vulnsDict
 from PDFUtils import vtcheck
 
 VT_KEY = 'COPY_HERE_YOUR_API_KEY'
-VT_KEY = 'fc90df3f5ac749a94a94cb8bf87e05a681a2eb001aef34b6a0084b8c22c97a64'
 
 try:
     import PyV8
@@ -237,7 +236,7 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.2'
-revision = '191'   
+revision = '192'   
 stats = ''
 pdf = None
 fileName = None
