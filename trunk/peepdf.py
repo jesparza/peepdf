@@ -236,7 +236,7 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.2'
-revision = '192'   
+revision = '202'   
 stats = ''
 pdf = None
 fileName = None
@@ -379,12 +379,6 @@ try:
             except:
                 errorMessage = '*** Error: Exception while generating the XML file!!'
                 traceback.print_exc(file=open(errorsFile,'a'))
-                '''
-                if COLORIZED_OUTPUT and not options.avoidColors:
-                    errorMessage = errorColor + errorMessage + Style.RESET_ALL
-                print errorMessage + newLine
-                traceback.print_exc(file=open(errorsFile,'a'))
-                '''
                 raise Exception('PeepException','Send me an email ;)')    
         else:
             if COLORIZED_OUTPUT and not options.avoidColors:
@@ -400,12 +394,6 @@ try:
                     console.cmdloop()
                 except:
                     errorMessage = '*** Error: Exception not handled using the batch mode!!'
-                    '''
-                    if COLORIZED_OUTPUT and not options.avoidColors:
-                        errorMessage = errorColor + errorMessage + Style.RESET_ALL
-                    print errorMessage + newLine
-                    traceback.print_exc(file=open(errorsFile,'a'))
-                    '''
                     scriptFileObject.close()
                     traceback.print_exc(file=open(errorsFile,'a'))
                     raise Exception('PeepException','Send me an email ;)') 
@@ -551,8 +539,6 @@ try:
                             print errorColor + errorMessage + resetColor + newLine
                             traceback.print_exc(file=open(errorsFile,'a'))
 except Exception as e:
-    # REMOVE!!
-    traceback.print_exc()
     if len(e.args) == 2:
         excName,excReason = e.args
     else:
