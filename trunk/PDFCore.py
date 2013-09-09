@@ -4848,6 +4848,7 @@ class PDFFile :
 
     def decrypt(self, password = ''):
         badPassword = False
+        fatalError = False
         errorMessage = ''
         passType = None
         encryptionAlgorithms = []
@@ -4855,6 +4856,11 @@ class PDFFile :
         stmAlgorithm = None
         strAlgorithm = None
         embedAlgorithm = None
+        computedUserPass = ''
+        dictO = '' 
+        dictU = ''
+        perm = 0
+        revision = 0
         fileId = self.getFileId()
         self.removeError(errorType = 'Decryption error')
         if self.encryptDict == None or self.encryptDict[1] == []:
@@ -4873,18 +4879,21 @@ class PDFFile :
                 if filter != '/Standard':
                     errorMessage = 'Decryption error: Filter not supported!!'
                     if isForceMode:
+                        fatalError = True
                         self.addError(errorMessage)
                     else:
                         return (-1, errorMessage)
             else:
                 errorMessage = 'Decryption error: Bad format for /Filter!!'
                 if isForceMode:
+                    fatalError = True
                     self.addError(errorMessage)
                 else:
                     return (-1, errorMessage)
         else:
             errorMessage = 'Decryption error: Filter not found!!'
             if isForceMode:
+                fatalError = True
                 self.addError(errorMessage)
             else:
                 return (-1, errorMessage)
@@ -4930,9 +4939,9 @@ class PDFFile :
                                                 else:
                                                     return (-1, errorMessage)
                                         else:
-                                            cfmValue = ''
                                             errorMessage = 'Decryption error: Bad format for /CFM!!'
                                             if isForceMode:
+                                                cfmValue = ''
                                                 self.addError(errorMessage)
                                             else:
                                                 return (-1, errorMessage)
@@ -5005,16 +5014,16 @@ class PDFFile :
                     if embedAlgorithm not in encryptionAlgorithms and embedAlgorithm != ['Identity',40]: # Not showing default embedAlgorithm
                         encryptionAlgorithms.append(embedAlgorithm) 
             else:
-                algVersion = 0
                 errorMessage = 'Decryption error: Bad format for /V!!'
                 if isForceMode:
+                    algVersion = 0
                     self.addError(errorMessage)
                 else:
                     return (-1, errorMessage)
         else:
-            algVersion = 0
             errorMessage = 'Decryption error: Algorithm version not found!!'
             if isForceMode:
+                algVersion = 0
                 self.addError(errorMessage)
             else:
                 return (-1, errorMessage)
@@ -5032,14 +5041,16 @@ class PDFFile :
                 self.addError('Decryption error: Bad format for /Length!!')
         else:
             keyLength = 40
+        
+        # Setting algorithms
         if algVersion == 1 or algVersion == 2:
             algorithm = ['RC4',keyLength]
             stmAlgorithm = strAlgorithm = embedAlgorithm = algorithm
         elif algVersion == 3:
-            algorithm = ['Unpublished',keyLength]
-            stmAlgorithm = strAlgorithm = embedAlgorithm = algorithm
             errorMessage = 'Decryption error: Algorithm not supported!!'
             if isForceMode:
+                algorithm = ['Unpublished',keyLength]
+                stmAlgorithm = strAlgorithm = embedAlgorithm = algorithm
                 self.addError(errorMessage)
             else:
                 return (-1, errorMessage)
@@ -5048,6 +5059,7 @@ class PDFFile :
         if algorithm != None and algorithm not in encryptionAlgorithms:
             encryptionAlgorithms.append(algorithm)
         self.setEncryptionAlgorithms(encryptionAlgorithms)
+        
         # Standard encryption: /R /P /O /U
         # Revision
         if encDict.has_key('/R'):
@@ -5057,18 +5069,22 @@ class PDFFile :
                 if revision < 2 or revision > 5:
                     errorMessage = 'Decryption error: Algorithm revision not supported!!'
                     if isForceMode:
+                        fatalError = True
                         self.addError(errorMessage)
                     else:
                         return (-1, errorMessage)
             else:
                 errorMessage = 'Decryption error: Bad format for /R!!'
                 if isForceMode:
+                    revision = 0
+                    fatalError = True
                     self.addError(errorMessage)
                 else:
                     return (-1, errorMessage)
         else:
             errorMessage = 'Decryption error: Algorithm revision not found!!'
             if isForceMode:
+                fatalError = True
                 self.addError(errorMessage)
             else:
                 return (-1, errorMessage)
@@ -5080,40 +5096,47 @@ class PDFFile :
             else:
                 errorMessage = 'Decryption error: Bad format for /P!!'
                 if isForceMode:
+                    perm = 0
+                    fatalError = True
                     self.addError(errorMessage)
                 else:
                     return (-1, errorMessage)
         else:
             errorMessage = 'Decryption error: Permission number not found!!'
             if isForceMode:
+                fatalError = True
                 self.addError(errorMessage)
             else:
                 return (-1, errorMessage)
         # Owner pass
         if encDict.has_key('/O'):
             dictO = encDict['/O']
-            if dictO != None and dictO.getType() == 'string':
+            if dictO != None and dictO.getType() in ['string','hexstring']:
                 dictO = dictO.getValue()
             else:
                 errorMessage = 'Decryption error: Bad format for /O!!'
                 if isForceMode:
+                    dictO = ''
+                    fatalError = True
                     self.addError(errorMessage)
                 else:
                     return (-1, errorMessage)
         else:
             errorMessage = 'Decryption error: Owner password not found!!'
             if isForceMode:
+                fatalError = True
                 self.addError(errorMessage)
             else:
                 return (-1, errorMessage)
         # Owner encrypted string
         if encDict.has_key('/OE'):
             dictOE = encDict['/OE']
-            if dictOE != None and dictOE.getType() == 'string':
+            if dictOE != None and dictOE.getType() in ['string','hexstring']:
                 dictOE = dictOE.getValue()
             else:
                 errorMessage = 'Decryption error: Bad format for /OE!!'
                 if isForceMode:
+                    dictOE = ''
                     self.addError(errorMessage)
                 else:
                     return (-1, errorMessage)
@@ -5128,28 +5151,32 @@ class PDFFile :
         # User pass
         if encDict.has_key('/U'):
             dictU = encDict['/U']
-            if dictU != None and dictU.getType() == 'string':
+            if dictU != None and dictU.getType() in ['string','hexstring']:
                 dictU = dictU.getValue()
             else:
                 errorMessage = 'Decryption error: Bad format for /U!!'
                 if isForceMode:
+                    dictU = ''
+                    fatalError = True
                     self.addError(errorMessage)
                 else:
                     return (-1, errorMessage)
         else:
             errorMessage = 'Decryption error: User password not found!!'
             if isForceMode:
+                fatalError = True
                 self.addError(errorMessage)
             else:
                 return (-1, errorMessage)
         # User encrypted string
         if encDict.has_key('/UE'):
             dictUE = encDict['/UE']
-            if dictUE != None and dictUE.getType() == 'string':
+            if dictUE != None and dictUE.getType() in ['string','hexstring']:
                 dictUE = dictUE.getValue()
             else:
                 errorMessage = 'Decryption error: Bad format for /UE!!'
                 if isForceMode:
+                    dictUE = ''
                     self.addError(errorMessage)
                 else:
                     return (-1, errorMessage)
@@ -5169,52 +5196,52 @@ class PDFFile :
             else:
                 errorMessage = 'Decryption error: Bad format for /EncryptMetadata!!'
                 if isForceMode:
+                    encryptMetadata = True
                     self.addError(errorMessage)
                 else:
                     return (-1, errorMessage)
         else:
             encryptMetadata = True
-        # Checking user password
-        if revision != 5:
-            ret = computeUserPass(password, dictO, fileId, perm, keyLength, revision, encryptMetadata)
-            if ret[0] != -1:
-                computedUserPass = ret[1]
+        if not fatalError:
+            # Checking user password
+            if revision != 5:
+                ret = computeUserPass(password, dictO, fileId, perm, keyLength, revision, encryptMetadata)
+                if ret[0] != -1:
+                    computedUserPass = ret[1]
+                else:
+                    errorMessage = 'Decryption error: '+ret[1]
+                    if isForceMode:
+                        self.addError(errorMessage)
+                    else:
+                        return (-1, errorMessage)
+            if isUserPass(password, computedUserPass, dictU, revision):
+                passType = 'USER'
+            elif isOwnerPass(password, dictO, dictU, computedUserPass, keyLength, revision):
+                passType = 'OWNER'
             else:
-                errorMessage = 'Decryption error: '+ret[1]
-                if isForceMode:
-                    self.addError(errorMessage)
+                badPassword = True
+                if password == '':
+                    errorMessage = 'Decryption error: Default user password not working here!!'
+                    if isForceMode:
+                        self.addError(errorMessage)
+                    else:
+                        return (-1, errorMessage)
                 else:
-                    return (-1, errorMessage)
-        else:
-            computedUserPass = ''
-        if isUserPass(password, computedUserPass, dictU, revision):
-            passType = 'USER'
-        elif isOwnerPass(password, dictO, dictU, computedUserPass, keyLength, revision):
-            passType = 'OWNER'
-        else:
-            badPassword = True
-            if password == '':
-                errorMessage = 'Decryption error: Default user password not working here!!'
-                if isForceMode:
-                    self.addError(errorMessage)
-                else:
-                    return (-1, errorMessage)
-            else:
-                errorMessage = 'Decryption error: User password not working here!!'
-                if isForceMode:
-                    self.addError(errorMessage)
-                else:
-                    return (-1, errorMessage)
+                    errorMessage = 'Decryption error: User password not working here!!'
+                    if isForceMode:
+                        self.addError(errorMessage)
+                    else:
+                        return (-1, errorMessage)
         self.setOwnerPass(dictO)
         self.setUserPass(dictU)
-        if not badPassword:
+        if not fatalError and not badPassword:
             ret = computeEncryptionKey(password, dictO, dictU, dictOE, dictUE, fileId, perm, keyLength, revision, encryptMetadata, passType)
             if ret[0] != -1:
                 encryptionKey = ret[1]
             else:
-                encryptionKey = ''
                 errorMessage = 'Decryption error: '+ret[1]
                 if isForceMode:
+                    encryptionKey = ''
                     self.addError(errorMessage)
                 else:
                     return (-1, errorMessage)
