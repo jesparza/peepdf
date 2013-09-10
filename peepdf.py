@@ -32,7 +32,7 @@ from datetime import datetime
 from PDFCore import PDFParser, vulnsDict
 from PDFUtils import vtcheck
 
-VT_KEY = 'COPY_HERE_YOUR_API_KEY'
+VT_KEY = 'fc90df3f5ac749a94a94cb8bf87e05a681a2eb001aef34b6a0084b8c22c97a64'
 
 try:
     import PyV8
@@ -236,7 +236,7 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.2'
-revision = '202'   
+revision = '203'   
 stats = ''
 pdf = None
 fileName = None
@@ -349,7 +349,7 @@ try:
         if fileName != None:
             pdfParser = PDFParser()
             ret,pdf = pdfParser.parse(fileName, options.isForceMode, options.isLooseMode, options.isManualAnalysis)
-            if options.checkOnVT and VT_KEY != 'COPY_HERE_YOUR_API_KEY':
+            if options.checkOnVT:
                 # Checks the MD5 on VirusTotal
                 md5Hash = pdf.getMD5()
                 ret = vtcheck(md5Hash, VT_KEY)
@@ -410,9 +410,6 @@ try:
                     if not EMU_MODULE:
                         warningMessage = 'Warning: pylibemu is not installed!!'
                         stats += warningColor + warningMessage + resetColor + newLine
-                    if options.checkOnVT and VT_KEY == 'COPY_HERE_YOUR_API_KEY':
-                        warningMessage = 'Warning: The VirusTotal API key has not been set!!'
-                        stats += warningColor + warningMessage + resetColor + newLine
                     errors = statsDict['Errors']
                     for error in errors:
                         if error.find('Decryption error') != -1:
@@ -426,7 +423,7 @@ try:
                     stats += beforeStaticLabel + 'SHA1: ' + resetColor + statsDict['SHA1'] + newLine
                     #stats += beforeStaticLabel + 'SHA256: ' + resetColor + statsDict['SHA256'] + newLine
                     stats += beforeStaticLabel + 'Size: ' + resetColor + statsDict['Size'] + ' bytes' + newLine
-                    if options.checkOnVT and VT_KEY != 'COPY_HERE_YOUR_API_KEY':
+                    if options.checkOnVT:
                         if statsDict['Detection'] != []:
                             detectionReportInfo = ''
                             if statsDict['Detection'] != None:
