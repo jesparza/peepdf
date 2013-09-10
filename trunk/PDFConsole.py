@@ -3149,6 +3149,7 @@ class PDFConsole(cmd.Cmd):
         print '\tmalformed_options: READ ONLY. Variable to store the malformed options used to save the file.' + newLine
         print '\toutput: specifies the destination of the commands output. Valid values are: \'stdout\', \'variable\' and \'file\'.' + newLine
         print '\toutput_limit: variable to specify the maximum number of lines to be shown at once when the output is long. By default there is no limit.' + newLine
+        print '\tvt_key: VirusTotal Api key.'
         print '\tUsage for the \'output\' variable:' + newLine 
         print '\t> set output stdout'
         print '\tNormal console output' + newLine
@@ -3191,7 +3192,8 @@ class PDFConsole(cmd.Cmd):
         print '\theader_file'
         print '\tmalformed_options'
         print '\toutput'
-        print '\toutput_limit' + newLine
+        print '\toutput_limit'
+        print '\tvt_key' + newLine
 
     def do_stream(self, argv):
         if self.pdfFile == None:
