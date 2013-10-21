@@ -65,10 +65,10 @@ def analyseJS(code, context = None, manualAnalysis = False):
     urlsFound = []
     
     try:
+        code = unescapeHTMLEntities(code)
         scriptCode = re.findall(reJSscript, code, re.DOTALL | re.IGNORECASE)
         if scriptCode != []:
             code = scriptCode[0]
-        code = unescapeHTMLEntities(code)
         code = jsbeautifier.beautify(code)
         JSCode.append(code)
     
