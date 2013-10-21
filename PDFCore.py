@@ -47,7 +47,8 @@ monitorizedEvents = ['/OpenAction ','/AA ','/Names ','/AcroForm ']
 monitorizedActions = ['/JS ','/JavaScript','/Launch','/SubmitForm','/ImportData']
 monitorizedElements = ['/EmbeddedFiles ','/EmbeddedFile','/JBIG2Decode','getPageNthWord','arguments.callee','/U3D','/PRC']
 jsVulns = ['mailto','Collab.collectEmailInfo','util.printf','getAnnots','getIcon','spell.customDictionaryOpen','media.newPlayer','doc.printSeps']
-vulnsDict = {'/JBIG2Decode':['CVE-2009-0658'],'mailto':['CVE-2007-5020'],'Collab.collectEmailInfo':['CVE-2007-5659'],'util.printf':['CVE-2008-2992'],'getAnnots':['CVE-2009-1492'],'getIcon':['CVE-2009-0927'],'spell.customDictionaryOpen':['CVE-2009-1493'],'media.newPlayer':['CVE-2009-4324'],'doc.printSeps':['CVE-2010-4091'],'/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462'],'/PRC':['CVE-2011-4369']}
+singUniqueName = 'CoolType.SING.uniqueName'
+vulnsDict = {'mailto':['CVE-2007-5020'],'Collab.collectEmailInfo':['CVE-2007-5659'],'util.printf':['CVE-2008-2992'],'/JBIG2Decode':['CVE-2009-0658'],'getIcon':['CVE-2009-0927'],'getAnnots':['CVE-2009-1492'],'spell.customDictionaryOpen':['CVE-2009-1493'],'media.newPlayer':['CVE-2009-4324'],singUniqueName:['CVE-2010-2883'],'doc.printSeps':['CVE-2010-4091'],'/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462'],'/PRC':['CVE-2011-4369']}
 jsContexts = {'global':None}
 
 class PDFObject :
@@ -4166,7 +4167,6 @@ class PDFBody :
     
     def updateOffsets (self) :
         pass
-    
 
     def updateStats(self, id, pdfObject, delete = False):
         if pdfObject == None:
@@ -4235,6 +4235,22 @@ class PDFBody :
                                 self.vulns[vuln].append(id)
                             else:
                                 self.vulns[vuln] = [id]
+        ## Extra checks
+        # CVE-2010-2883
+        # http://opensource.adobe.com/svn/opensource/tin/src/SING.cpp
+        # http://community.websense.com/blogs/securitylabs/archive/2010/09/10/brief-analysis-on-adobe-reader-sing-table-parsing-vulnerability-cve-2010-2883.aspx
+        objectType = pdfObject.getType()
+        if objectType == 'stream':
+            streamContent = pdfObject.getStream()
+            if len(streamContent) > 327 and streamContent[236:240] == 'SING' and streamContent[327] != '\0':
+                if self.suspiciousElements.has_key(singUniqueName):
+                    if delete:
+                        if id in self.suspiciousElements[singUniqueName]:
+                            self.suspiciousElements[singUniqueName].remove(id)
+                    elif id not in self.suspiciousElements[singUniqueName]:
+                        self.suspiciousElements[singUniqueName].append(id)
+                elif not delete:
+                    self.suspiciousElements[singUniqueName] = [id]
         return (0,'')                        
     
 
@@ -6770,7 +6786,7 @@ class PDFParser :
                         if not forceMode:
                             sys.exit('Error: An error has occurred while parsing an indirect object!!')
                         else:
-                            pdfFile.addError('Error parsing object: '+str(objectHeader))
+                            pdfFile.addError('Error parsing object: '+str(objectHeader)+' ('+str(ret[1])+')')
             else:
                 pdfFile.addError('No indirect objects found in the body')
             if pdfIndirectObject != None:
@@ -7509,7 +7525,7 @@ class PDFParser :
             @return A tuple (status,statusContent), where statusContent is a PDFObject instance in case status = 0 or an error in case status = -1
         '''
         global pdfFile
-        if len(content) == 0:
+        if len(content) == 0 or content[:6] == 'endobj':
             return (-1,'Empty content reading object')
         pdfObject = None
         oldCounter = self.charCounter
