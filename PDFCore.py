@@ -3,7 +3,7 @@
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2011-2013 Jose Miguel Esparza
+#    Copyright (C) 2011-2014 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
@@ -46,9 +46,9 @@ delimiterChars = ['<<','(','<','[','{','/','%']
 monitorizedEvents = ['/OpenAction ','/AA ','/Names ','/AcroForm ']
 monitorizedActions = ['/JS ','/JavaScript','/Launch','/SubmitForm','/ImportData']
 monitorizedElements = ['/EmbeddedFiles ','/EmbeddedFile','/JBIG2Decode','getPageNthWord','arguments.callee','/U3D','/PRC']
-jsVulns = ['mailto','Collab.collectEmailInfo','util.printf','getAnnots','getIcon','spell.customDictionaryOpen','media.newPlayer','doc.printSeps','.rawValue']
+jsVulns = ['mailto','Collab.collectEmailInfo','util.printf','getAnnots','getIcon','spell.customDictionaryOpen','media.newPlayer','doc.printSeps','.rawValue','app.removeToolButton']
 singUniqueName = 'CoolType.SING.uniqueName'
-vulnsDict = {'mailto':['CVE-2007-5020'],'Collab.collectEmailInfo':['CVE-2007-5659'],'util.printf':['CVE-2008-2992'],'/JBIG2Decode':['CVE-2009-0658'],'getIcon':['CVE-2009-0927'],'getAnnots':['CVE-2009-1492'],'spell.customDictionaryOpen':['CVE-2009-1493'],'media.newPlayer':['CVE-2009-4324'],'.rawValue':['CVE-2010-0188'],singUniqueName:['CVE-2010-2883'],'doc.printSeps':['CVE-2010-4091'],'/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462'],'/PRC':['CVE-2011-4369']}
+vulnsDict = {'mailto':['CVE-2007-5020'],'Collab.collectEmailInfo':['CVE-2007-5659'],'util.printf':['CVE-2008-2992'],'/JBIG2Decode':['CVE-2009-0658'],'getIcon':['CVE-2009-0927'],'getAnnots':['CVE-2009-1492'],'spell.customDictionaryOpen':['CVE-2009-1493'],'media.newPlayer':['CVE-2009-4324'],'.rawValue':['CVE-2010-0188'],singUniqueName:['CVE-2010-2883'],'doc.printSeps':['CVE-2010-4091'],'/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462'],'/PRC':['CVE-2011-4369'],'app.removeToolButton':['CVE-2013-3346']}
 jsContexts = {'global':None}
 
 class PDFObject :
