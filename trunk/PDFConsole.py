@@ -3,7 +3,7 @@
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2011-2013 Jose Miguel Esparza
+#    Copyright (C) 2011-2014 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
@@ -25,13 +25,15 @@
     Implementation of the interactive console of peepdf
 '''
 
-import cmd, sys, os, re, subprocess, optparse, hashlib, jsbeautifier
+import cmd, sys, os, re, subprocess, optparse, hashlib, jsbeautifier, traceback
 from PDFUtils import *
 from PDFCrypto import *
 from JSAnalysis import *
 from PDFCore import *
 from base64 import b64encode,b64decode
 from PDFFilters import decodeStream,encodeStream
+from jjdecode import JJDecoder
+
 try:
     from colorama import init, Fore, Back, Style
     COLORIZED_OUTPUT = True
@@ -1692,7 +1694,6 @@ class PDFConsole(cmd.Cmd):
             content = src
         content = content.strip()
         jsCode, unescapedBytes, urlsFound, jsErrors, self.javaScriptContexts['global'] = analyseJS(content, self.javaScriptContexts['global'])
-        #self.javaScriptContexts['global'] = context
         if content not in jsCode:
             jsCode = [content] + jsCode
         jsanalyseOutput = ''
@@ -2041,7 +2042,132 @@ class PDFConsole(cmd.Cmd):
         print 'Usage: js_eval object $object_id [$version]'
         print 'Usage: js_eval code $javascript_code'
         print newLine + 'Evaluates the Javascript code stored in the specified variable, file, object or raw code in a global context' + newLine
-                
+
+    def do_js_jjdecode(self, argv):
+        content = ''
+        bytes = ''
+        validTypes = ['variable','file','object']
+        args = self.parseArgs(argv)
+        if args == None:
+            message = '*** Error: The command line arguments have not been parsed successfully!!'
+            self.log_output('js_jjdecode ' + argv, message)
+            return False
+        if len(args) == 2:
+            version = None
+        elif len(args) == 3 and args[0] == 'object':
+            version = args[2]
+        else:
+            self.help_js_jjdecode()
+            return False
+        type = args[0]
+        src = args[1]
+        if type not in validTypes:
+            self.help_js_jjdecode()
+            return False
+        if type == 'variable':
+            if not self.variables.has_key(src):
+                message = '*** Error: The variable does not exist!!'
+                self.log_output('js_jjdecode ' + argv, message)
+                return False
+            else:
+                content = self.variables[src][0]
+                if not isJavascript(content):
+                    if self.use_rawinput:
+                        res = raw_input('The variable may not contain Javascript code, do you want to continue? (y/n) ')
+                        if res.lower() == 'n':
+                            message = '*** Error: The variable does not contain Javascript code!!'
+                            self.log_output('js_jjdecode ' + argv, message)
+                            return False
+                    else:
+                        print 'Warning: the object may not contain Javascript code...' + newLine
+        elif type == 'file':
+            if not os.path.exists(src):
+                message = '*** Error: The file does not exist!!'
+                self.log_output('js_jjdecode ' + argv, message)
+                return False
+            else:
+                content = open(src,'rb').read()
+                if not isJavascript(content):
+                    if self.use_rawinput:
+                        res = raw_input('The file may not contain Javascript code, do you want to continue? (y/n) ')
+                        if res.lower() == 'n':
+                            message = '*** Error: The file does not contain Javascript code!!'
+                            self.log_output('js_jjdecode ' + argv, message)
+                            return False                
+                    else:
+                        print 'Warning: the object may not contain Javascript code...' + newLine
+        else:
+            if self.pdfFile == None:
+                message = '*** Error: You must open a file!!'
+                self.log_output('js_jjdecode ' + argv, message)
+                return False
+            if not src.isdigit() or (version != None and not version.isdigit()):
+                self.help_js_jjdecode()
+                return False
+            src = int(src)
+            if version != None:
+                version = int(version)
+                if version > self.pdfFile.getNumUpdates():
+                    message = '*** Error: The version number is not valid!!'
+                    self.log_output('js_jjdecode ' + argv, message)
+                    return False
+            object = self.pdfFile.getObject(src, version)
+            if object != None:
+                if object.containsJS():
+                    content = object.getJSCode()[0]
+                else:
+                    if self.use_rawinput:
+                        res = raw_input('The object may not contain Javascript code, do you want to continue? (y/n) ')
+                        if res.lower() == 'n':
+                            message = '*** Error: The object does not contain Javascript code!!'
+                            self.log_output('js_jjdecode ' + argv, message)
+                            return False
+                    else:
+                        print 'Warning: the object may not contain Javascript code...' + newLine
+                    objectType = object.getType()
+                    if objectType == 'stream':
+                        content = object.getStream()
+                    elif type == 'dictionary' or type == 'array':
+                        element = object.getElementByName('/JS')
+                        if element != None:
+                            content = element.getValue()
+                        else:
+                            message = '*** Error: Target not found!!'
+                            self.log_output('js_jjdecode ' + argv, message)
+                            return False
+                    elif type == 'string' or type == 'hexstring':
+                        content = object.getValue()
+                    else:
+                        message = '*** Error: Target not found!!'
+                        self.log_output('js_jjdecode ' + argv, message)
+                        return False
+            else:
+                message = '*** Error: Object not found!!'
+                self.log_output('js_jjdecode ' + argv, message)
+                return False
+            
+        jjdecoder = JJDecoder(content)
+        try:
+            decodedContent = jjdecoder.decode() 
+        except Exception as e:
+            if len(e.args) == 2:
+                excName,excReason = e.args
+            else:
+                excName = excReason = None
+            if excName != 'JJDecoderException':
+                raise
+            else:
+                message = '*** Error: ' + excReason
+                self.log_output('js_jjdecode ' + argv, message)
+                return False
+        self.log_output('js_jjdecode ' + argv, decodedContent, storeOutput =  True)        
+        
+    def help_js_jjdecode(self):
+        print newLine + 'Usage: js_jjdecode variable $var_name'
+        print 'Usage: js_jjdecode file $file_name'
+        print 'Usage: js_jjdecode object $object_id [$version]'
+        print newLine + 'Decodes the Javascript code stored in the specified variable, file or object using the jjencode/decode algorithm by Yosuke Hasegawa (http://utf-8.jp/public/jjencode.html)' + newLine
+               
     def do_js_join(self, argv):
         content = ''
         finalString = ''
@@ -2162,6 +2288,52 @@ class PDFConsole(cmd.Cmd):
         print '> js_unescape variable aux' + newLine
         print '54 65 73 74                                       |Test|' + newLine
 
+    def do_js_vars(self, argv):
+        varName = None
+        if not JS_MODULE:
+            message = '*** Error: PyV8 is not installed!!'
+            self.log_output('js_vars ' + argv, message)
+            return False
+        args = self.parseArgs(argv)
+        if args == None:
+            message = '*** Error: The command line arguments have not been parsed successfully!!'
+            self.log_output('js_vars ' + argv, message)
+            return False
+        if len(args) > 1:
+            self.help_js_vars()
+            return False
+        if self.javaScriptContexts['global'] != None:
+            context = self.javaScriptContexts['global']
+        else:
+            self.log_output('js_vars ' + argv, '*** Warning: There is no Javascript context defined!! Use "js_eval" or "js_analyse" to create one.')
+            return False
+        if len(args) == 1:
+            varName = args[0]
+            if varName in context.locals.keys():
+                varContent = context.locals[varName]
+                try:
+                    self.log_output('js_vars ' + argv, str(varContent))
+                except:
+                    exceptionInfo = traceback.format_exc()
+                    if exceptionInfo.find('Allocation failed - process out of memory') != -1:
+                        message = '*** Error: The variable is too big to be processed!!'
+                        self.log_output('js_vars ' + argv, message)
+                        return False
+                    else:
+                        raise
+            else:
+                self.log_output('js_vars ' + argv, '*** Error: The variable does not exist in the Javascript context.')
+        else:
+            fixedVars = ['evalOverride', 'hasOwnProperty', 'isPrototypeOf', 'toLocaleString', 'toString', 'unwatch', 'valueOf', 'watch']
+            varArray = context.locals.keys()
+            for fixedVar in fixedVars:
+                varArray.remove(fixedVar)
+            self.log_output('js_vars ' + argv, str(varArray))
+        
+    def help_js_vars(self):
+        print newLine + 'Usage: js_vars [$var_name]'
+        print newLine + 'Shows the Javascript variables defined in the execution context or the content of the specified variable' + newLine
+        
     def do_log(self, argv):
         args = self.parseArgs(argv)
         if args == None:
