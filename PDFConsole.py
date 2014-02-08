@@ -146,7 +146,7 @@ class PDFConsole(cmd.Cmd):
                 return False
             bytes = ret[1]
             if numArgs == 2:
-                self.log_output('bytes ' + argv, bytes, bytes, storeOutput = True, bytesOutput = True)
+                self.log_output('bytes ' + argv, bytes, [bytes], storeOutput = True, bytesOutput = True)
             else:
                 outputFile = args[2]
                 open(outputFile,'wb').write(bytes)
@@ -451,7 +451,23 @@ class PDFConsole(cmd.Cmd):
                     self.log_output('decode ' + argv, message)
                     return False
                 decodedContent = ret[1]
-        self.log_output('decode ' + argv, decodedContent, decodedContent, storeOutput = True, bytesOutput = True)
+        self.log_output('decode ' + argv, decodedContent, [decodedContent], storeOutput = True, bytesOutput = True)
+              
+    def help_decode(self):
+        print newLine + 'Usage: decode variable $var_name $filter1 [$filter2 ...]'
+        print 'Usage: decode file $file_name $filter1 [$filter2 ...]'
+        print 'Usage: decode raw $offset $num_bytes $filter1 [$filter2 ...]' + newLine
+        print 'Decodes the content of the specified variable, file or raw bytes using the following filters or algorithms:'
+        print '\tbase64,b64: Base64'
+        print '\tasciihex,ahx: /ASCIIHexDecode'
+        print '\tascii85,a85: /ASCII85Decode'
+        print '\tlzw: /LZWDecode'
+        print '\tflatedecode,fl: /FlateDecode'
+        print '\trunlength,rl: /RunLengthDecode'
+        print '\tccittfax,ccf: /CCITTFaxDecode'
+        print '\tjbig2: /JBIG2Decode (Not implemented)'
+        print '\tdct: /DCTDecode (Not implemented)'
+        print '\tjpx: /JPXDecode (Not implemented)' + newLine
 
     def do_decrypt(self, argv):
         if self.pdfFile == None:
@@ -479,22 +495,6 @@ class PDFConsole(cmd.Cmd):
     def help_decrypt(self):
         print newLine + 'Usage: decrypt $password'
         print newLine + 'Decrypts the file with the specified password' + newLine
-                                
-    def help_decode(self):
-        print newLine + 'Usage: decode variable $var_name $filter1 [$filter2 ...]'
-        print 'Usage: decode file $file_name $filter1 [$filter2 ...]'
-        print 'Usage: decode raw $offset $num_bytes $filter1 [$filter2 ...]' + newLine
-        print 'Decodes the content of the specified variable, file or raw bytes using the following filters or algorithms:'
-        print '\tbase64,b64: Base64'
-        print '\tasciihex,ahx: /ASCIIHexDecode'
-        print '\tascii85,a85: /ASCII85Decode'
-        print '\tlzw: /LZWDecode'
-        print '\tflatedecode,fl: /FlateDecode'
-        print '\trunlength,rl: /RunLengthDecode'
-        print '\tccittfax,ccf: /CCITTFaxDecode'
-        print '\tjbig2: /JBIG2Decode (Not implemented)'
-        print '\tdct: /DCTDecode (Not implemented)'
-        print '\tjpx: /JPXDecode (Not implemented)' + newLine
 
     def do_embed(self, argv):
         fileType = 'application#2Fpdf'
@@ -842,7 +842,7 @@ class PDFConsole(cmd.Cmd):
                     self.log_output('encode ' + argv, message)
                     return False
                 encodedContent = ret[1]
-        self.log_output('encode ' + argv, encodedContent, encodedContent, storeOutput = True, bytesOutput = True)
+        self.log_output('encode ' + argv, encodedContent, [encodedContent], storeOutput = True, bytesOutput = True)
                                 
     def help_encode(self):
         print newLine + 'Usage: encode variable $var_name $filter1 [$filter2 ...]'
@@ -1586,7 +1586,6 @@ class PDFConsole(cmd.Cmd):
 
     def do_js_analyse(self, argv):
         content = ''
-        rawBytes = ''
         validTypes = ['variable','file','object','code']
         if not JS_MODULE:
             message = '*** Error: PyV8 is not installed!!'
@@ -1710,7 +1709,6 @@ class PDFConsole(cmd.Cmd):
             jsanalyseOutput += newLine*2 + 'Unescaped bytes:' + newLine*2
             for bytes in unescapedBytes: 
                 jsanalyseOutput += self.printBytes(bytes) + newLine*2
-                rawBytes += bytes + newLine*2
         if urlsFound != []:
             jsanalyseOutput += newLine*2 + 'URLs in shellcode:' + newLine*2
             for url in urlsFound:
@@ -1720,7 +1718,7 @@ class PDFConsole(cmd.Cmd):
             for jsError in jsErrors:
                 jsanalyseOutput += '*** Error analysing Javascript: ' + jsError + newLine
                 
-        self.log_output('js_analyse ' + argv, jsanalyseOutput, rawBytes, storeOutput =  True)        
+        self.log_output('js_analyse ' + argv, jsanalyseOutput, unescapedBytes, storeOutput =  True)        
         
     def help_js_analyse(self):
         print newLine + 'Usage: js_analyse variable $var_name'
@@ -2148,7 +2146,7 @@ class PDFConsole(cmd.Cmd):
             
         jjdecoder = JJDecoder(content)
         try:
-            decodedContent = jjdecoder.decode() 
+            ret = jjdecoder.decode() 
         except Exception as e:
             if len(e.args) == 2:
                 excName,excReason = e.args
@@ -2160,6 +2158,12 @@ class PDFConsole(cmd.Cmd):
                 message = '*** Error: ' + excReason
                 self.log_output('js_jjdecode ' + argv, message)
                 return False
+        if ret[0] == 0:
+            decodedContent = ret[1]
+        else:
+            message = '*** Error: ' + ret[1]
+            self.log_output('js_jjdecode ' + argv, message)
+            return False
         self.log_output('js_jjdecode ' + argv, decodedContent, storeOutput =  True)        
         
     def help_js_jjdecode(self):
@@ -2277,7 +2281,7 @@ class PDFConsole(cmd.Cmd):
             message = '*** Error: '+ret[1]
             self.log_output('js_unescape ' + argv, message)
             return False
-        self.log_output('js_unescape ' + argv, unescapedOutput, bytes, storeOutput = True, bytesOutput = True)
+        self.log_output('js_unescape ' + argv, unescapedOutput, [bytes], storeOutput = True, bytesOutput = True)
         
     def help_js_unescape(self):
         print newLine + 'Usage: js_unescape variable $var_name'
@@ -2854,7 +2858,7 @@ class PDFConsole(cmd.Cmd):
             self.log_output('rawstream ' + argv, message)
             return False
         value = object.getRawStream()
-        self.log_output('rawstream ' + argv, value, value, storeOutput = True, bytesOutput = True)
+        self.log_output('rawstream ' + argv, value, [value], storeOutput = True, bytesOutput = True)
     
     def help_rawstream(self):
         print newLine + 'Usage: rawstream $object_id [$version]'
@@ -3410,7 +3414,7 @@ class PDFConsole(cmd.Cmd):
             message = '*** Error: The stream cannot be decoded!!'
             self.log_output('stream ' + argv, message)
             return False
-        self.log_output('stream ' + argv, value, value, storeOutput = True, bytesOutput = True)
+        self.log_output('stream ' + argv, value, [value], storeOutput = True, bytesOutput = True)
             
     def help_stream(self):
         print newLine + 'Usage: stream $object_id [$version]'
@@ -3770,7 +3774,7 @@ class PDFConsole(cmd.Cmd):
                 key = chr(i)
                 xored = xor(content, key)
                 output += '[' + hex(i) + ']' + newLine + xored + newLine + '[/' + hex(i) + ']' + newLine
-        self.log_output('xor ' + argv, output, output, storeOutput = True, bytesOutput = True)
+        self.log_output('xor ' + argv, output, [output], storeOutput = True, bytesOutput = True)
 
     def help_xor(self):
         print newLine + 'Usage: xor stream|rawstream $object_id [$version] [$key]'
@@ -4090,16 +4094,16 @@ class PDFConsole(cmd.Cmd):
                 objectContent = objectContent.lower()
         return objectContent
 
-    def log_output(self, command, output, bytes = None, printOutput = True, storeOutput = False, bytesOutput = False):
+    def log_output(self, command, output, bytesToSave = [], printOutput = True, storeOutput = False, bytesOutput = False):
         '''
             Method to check the commands output and write it to the console and/or files / variables
             
             @param command: The command launched
             @param output: The output of the command
-            @param bytes: The raw bytes of the command
+            @param bytesToSave: A list with the raw bytes which will be stored in a file or variable
             @param printOutput: Boolean to specify if the output will be written to the console or not. Default value: True.
             @param storeOutput: Boolean to specify if the output will be stored in a variable or file. Default value: False.
-            @param bytesOutput: Boolean to specify if the raw bytes of output will be stored or not. Default value: False. 
+            @param bytesOutput: Boolean to specify if the raw bytes of the output will be stored or not. Default value: False. 
         '''
         errorIndex = output.find('*** Error')
         if errorIndex != -1:
@@ -4115,36 +4119,52 @@ class PDFConsole(cmd.Cmd):
         if self.loggingFile != None:
             open(self.loggingFile,'ab').write('PPDF> '+longOutput)
         if self.redirect:
-            if bytes != None:
-                output = bytes
-            else:
-                output = niceOutput
-            if self.redirect == FILE_WRITE:
-                if self.outputFileName != None:
-                    open(str(self.outputFileName),'wb').write(output)
-            elif self.redirect == FILE_ADD:
-                if self.outputFileName != None:
-                    open(str(self.outputFileName),'ab').write(output)
-            elif self.redirect == VAR_WRITE:
-                if self.outputVarName != None:
-                    self.variables[self.outputVarName] = [output,output]
-            elif self.redirect == VAR_ADD:
-                if self.outputVarName != None:
-                    if self.variables.has_key(self.outputVarName):
-                        self.variables[self.outputVarName][0] += output
+            if bytesToSave == []:
+                bytesToSave.append(niceOutput)
+            for i in range(len(bytesToSave)):
+                bytes = bytesToSave[i]
+                if (self.redirect == FILE_WRITE or self.redirect == FILE_ADD) and self.outputFileName != None:
+                    if i == 0:
+                        outFile = str(self.outputFileName)
                     else:
-                        self.variables[self.outputVarName] = [output,output]
+                        outFile = '%s_%d' % (str(self.outputFileName),i)
+                    if self.redirect == FILE_WRITE:
+                        open(outFile,'wb').write(bytes)
+                    elif self.redirect == FILE_ADD:
+                        open(outFile,'ab').write(bytes)
+                elif (self.redirect == VAR_WRITE or self.redirect == VAR_ADD) and self.outputVarName != None:
+                    if i == 0:
+                        varName = self.outputVarName
+                    else:
+                        varName = '%s_%d' % (self.outputVarName,i)
+                    if self.redirect == VAR_WRITE:
+                        self.variables[varName] = [bytes,bytes]
+                    elif self.redirect == VAR_ADD:
+                        if self.variables.has_key(varName):
+                            self.variables[varName][0] += bytes
+                        else:
+                            self.variables[varName] = [bytes,bytes]
         else:
             if storeOutput:
-                if bytes != None:
-                    output = bytes
-                if self.variables['output'][0] == 'file':
-                    open(self.output,'ab').write(output)
-                elif self.variables['output'][0] == 'variable':
-                    if self.variables.has_key(self.output):
-                        self.variables[self.output][0] = output
-                    else:
-                        self.variables[self.output] = [output,output]
+                if bytesToSave == []:
+                    bytesToSave.append(output)
+                for i in range(len(bytesToSave)):
+                    bytes = bytesToSave[i]
+                    if self.variables['output'][0] == 'file':
+                        if i == 0 and len(bytesToSave) == 1:
+                            outFile = self.output
+                        else:
+                            outFile = '%s_%d' % (self.output,i)
+                        open(outFile,'ab').write(bytes)
+                    elif self.variables['output'][0] == 'variable':
+                        if i == 0 and len(bytesToSave) == 1:
+                            varName = self.output
+                        else:
+                            varName = '%s_%d' % (self.output,i)
+                        if self.variables.has_key(varName):
+                            self.variables[varName][0] = bytes
+                        else:
+                            self.variables[varName] = [bytes,bytes]
             if printOutput:
                 niceOutput = newLine + niceOutput + newLine
                 if self.variables['output_limit'][0] == None or not self.use_rawinput:
