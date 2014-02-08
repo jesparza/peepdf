@@ -6929,7 +6929,6 @@ class PDFParser :
         try:
             self.charCounter = 0
             pdfIndirectObject = PDFIndirectObject()
-            pdfIndirectObject.setSize(len(rawIndirectObject))
             ret,id = self.readUntilNotRegularChar(rawIndirectObject)
             pdfIndirectObject.setId(int(id))
             ret,genNum = self.readUntilNotRegularChar(rawIndirectObject)
@@ -6937,17 +6936,14 @@ class PDFParser :
             ret = self.readSymbol(rawIndirectObject, 'obj')
             if ret[0] == -1:
                 return ret
-            if not looseMode:
-                ret,rawIndirectObject = self.readUntilSymbol(rawIndirectObject, 'endobj')
-                if ret == -1:
-                    return (-1,'End of object not found')
-            else:
-                rawIndirectObject = rawIndirectObject[self.charCounter:]
-            ret = self.readObject(rawIndirectObject, forceMode = forceMode, looseMode = looseMode)
+            rawObject = rawIndirectObject[self.charCounter:]
+            ret = self.readObject(rawObject, forceMode = forceMode, looseMode = looseMode)
             if ret[0] == -1:
                 return ret
             object = ret[1]
             pdfIndirectObject.setObject(object)
+            ret = self.readSymbol(rawIndirectObject, 'endobj', False)
+            pdfIndirectObject.setSize(self.charCounter)
         except:
             errorMessage = 'Unspecified parsing error'
             pdfFile.addError(errorMessage)
