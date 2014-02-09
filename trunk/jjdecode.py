@@ -327,4 +327,4 @@ class JJDecoder(object):
                     continue
             return (-1,'No match in the code!!')
             break
-        return out
+        return (0, out)
