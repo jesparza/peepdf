@@ -3086,6 +3086,7 @@ class PDFConsole(cmd.Cmd):
             self.log_output('sctest ' + argv, message)
             return False
         outputBuffer = 2048
+        maxSteps = 10000000
         verboseMode = False
         validTypes = ['variable','file','raw']
         bytes = ''
@@ -3174,7 +3175,11 @@ class PDFConsole(cmd.Cmd):
         else:
             emu = pylibemu.Emulator(outputBuffer)
         try:
-            emu.run(bytes)
+            shellcodeOffset = emu.shellcode_getpc_test(bytes)
+            if shellcodeOffset < 0:
+                shellcodeOffset = 0
+            emu.prepare(bytes, shellcodeOffset)
+            emu.test(maxSteps)
         except:
             message = '*** Error: Shellcode emulation failed!!'
             self.log_output('sctest ' + argv, message)
