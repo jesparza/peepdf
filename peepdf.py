@@ -236,7 +236,7 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.2'
-revision = '218'   
+revision = '219'   
 stats = ''
 pdf = None
 fileName = None
@@ -292,7 +292,7 @@ try:
         try:
             remotePeepContent = urllib2.urlopen(repURL+'peepdf.py').read()
         except:
-            sys.exit('[x] Connection error while getting file "'+path+'"')
+            sys.exit('[x] Connection error while trying to connect with the repository')
         repVer = re.findall(reVersion, remotePeepContent)
         if repVer != []:
             newVersion = 'v'+repVer[0][0]+' r'+repVer[0][1]
