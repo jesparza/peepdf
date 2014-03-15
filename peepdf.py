@@ -236,7 +236,7 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.2'
-revision = '215'   
+revision = '218'   
 stats = ''
 pdf = None
 fileName = None
@@ -399,7 +399,7 @@ try:
                     raise Exception('PeepException','Send me an email ;)') 
             else:
                 if statsDict != None:
-                    if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
+                    if COLORIZED_OUTPUT and not options.avoidColors:
                         beforeStaticLabel = staticColor
                     else:
                         beforeStaticLabel = ''
@@ -428,7 +428,7 @@ try:
                             detectionReportInfo = ''
                             if statsDict['Detection'] != None:
                                  detectionColor = ''
-                                 if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
+                                 if COLORIZED_OUTPUT and not options.avoidColors:
                                 	 detectionLevel = statsDict['Detection'][0]/(statsDict['Detection'][1]/3)
                                 	 if detectionLevel == 0:
                                 	 	 detectionColor = alertColor
@@ -481,7 +481,7 @@ try:
                             stats += newLine + beforeStaticLabel + '\t\tEncoded ('+statsVersion['Encoded'][0]+'): ' + resetColor + str(statsVersion['Encoded'][1])
                             if statsVersion['Decoding Errors'] != None:
                                 stats += newLine + beforeStaticLabel + '\t\tDecoding errors ('+statsVersion['Decoding Errors'][0]+'): ' + resetColor + str(statsVersion['Decoding Errors'][1])
-                        if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
+                        if COLORIZED_OUTPUT and not options.avoidColors:
                             beforeStaticLabel = warningColor
                         if statsVersion['Objects with JS code'] != None:
                             stats += newLine + beforeStaticLabel + '\tObjects with JS code ('+statsVersion['Objects with JS code'][0]+'): ' + resetColor + str(statsVersion['Objects with JS code'][1])
@@ -515,7 +515,7 @@ try:
                                         stats = stats[:-1] + '): ' + resetColor + str(elements[element]) + newLine
                                     else:
                                         stats += '\t\t' + beforeStaticLabel + element + ': ' + resetColor + str(elements[element]) + newLine
-                        if COLORIZED_OUTPUT and options.isInteractive and not options.avoidColors:
+                        if COLORIZED_OUTPUT and not options.avoidColors:
                             beforeStaticLabel = staticColor
                         urls = statsVersion['URLs']
                         if urls != None:
