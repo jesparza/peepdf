@@ -50,6 +50,15 @@ try:
 except:
     EMU_MODULE = False
     
+# The GNU readline function does not handle correctly the colorized (ANSI) prompts, so this is a dirty fix
+try:
+    import readline
+    RL_PROMPT_START_IGNORE = '\001'
+    RL_PROMPT_END_IGNORE = '\002'
+except:
+    RL_PROMPT_START_IGNORE = RL_PROMPT_END_IGNORE = ''
+    
+# File and variable redirections 
 FILE_WRITE = 1
 FILE_ADD = 2
 VAR_WRITE = 3
@@ -64,6 +73,7 @@ class PDFConsole(cmd.Cmd):
     '''
 
     def __init__(self, pdfFile, vtKey, avoidOutputColors = False, stdin = None):
+        global COLORIZED_OUTPUT
         cmd.Cmd.__init__(self, stdin = stdin)
         errorColorizedInit = False
         self.warningColor = ''
@@ -80,14 +90,15 @@ class PDFConsole(cmd.Cmd):
                 self.errorColor = Fore.RED
                 self.alertColor = Fore.RED
                 self.staticColor = Fore.BLUE
+                self.promptColor = RL_PROMPT_START_IGNORE + Fore.GREEN + RL_PROMPT_END_IGNORE
                 self.resetColor = Style.RESET_ALL
                 self.avoidOutputColors = False
             except:
                 self.avoidOutputColors = True
-                errorColorizedInit = True
+                COLORIZED_OUTPUT = False
 
-        if COLORIZED_OUTPUT and not errorColorizedInit:
-            self.prompt = Fore.GREEN + 'PPDF> ' + Style.RESET_ALL
+        if not self.avoidOutputColors:
+            self.prompt = self.promptColor + 'PPDF> ' + RL_PROMPT_START_IGNORE + self.resetColor + RL_PROMPT_END_IGNORE
         else:
             self.prompt = 'PPDF> '       
         self.use_rawinput = True
@@ -95,13 +106,11 @@ class PDFConsole(cmd.Cmd):
             self.use_rawinput = False
             self.prompt = '' 
         self.pdfFile = pdfFile
-        self.variables = {'output':['stdout','stdout'], # value and default value
-                          'output_limit':[None,None],
+        self.variables = {'output_limit':[1000,1000],
                           'malformed_options':[[],[]],
                           'header_file':[None,None],
                           'vt_key':[vtKey,vtKey]}
         self.javaScriptContexts = {'global': None}
-        self.validVariableValues = {'output':['stdout','file','variable']}
         self.readOnlyVariables = ['malformed_options','header_file']
         self.loggingFile = None
         self.output = None
@@ -146,7 +155,7 @@ class PDFConsole(cmd.Cmd):
                 return False
             bytes = ret[1]
             if numArgs == 2:
-                self.log_output('bytes ' + argv, bytes, [bytes], storeOutput = True, bytesOutput = True)
+                self.log_output('bytes ' + argv, bytes, [bytes], bytesOutput = True)
             else:
                 outputFile = args[2]
                 open(outputFile,'wb').write(bytes)
@@ -232,7 +241,7 @@ class PDFConsole(cmd.Cmd):
             if notMatchingObjects != []:
                 output += '\tIncoherent objects: ' + str(notMatchingObjects) + newLine
             output += newLine
-        self.log_output('changelog ' + argv, output, storeOutput = True)
+        self.log_output('changelog ' + argv, output)
         
     def help_changelog(self):
         print newLine + 'Usage: changelog [$version]'
@@ -451,7 +460,7 @@ class PDFConsole(cmd.Cmd):
                     self.log_output('decode ' + argv, message)
                     return False
                 decodedContent = ret[1]
-        self.log_output('decode ' + argv, decodedContent, [decodedContent], storeOutput = True, bytesOutput = True)
+        self.log_output('decode ' + argv, decodedContent, [decodedContent], bytesOutput = True)
               
     def help_decode(self):
         print newLine + 'Usage: decode variable $var_name $filter1 [$filter2 ...]'
@@ -842,7 +851,7 @@ class PDFConsole(cmd.Cmd):
                     self.log_output('encode ' + argv, message)
                     return False
                 encodedContent = ret[1]
-        self.log_output('encode ' + argv, encodedContent, [encodedContent], storeOutput = True, bytesOutput = True)
+        self.log_output('encode ' + argv, encodedContent, [encodedContent], bytesOutput = True)
                                 
     def help_encode(self):
         print newLine + 'Usage: encode variable $var_name $filter1 [$filter2 ...]'
@@ -935,7 +944,7 @@ class PDFConsole(cmd.Cmd):
         else:
             self.help_encode_strings()
             return False
-        self.log_output('encode_strings ' + argv, message, storeOutput = True)
+        self.log_output('encode_strings ' + argv, message)
                     
     def help_encode_strings(self):
         print newLine + 'Usage: encode_strings [$object_id|trailer [$version]]'
@@ -1177,7 +1186,7 @@ class PDFConsole(cmd.Cmd):
             newErrors = object.getErrors()
             if newErrors != errors:
                 message = 'Warning: Some errors found in the modification process!!' + newLine
-        self.log_output('filters ' + argv, message+value, value, storeOutput = True)
+        self.log_output('filters ' + argv, message+value, value)
             
     def help_filters(self):
         print newLine + 'Usage: filters $object_id [$version] [$filter1 [$filter2 ...]]'
@@ -1294,7 +1303,7 @@ class PDFConsole(cmd.Cmd):
         sha1Hash = hashlib.sha1(content).hexdigest()
         sha256Hash = hashlib.sha256(content).hexdigest()
         output = 'MD5: ' + md5Hash + newLine + 'SHA1: ' + sha1Hash + newLine + 'SHA256: ' + sha256Hash + newLine
-        self.log_output('hash ' + argv, output, storeOutput = True)
+        self.log_output('hash ' + argv, output)
 
     def help_hash(self):
         print newLine + 'Usage: hash object|rawobject|stream|rawstream $object_id [$version]'
@@ -1428,7 +1437,7 @@ class PDFConsole(cmd.Cmd):
                     for url in urls:
                         stats += '\t\t' + url + newLine
                 stats += newLine * 2           
-            self.log_output('info ' + argv, stats, storeOutput = True)
+            self.log_output('info ' + argv, stats)
             return False
         elif len(args) == 1:
             version = None
@@ -1578,7 +1587,7 @@ class PDFConsole(cmd.Cmd):
                     stats += beforeStaticLabel + 'Parsing Errors: ' + self.resetColor  + statsDict['Errors'] + newLine
                 else:
                     stats += beforeStaticLabel + 'Errors: ' + self.resetColor  + statsDict['Errors'] + newLine
-        self.log_output('info ' + argv, stats, storeOutput = True)        
+        self.log_output('info ' + argv, stats)        
         
     def help_info(self):
         print newLine + 'Usage: info [$object_id|xref|trailer [$version]]'
@@ -1718,7 +1727,7 @@ class PDFConsole(cmd.Cmd):
             for jsError in jsErrors:
                 jsanalyseOutput += '*** Error analysing Javascript: ' + jsError + newLine
                 
-        self.log_output('js_analyse ' + argv, jsanalyseOutput, unescapedBytes, storeOutput =  True)        
+        self.log_output('js_analyse ' + argv, jsanalyseOutput, unescapedBytes)        
         
     def help_js_analyse(self):
         print newLine + 'Usage: js_analyse variable $var_name'
@@ -1831,7 +1840,7 @@ class PDFConsole(cmd.Cmd):
                 return False
             
         beautyContent = jsbeautifier.beautify(content)
-        self.log_output('js_beautify ' + argv, beautyContent, storeOutput =  True)        
+        self.log_output('js_beautify ' + argv, beautyContent)        
         
     def help_js_beautify(self):
         print newLine + 'Usage: js_beautify variable $var_name'
@@ -1893,7 +1902,7 @@ class PDFConsole(cmd.Cmd):
                     consoleOutput += newLine + js + newLine
             elif len(jsCode) == 1:
                 consoleOutput += newLine + jsCode[0] + newLine
-            self.log_output('js_code ' + argv, consoleOutput, storeOutput = True)
+            self.log_output('js_code ' + argv, consoleOutput)
         else:
             message = '*** Error: Javascript code not found in this object!!'
             self.log_output('js_code ' + argv, message)
@@ -2164,7 +2173,7 @@ class PDFConsole(cmd.Cmd):
             message = '*** Error: ' + ret[1]
             self.log_output('js_jjdecode ' + argv, message)
             return False
-        self.log_output('js_jjdecode ' + argv, decodedContent, storeOutput =  True)        
+        self.log_output('js_jjdecode ' + argv, decodedContent)        
         
     def help_js_jjdecode(self):
         print newLine + 'Usage: js_jjdecode variable $var_name'
@@ -2211,7 +2220,7 @@ class PDFConsole(cmd.Cmd):
             return False            
         for string in strings:
             finalString += string
-        self.log_output('js_join ' + argv, finalString, storeOutput = True)
+        self.log_output('js_join ' + argv, finalString)
         
     def help_js_join(self):
         print newLine + 'Usage: js_join variable $var_name'
@@ -2281,7 +2290,7 @@ class PDFConsole(cmd.Cmd):
             message = '*** Error: '+ret[1]
             self.log_output('js_unescape ' + argv, message)
             return False
-        self.log_output('js_unescape ' + argv, unescapedOutput, [bytes], storeOutput = True, bytesOutput = True)
+        self.log_output('js_unescape ' + argv, unescapedOutput, [bytes], bytesOutput = True)
         
     def help_js_unescape(self):
         print newLine + 'Usage: js_unescape variable $var_name'
@@ -2404,7 +2413,7 @@ class PDFConsole(cmd.Cmd):
         self.variables['malformed_options'] = [malformedOptions, malformedOptions]
         self.variables['header_file'] = [headerFile, headerFile]
         message = 'Malformed options successfully enabled'
-        self.log_output('malformed_output ' + argv, message, storeOutput = True)
+        self.log_output('malformed_output ' + argv, message)
         
     def help_malformed_output(self):
         print newLine + 'Usage: malformed_output [$option1 [$option2 ...] [$header_file]]' + newLine
@@ -2468,7 +2477,7 @@ class PDFConsole(cmd.Cmd):
 	                                value = object.getValue()
 	                                if value != '':
 	                                    output += 'Object '+str(id)+' in version '+str(v)+':' + newLine*2+value+newLine*2
-            self.log_output('metadata ' + argv, output, storeOutput = True)
+            self.log_output('metadata ' + argv, output)
         else:
             message = '*** No metadata found!!'
             self.log_output('metadata ' + argv, message)
@@ -2601,7 +2610,7 @@ class PDFConsole(cmd.Cmd):
             self.log_output('object ' + argv, message)
             return False
         value = object.getValue()
-        self.log_output('object ' + argv, value, storeOutput = True)
+        self.log_output('object ' + argv, value)
         
     def help_object(self):
         print newLine + 'Usage: object $object_id [$version]'
@@ -2666,7 +2675,7 @@ class PDFConsole(cmd.Cmd):
                 offset, size = offsets['eof']
                 offsetsOutput += '%8d %s%s' % (offset,'EOF',newLine)
                 
-        self.log_output('offsets ' + argv, offsetsOutput, storeOutput = True)
+        self.log_output('offsets ' + argv, offsetsOutput)
                     
     def help_offsets(self):
         print newLine + 'Usage: offsets [$version]'
@@ -2814,7 +2823,7 @@ class PDFConsole(cmd.Cmd):
                 return False
             rawValue = ret[1]
         '''
-        self.log_output('rawobject ' + argv, rawValue, storeOutput = True)
+        self.log_output('rawobject ' + argv, rawValue)
         
     def help_rawobject(self):
         print newLine + 'Usage: rawobject [$object_id|xref|trailer [$version]]'
@@ -2858,7 +2867,7 @@ class PDFConsole(cmd.Cmd):
             self.log_output('rawstream ' + argv, message)
             return False
         value = object.getRawStream()
-        self.log_output('rawstream ' + argv, value, [value], storeOutput = True, bytesOutput = True)
+        self.log_output('rawstream ' + argv, value, [value], bytesOutput = True)
     
     def help_rawstream(self):
         print newLine + 'Usage: rawstream $object_id [$version]'
@@ -2901,7 +2910,7 @@ class PDFConsole(cmd.Cmd):
             references = 'No references!!'
         elif references == None:
             references = '*** Error: Object not found!!'
-        self.log_output('references ' + argv, str(references), storeOutput = True)
+        self.log_output('references ' + argv, str(references))
     
     def help_references(self):
         print newLine + 'Usage: references to|in $object_id [$version]'
@@ -3169,7 +3178,7 @@ class PDFConsole(cmd.Cmd):
                 self.log_output('sctest ' + argv, message)
                 return False
             bytes = ret[1]
-        
+            
         if verboseMode:
             emu = pylibemu.Emulator()
         else:
@@ -3188,7 +3197,7 @@ class PDFConsole(cmd.Cmd):
             output = emu.emu_profile_output
         else:
             output = ''
-        self.log_output('sctest ' + argv, output, storeOutput = True)
+        self.log_output('sctest ' + argv, output)
         
     def help_sctest(self):
         print newLine + 'Usage: sctest [-v] variable $var_name'
@@ -3254,7 +3263,7 @@ class PDFConsole(cmd.Cmd):
                     output = 'Not found!!'
                 else:
                     output = output[1:-1]
-        self.log_output('search ' + argv, output, storeOutput = True)
+        self.log_output('search ' + argv, output)
         
     def help_search(self):
         print newLine + 'Usage: search [hex] $string'
@@ -3269,58 +3278,39 @@ class PDFConsole(cmd.Cmd):
             self.log_output('set ' + argv, message)
             return False
         numArgs = len(args)
-        if numArgs != 0 and numArgs != 2 and numArgs != 3:
+        if numArgs != 0 and numArgs != 2:
             self.help_set()
             return False
         if numArgs == 0:
             vars = self.variables.keys()
             for var in vars:
-                if var == 'output' and (self.variables[var][0] == 'file' or self.variables[var][0] == 'variable'):
-                    consoleOutput += var + ' = "' + self.output + '" ('+ str(self.variables[var][0]) +')' + newLine
-                else:
-                    varContent = self.printResult(str(self.variables[var][0]))
-                    if varContent == str(self.variables[var][0]):
-                        if varContent != 'None' and not re.match('\[.*\]',varContent):
-                            consoleOutput += var + ' = "' + varContent + '"' + newLine
-                        else:
-                            consoleOutput += var + ' = ' + varContent + newLine
+                varContent = self.printResult(str(self.variables[var][0]))
+                if varContent == str(self.variables[var][0]):
+                    if varContent != 'None' and not re.match('\[.*\]',varContent) and not varContent.isdigit():
+                        consoleOutput += var + ' = "' + varContent + '"' + newLine
                     else:
-                        consoleOutput += var + ' = ' + newLine + varContent + newLine
+                        consoleOutput += var + ' = ' + str(varContent) + newLine
+                else:
+                    consoleOutput += var + ' = ' + newLine + varContent + newLine
             print newLine + consoleOutput
         else:
             varName = args[0]
             value = args[1]
-            if varName == 'output':
-                if value not in self.validVariableValues[varName]:
-                    self.help_set()
-                    return False
-                if value != 'stdout':
-                    if numArgs != 3:
-                        self.help_set()
-                        return False
-                    else:
-                        self.variables[varName][0] = value
-                        self.output = args[2]
-                else:
-                    if numArgs != 2:
-                        self.help_set()
-                        return False
-                    else:
-                        self.variables[varName][0] = value
-                        self.output = None
-            else:
-                if varName in self.readOnlyVariables:
-                    message = '*** Error: This is a READ ONLY variable!!'
-                    self.log_output('set ' + argv, message)
-                    return False
-                if varName == 'output_limit' and not value.isdigit():
+            if varName in self.readOnlyVariables:
+                message = '*** Error: This is a READ ONLY variable!!'
+                self.log_output('set ' + argv, message)
+                return False
+            if varName == 'output_limit':
+                if not value.isdigit():
                     message = '*** Error: The value for this variable must be an integer!!'
                     self.log_output('set ' + argv, message)
                     return False
-                if self.variables.has_key(varName):
-                    self.variables[varName][0] = value
                 else:
-                    self.variables[varName] = [value, value]
+                    value = int(value)
+            if self.variables.has_key(varName):
+                self.variables[varName][0] = value
+            else:
+                self.variables[varName] = [value, value]
                 
     def help_set(self):
         print newLine + 'Usage: set [$var_name $var_value]'
@@ -3328,16 +3318,8 @@ class PDFConsole(cmd.Cmd):
         print 'Special variables:' + newLine
         print '\theader_file: READ ONLY. Specifies the file header to be used when \'malformed_options\' are active.' + newLine
         print '\tmalformed_options: READ ONLY. Variable to store the malformed options used to save the file.' + newLine
-        print '\toutput: specifies the destination of the commands output. Valid values are: \'stdout\', \'variable\' and \'file\'.' + newLine
-        print '\toutput_limit: variable to specify the maximum number of lines to be shown at once when the output is long. By default there is no limit.' + newLine
-        print '\tvt_key: VirusTotal Api key.'
-        print '\tUsage for the \'output\' variable:' + newLine 
-        print '\t> set output stdout'
-        print '\tNormal console output' + newLine
-        print    '\t> set output file $file_name'
-        print '\tStores the results of the commands in the specified file' + newLine
-        print    '\t> set output variable $var_name'
-        print '\tStores the results of the commands in the specified variable' + newLine
+        print '\toutput_limit: variable to specify the maximum number of lines to be shown at once when the output is long (no limit = -1). By default there is no limit.' + newLine
+        print '\tvt_key: VirusTotal Api key.' + newLine
 
     def do_show(self, argv):
         args = self.parseArgs(argv)
@@ -3419,7 +3401,7 @@ class PDFConsole(cmd.Cmd):
             message = '*** Error: The stream cannot be decoded!!'
             self.log_output('stream ' + argv, message)
             return False
-        self.log_output('stream ' + argv, value, [value], storeOutput = True, bytesOutput = True)
+        self.log_output('stream ' + argv, value, [value], bytesOutput = True)
             
     def help_stream(self):
         print newLine + 'Usage: stream $object_id [$version]'
@@ -3469,7 +3451,7 @@ class PDFConsole(cmd.Cmd):
             for object in objectsInfo:
                 nodesPrinted, nodeOutput = self.printTreeNode(object, objectsInfo, nodesPrinted)
                 treeOutput += nodeOutput
-        self.log_output('tree ' + argv, treeOutput, storeOutput = True)
+        self.log_output('tree ' + argv, treeOutput)
                     
     def help_tree(self):
         print newLine + 'Usage: tree [$version]'
@@ -3493,7 +3475,7 @@ class PDFConsole(cmd.Cmd):
         elif args == []:
             if self.pdfFile == None:
                 message = '*** Error: You must open a file!!'
-                self.log_output('version ' + argv, message)
+                self.log_output('vtcheck ' + argv, message)
                 return False
             md5Hash = self.pdfFile.getMD5()
         else:
@@ -3629,7 +3611,7 @@ class PDFConsole(cmd.Cmd):
             message = '*** Error: Bad response from VirusTotal!!'
             self.log_output('vtcheck ' + argv, message)
             return False
-        self.log_output('vtcheck ' + argv, output, storeOutput = True)
+        self.log_output('vtcheck ' + argv, output)
 
     def help_vtcheck(self):
         print newLine + 'Usage: vtcheck'
@@ -3779,7 +3761,7 @@ class PDFConsole(cmd.Cmd):
                 key = chr(i)
                 xored = xor(content, key)
                 output += '[' + hex(i) + ']' + newLine + xored + newLine + '[/' + hex(i) + ']' + newLine
-        self.log_output('xor ' + argv, output, [output], storeOutput = True, bytesOutput = True)
+        self.log_output('xor ' + argv, output, [output], bytesOutput = True)
 
     def help_xor(self):
         print newLine + 'Usage: xor stream|rawstream $object_id [$version] [$key]'
@@ -4099,16 +4081,15 @@ class PDFConsole(cmd.Cmd):
                 objectContent = objectContent.lower()
         return objectContent
 
-    def log_output(self, command, output, bytesToSave = [], printOutput = True, storeOutput = False, bytesOutput = False):
+    def log_output(self, command, output, bytesToSave = None, printOutput = True, bytesOutput = False):
         '''
             Method to check the commands output and write it to the console and/or files / variables
             
             @param command: The command launched
             @param output: The output of the command
-            @param bytesToSave: A list with the raw bytes which will be stored in a file or variable
+            @param bytesToSave: A list with the raw bytes which will be stored in a file or variable if a redirection has been set (>,>>,$>,$>>).
             @param printOutput: Boolean to specify if the output will be written to the console or not. Default value: True.
-            @param storeOutput: Boolean to specify if the output will be stored in a variable or file. Default value: False.
-            @param bytesOutput: Boolean to specify if the raw bytes of the output will be stored or not. Default value: False. 
+            @param bytesOutput: Boolean to specify if we want to print raw bytes or not. Default value: False. 
         '''
         errorIndex = output.find('*** Error')
         if errorIndex != -1:
@@ -4124,8 +4105,8 @@ class PDFConsole(cmd.Cmd):
         if self.loggingFile != None:
             open(self.loggingFile,'ab').write('PPDF> '+longOutput)
         if self.redirect:
-            if bytesToSave == []:
-                bytesToSave.append(niceOutput)
+            if bytesToSave == None:
+                bytesToSave = [niceOutput]
             for i in range(len(bytesToSave)):
                 bytes = bytesToSave[i]
                 if (self.redirect == FILE_WRITE or self.redirect == FILE_ADD) and self.outputFileName != None:
@@ -4149,42 +4130,23 @@ class PDFConsole(cmd.Cmd):
                             self.variables[varName][0] += bytes
                         else:
                             self.variables[varName] = [bytes,bytes]
-        else:
-            if storeOutput:
-                if bytesToSave == []:
-                    bytesToSave.append(output)
-                for i in range(len(bytesToSave)):
-                    bytes = bytesToSave[i]
-                    if self.variables['output'][0] == 'file':
-                        if i == 0 and len(bytesToSave) == 1:
-                            outFile = self.output
-                        else:
-                            outFile = '%s_%d' % (self.output,i)
-                        open(outFile,'ab').write(bytes)
-                    elif self.variables['output'][0] == 'variable':
-                        if i == 0 and len(bytesToSave) == 1:
-                            varName = self.output
-                        else:
-                            varName = '%s_%d' % (self.output,i)
-                        if self.variables.has_key(varName):
-                            self.variables[varName][0] = bytes
-                        else:
-                            self.variables[varName] = [bytes,bytes]
-            if printOutput:
-                niceOutput = newLine + niceOutput + newLine
-                if self.variables['output_limit'][0] == None or not self.use_rawinput:
-                    print niceOutput
-                else:
-                    limit = int(self.variables['output_limit'][0])
-                    lines = niceOutput.split(newLine)
-                    while len(lines) > 0:
-                        outputStepLines = lines[:limit]
-                        lines = lines[limit:]
-                        for line in outputStepLines:
-                            print line
-                        ch = raw_input('( Press <intro> to continue or <q><intro> to quit )')
-                        if ch == 'q' or ch == 'Q':
-                            break
+        elif printOutput:
+            niceOutput = newLine + niceOutput + newLine
+            if self.variables['output_limit'][0] == None or self.variables['output_limit'][0] == -1 or not self.use_rawinput:
+                print niceOutput
+            else:
+                limit = int(self.variables['output_limit'][0])
+                lines = niceOutput.split(newLine)
+                while len(lines) > 0:
+                    outputStepLines = lines[:limit]
+                    lines = lines[limit:]
+                    for line in outputStepLines:
+                        print line
+                    if len(lines) == 0:
+                        break
+                    ch = raw_input('( Press <intro> to continue or <q><intro> to quit )')
+                    if ch == 'q' or ch == 'Q':
+                        break
 
     def modifyObject(self, object, iteration = 0, contentFile = None, maxDepth = 10):
         '''
