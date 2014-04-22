@@ -25,7 +25,7 @@
     Module with some misc functions
 '''
 
-import os, re, htmlentitydefs, simplejson, urllib, urllib2
+import os, re, htmlentitydefs, json, urllib, urllib2
 
 def clearScreen():
 	'''
@@ -429,11 +429,11 @@ def vtcheck(md5, vtKey):
         data = urllib.urlencode(parameters)
         req = urllib2.Request(vtUrl, data)
         response = urllib2.urlopen(req)
-        json = response.read()
+        jsonResponse = response.read()
     except:
         return (-1, 'The request to VirusTotal has not been successful')
     try:
-        jsonDict = simplejson.loads(json)
+        jsonDict = json.loads(jsonResponse)
     except:
         return (-1, 'An error has occurred while parsing the JSON response from VirusTotal')
     return (0, jsonDict)
