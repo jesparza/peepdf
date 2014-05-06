@@ -69,21 +69,21 @@ def decodeStream(stream, filter, parameters = {}):
 		@param parameters: List of PDFObjects containing the parameters for the filter
 		@return: A tuple (status,statusContent), where statusContent is the decoded stream in case status = 0 or an error in case status = -1
 	'''
-	if filter == '/ASCIIHexDecode' or filter == 'AHx':
+	if filter == '/ASCIIHexDecode' or filter == '/AHx':
 		ret = asciiHexDecode(stream)
-	elif filter == '/ASCII85Decode' or filter == 'A85':
+	elif filter == '/ASCII85Decode' or filter == '/A85':
 		ret = ascii85Decode(stream)
-	elif filter == '/LZWDecode' or filter == 'LZW':
+	elif filter == '/LZWDecode' or filter == '/LZW':
 		ret = lzwDecode(stream, parameters)
-	elif filter == '/FlateDecode' or filter == 'Fl':
+	elif filter == '/FlateDecode' or filter == '/Fl':
 		ret = flateDecode(stream, parameters)
-	elif filter == '/RunLengthDecode' or filter == 'RL':
+	elif filter == '/RunLengthDecode' or filter == '/RL':
 		ret = runLengthDecode(stream)
-	elif filter == '/CCITTFaxDecode' or filter == 'CCF':
+	elif filter == '/CCITTFaxDecode' or filter == '/CCF':
 		ret = ccittFaxDecode(stream, parameters)
 	elif filter == '/JBIG2Decode':
 		ret = jbig2Decode(stream, parameters)
-	elif filter == '/DCTDecode' or filter == 'DCT':
+	elif filter == '/DCTDecode' or filter == '/DCT':
 		ret = dctDecode(stream, parameters)
 	elif filter == '/JPXDecode':
 		ret = jpxDecode(stream)
