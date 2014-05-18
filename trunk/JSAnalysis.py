@@ -43,6 +43,7 @@ except:
     JS_MODULE = False
 
 
+errorsFile = 'errors.txt'
 newLine = os.linesep         
 reJSscript = '<script[^>]*?contentType\s*?=\s*?[\'"]application/x-javascript[\'"][^>]*?>(.*?)</script>'
 preDefinedCode = 'var app = this;'
@@ -66,9 +67,11 @@ def analyseJS(code, context = None, manualAnalysis = False):
     
     try:
         code = unescapeHTMLEntities(code)
-        scriptCode = re.findall(reJSscript, code, re.DOTALL | re.IGNORECASE)
-        if scriptCode != []:
-            code = scriptCode[0]
+        scriptElements = re.findall(reJSscript, code, re.DOTALL | re.IGNORECASE)
+        if scriptElements != []:
+            code = ''
+            for scriptElement in scriptElements:
+                code += scriptElement + '\n\n'
         code = jsbeautifier.beautify(code)
         JSCode.append(code)
     
