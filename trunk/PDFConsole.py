@@ -2235,7 +2235,7 @@ class PDFConsole(cmd.Cmd):
         content = ''
         unescapedOutput = ''
         bytes = ''
-        reUnicodeChars = '(%u[0-9a-f]{4})+'
+        reUnicodeChars = '([%\]u[0-9a-f]{4})+'
         reHexChars = '(%[0-9a-f]{2})+'
         validTypes = ['variable','file']
         args = self.parseArgs(argv)

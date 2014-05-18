@@ -228,8 +228,11 @@ def unescape(escapedBytes, unicode = True):
     else:
         unicodePadding = ''
     try:
-        if escapedBytes.find('%u') != -1 or escapedBytes.find('%U') != -1 or escapedBytes.find('%') != -1:
-            splitBytes = escapedBytes.split('%')
+        if escapedBytes.lower().find('%u') != -1 or escapedBytes.lower().find('\u') != -1 or escapedBytes.find('%') != -1:
+            if escapedBytes.lower().find('\u') != -1:
+                splitBytes = escapedBytes.split('\\')
+            else:
+                splitBytes = escapedBytes.split('%')
             for i in range(len(splitBytes)):
                 splitByte = splitBytes[i]
                 if splitByte == '':
