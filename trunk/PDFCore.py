@@ -48,7 +48,8 @@ monitorizedActions = ['/JS ','/JavaScript','/Launch','/SubmitForm','/ImportData'
 monitorizedElements = ['/EmbeddedFiles ','/EmbeddedFile','/JBIG2Decode','getPageNthWord','arguments.callee','/U3D','/PRC','/RichMedia']
 jsVulns = ['mailto','Collab.collectEmailInfo','util.printf','getAnnots','getIcon','spell.customDictionaryOpen','media.newPlayer','doc.printSeps','.rawValue','app.removeToolButton']
 singUniqueName = 'CoolType.SING.uniqueName'
-vulnsDict = {'mailto':['CVE-2007-5020'],'Collab.collectEmailInfo':['CVE-2007-5659'],'util.printf':['CVE-2008-2992'],'/JBIG2Decode':['CVE-2009-0658'],'getIcon':['CVE-2009-0927'],'getAnnots':['CVE-2009-1492'],'spell.customDictionaryOpen':['CVE-2009-1493'],'media.newPlayer':['CVE-2009-4324'],'.rawValue':['CVE-2010-0188'],singUniqueName:['CVE-2010-2883'],'doc.printSeps':['CVE-2010-4091'],'/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462'],'/PRC':['CVE-2011-4369'],'app.removeToolButton':['CVE-2013-3346']}
+bmpVuln = 'BMP/RLE heap corruption'
+vulnsDict = {'mailto':['CVE-2007-5020'],'Collab.collectEmailInfo':['CVE-2007-5659'],'util.printf':['CVE-2008-2992'],'/JBIG2Decode':['CVE-2009-0658'],'getIcon':['CVE-2009-0927'],'getAnnots':['CVE-2009-1492'],'spell.customDictionaryOpen':['CVE-2009-1493'],'media.newPlayer':['CVE-2009-4324'],'.rawValue':['CVE-2010-0188'],singUniqueName:['CVE-2010-2883'],'doc.printSeps':['CVE-2010-4091'],'/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462'],'/PRC':['CVE-2011-4369'],bmpVuln:['CVE-2013-2729'],'app.removeToolButton':['CVE-2013-3346']}
 jsContexts = {'global':None}
 
 class PDFObject :
@@ -4239,21 +4240,29 @@ class PDFBody :
                             else:
                                 self.vulns[vuln] = [id]
         ## Extra checks
-        # CVE-2010-2883
-        # http://opensource.adobe.com/svn/opensource/tin/src/SING.cpp
-        # http://community.websense.com/blogs/securitylabs/archive/2010/09/10/brief-analysis-on-adobe-reader-sing-table-parsing-vulnerability-cve-2010-2883.aspx
         objectType = pdfObject.getType()
         if objectType == 'stream':
+            vulnFound = None
             streamContent = pdfObject.getStream()
             if len(streamContent) > 327 and streamContent[236:240] == 'SING' and streamContent[327] != '\0':
-                if self.suspiciousElements.has_key(singUniqueName):
+                # CVE-2010-2883
+                # http://opensource.adobe.com/svn/opensource/tin/src/SING.cpp
+                # http://community.websense.com/blogs/securitylabs/archive/2010/09/10/brief-analysis-on-adobe-reader-sing-table-parsing-vulnerability-cve-2010-2883.aspx
+                vulnFound = singUniqueName
+            elif streamContent.count('AAL/AAAC/wAAAv8A') > 1000:
+                # CVE-2013-2729
+                # Adobe Reader BMP/RLE heap corruption
+                # http://blog.binamuse.com/2013/05/readerbmprle.html
+                vulnFound = bmpVuln
+            if vulnFound != None:    
+                if self.suspiciousElements.has_key(vulnFound):
                     if delete:
-                        if id in self.suspiciousElements[singUniqueName]:
-                            self.suspiciousElements[singUniqueName].remove(id)
-                    elif id not in self.suspiciousElements[singUniqueName]:
-                        self.suspiciousElements[singUniqueName].append(id)
+                        if id in self.suspiciousElements[vulnFound]:
+                            self.suspiciousElements[vulnFound].remove(id)
+                    elif id not in self.suspiciousElements[vulnFound]:
+                        self.suspiciousElements[vulnFound].append(id)
                 elif not delete:
-                    self.suspiciousElements[singUniqueName] = [id]
+                    self.suspiciousElements[vulnFound] = [id]
         return (0,'')                        
     
 
