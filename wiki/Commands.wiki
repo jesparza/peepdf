@@ -1187,24 +1187,11 @@ Special variables:
 
 	malformed_options: READ ONLY. Variable to store the malformed options used to save the file.
 
-	output: specifies the destination of the commands output. Valid values are: 'stdout', 'variable' and 'file'.
-
 	output_limit: variable to specify the maximum number of lines to be shown at once when the output is long. 
 By default there is no limit.
-
-	Usage for the 'output' variable:
-
-	> set output stdout
-	Normal console output
-
-	> set output file file_name
-	Stores the results of the commands in the specified file
-
-	> set output variable var_name
-	Stores the results of the commands in the specified variable
 }}}
-Thanks to this command it's possible to store the result of the rest of commands or anything we want in a
-variable or in a file. If we modify the default output we should restore it with the [#reset reset] command: 
+~~Thanks to this command it's possible to store the result of the rest of commands or anything we want in a
+variable or in a file.~~ The "set output" way to store the commands output has been deprecated, use instead ">" and ">>" for files, and "$>" and "$>>" for variables: 
 {{{
 PPDF> rawstream 5
 
@@ -1233,9 +1220,8 @@ a9 21 74 6c 93 15 44 b9 05 5a 63 e7 66 d4 a8 48   |.!tl..D..Zc.f..H|
 2e e7 39 18 c7 c6 58 19 82 0d 16 7c 5f 7b c7 8b   |..9...X....|_{..|
 8a ab 6b 2f e5 eb 24 3c 6c f5 8a d8 ca 68 51 3c   |..k/..$<l....hQ<|
 9e cb 89 f3 3b fb 0f 6c d4 7d d7 0d 0a            |....;..l.}...|
-
-PPDF> set output variable stream5
-PPDF> rawstream 5
+ 
+PPDF> rawstream 5 $> stream5
 
 78 da 05 c1 7b 7f 6a 60 00 00 e0 cf 72 dc 5e 8b   |x...{j`....r.^.|
 5a 26 22 8a 37 62 ea 87 cd ad 8b cb ab 25 e4 54   |Z&".7b.......%.T|
@@ -1262,10 +1248,6 @@ a9 21 74 6c 93 15 44 b9 05 5a 63 e7 66 d4 a8 48   |.!tl..D..Zc.f..H|
 2e e7 39 18 c7 c6 58 19 82 0d 16 7c 5f 7b c7 8b   |..9...X....|_{..|
 8a ab 6b 2f e5 eb 24 3c 6c f5 8a d8 ca 68 51 3c   |..k/..$<l....hQ<|
 9e cb 89 f3 3b fb 0f 6c d4 7d d7 0d 0a            |....;..l.}...|
-
-PPDF> reset output
-
-output = "stdout"
 
 PPDF> show stream5
 
