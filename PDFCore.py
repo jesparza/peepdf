@@ -7560,12 +7560,15 @@ class PDFParser :
                         dictContent = ''
                     else:
                         dictContent = ret[1]
-                    if content.find('stream') != -1 and dictContent.find('stream') == -1:
+                    nonDictContent = content[self.charCounter:]
+                    streamFound = re.findall('[>\s]stream', nonDictContent)
+                    if streamFound:
                         ret = self.readUntilSymbol(content, 'stream')
                         if ret[0] == -1:
                             return ret
                         auxDict = ret[1]
                         self.readSymbol(content, 'stream', False)
+                        self.readUntilEndOfLine(content)
                         self.readSymbol(content, '\r', False)
                         self.readSymbol(content, '\n', False)
                         ret = self.readUntilSymbol(content, 'endstream')
