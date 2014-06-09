@@ -1,4 +1,43 @@
 -----------------------------------------------
+peepdf 0.3 r234, 2014-06-09
+-----------------------------------------------
+
+    * New features:
+
+		- Added descriptive titles for the vulns found
+		- Added detection of CVE-2013-2729 (Adobe Reader BMP/RLE heap corruption)
+		- Added support for more than one script block in objects containing Javascript (e.g. XFA objects)
+		- Updated colorama to version 3.1 (2014-04-19)
+		- Added detection of CVE-2013-3346 (ToolButton Use-After-Free)
+		- Added command "js_vars" to show the variables defined in the Javascript context and their content
+		- Added command "js_jjdecode" to decode Javascript code using the jjencode algorithm (Thanks to Nahuel Riva @crackinglandia)
+		- Added static detection for CVE-2010-0188
+		- Added detection for CoolType.dll SING uniqueName vulnerability (CVE-2010-2883). Better late than never ;p
+		- Added new command "vtcheck" to check for detection on VirusTotal (API key included)
+		- Added option to avoid automatic Javascript analysis (useful with endless loops)
+		- Added PyV8 as Javascript engine and removed Spidermonkey (Windows issues).
+
+    * Fixes:
+
+		- Fixed bug when encrypting/decrypting hexadecimal objects (Thanks to Timo Hirvonen for the feedback)
+		- Fixed silly bug related to abbreviated PDF Filters
+		- Fixed bug related to the GNU readline function not handling correctly colorized prompts
+		- Fixed log_output function, it was storing the previous command output instead of the current one
+		- Fixed bug in PDFStream to show the stream content when the stream dictionary is empty (Thanks to Nahuel Riva)
+		- Fixed Issue 12, related to bad JS code parsing due to HTML entities in the XFA form (Thanks to robomotic)
+		- Fixed Issue 10 related to bad error handling in the PDFFile.decrypt() method
+		- Fixed Issue 9, related to an uncaught exception when PyV8 is not installed
+		- Fixed bug in do_metadata() when objects contain /Metadata but they are not really Metadata objects
+
+	* Others
+	
+		- Removed the old redirection method using the "set" command, it is useless now with the shell-like redirection (>, >>, $>, $>>)
+
+	* Known issues
+	
+		- It exists a problem related to the GNU readline in Mac OS X (fixed in Windows) not handling correctly colorized prompts.
+
+-----------------------------------------------
 peepdf Black Hat Vegas (0.2 r156), 2012-07-25
 -----------------------------------------------
 
