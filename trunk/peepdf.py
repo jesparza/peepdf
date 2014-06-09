@@ -206,7 +206,9 @@ def getPeepXML(statsDict, version, revision):
                 for element in elements:
                     elementInfo = etree.SubElement(elementsList, 'element', name = element)
                     if vulnsDict.has_key(element):
-                        for vulnCVE in vulnsDict[element]:
+                        vulnName = vulnsDict[element][0]
+                        vulnCVEList = vulnsDict[element][1]
+                        for vulnCVE in vulnCVEList:
                             cve = etree.SubElement(elementInfo, 'cve')
                             cve.text = vulnCVE
                     for id in elements[element]:
@@ -216,7 +218,9 @@ def getPeepXML(statsDict, version, revision):
                 for vuln in vulns:
                     vulnInfo = etree.SubElement(vulnsList, 'vulnerable_function', name = vuln)
                     if vulnsDict.has_key(vuln):
-                        for vulnCVE in vulnsDict[vuln]:
+                        vulnName = vulnsDict[vuln][0]
+                        vulnCVEList = vulnsDict[vuln][1]
+                        for vulnCVE in vulnCVEList:
                             cve = etree.SubElement(vulnInfo, 'cve')
                             cve.text = vulnCVE
                     for id in vulns[vuln]:
@@ -236,7 +240,7 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.2'
-revision = '231'   
+revision = '232'   
 stats = ''
 pdf = None
 fileName = None
@@ -500,8 +504,10 @@ try:
                             if vulns != None:
                                 for vuln in vulns:
                                     if vulnsDict.has_key(vuln):
-                                        stats += '\t\t' + beforeStaticLabel + vuln + ' ('
-                                        for vulnCVE in vulnsDict[vuln]: 
+                                        vulnName = vulnsDict[vuln][0]
+                                        vulnCVEList = vulnsDict[vuln][1]
+                                        stats += '\t\t' + beforeStaticLabel + vulnName + ' ('
+                                        for vulnCVE in vulnCVEList: 
                                             stats += vulnCVE + ',' 
                                         stats = stats[:-1] + '): ' + resetColor + str(vulns[vuln]) + newLine
                                     else:
@@ -509,8 +515,10 @@ try:
                             if elements != None:
                                 for element in elements:
                                     if vulnsDict.has_key(element):
-                                        stats += '\t\t' + beforeStaticLabel + element + ' ('
-                                        for vulnCVE in vulnsDict[element]: 
+                                        vulnName = vulnsDict[element][0]
+                                        vulnCVEList = vulnsDict[element][1]
+                                        stats += '\t\t' + beforeStaticLabel + vulnName + ' ('
+                                        for vulnCVE in vulnCVEList: 
                                             stats += vulnCVE + ',' 
                                         stats = stats[:-1] + '): ' + resetColor + str(elements[element]) + newLine
                                     else:
