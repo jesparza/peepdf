@@ -1414,8 +1414,10 @@ class PDFConsole(cmd.Cmd):
                     if vulns != None:
                         for vuln in vulns:
                             if vulnsDict.has_key(vuln):
-                                stats += '\t\t' + beforeStaticLabel + vuln + ' ('
-                                for vulnCVE in vulnsDict[vuln]: 
+                                vulnName = vulnsDict[vuln][0]
+                                vulnCVEList = vulnsDict[vuln][1]
+                                stats += '\t\t' + beforeStaticLabel + vulnName + ' ('
+                                for vulnCVE in vulnCVEList: 
                                     stats += vulnCVE + ',' 
                                 stats = stats[:-1] + '): ' + self.resetColor + str(vulns[vuln]) + newLine
                             else:
@@ -1423,8 +1425,10 @@ class PDFConsole(cmd.Cmd):
                     if elements != None:
                         for element in elements:
                             if vulnsDict.has_key(element):
-                                stats += '\t\t' + beforeStaticLabel + element + ' ('
-                                for vulnCVE in vulnsDict[element]: 
+                                vulnName = vulnsDict[element][0]
+                                vulnCVEList = vulnsDict[element][1]
+                                stats += '\t\t' + beforeStaticLabel + vulnName + ' ('
+                                for vulnCVE in vulnCVEList: 
                                     stats += vulnCVE + ',' 
                                 stats = stats[:-1] + '): ' + self.resetColor + str(elements[element]) + newLine
                             else:

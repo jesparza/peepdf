@@ -43,14 +43,47 @@ isForceMode = False
 isManualAnalysis = False
 spacesChars = ['\x00','\x09','\x0a','\x0c','\x0d','\x20']
 delimiterChars = ['<<','(','<','[','{','/','%']
-monitorizedEvents = ['/OpenAction ','/AA ','/Names ','/AcroForm ','/XFA ']
+monitorizedEvents = ['/OpenAction ','/AA ','/Names ','/AcroForm ', '/XFA ']
 monitorizedActions = ['/JS ','/JavaScript','/Launch','/SubmitForm','/ImportData']
-monitorizedElements = ['/EmbeddedFiles ','/EmbeddedFile','/JBIG2Decode','getPageNthWord','arguments.callee','/U3D','/PRC','/RichMedia']
-jsVulns = ['mailto','Collab.collectEmailInfo','util.printf','getAnnots','getIcon','spell.customDictionaryOpen','media.newPlayer','doc.printSeps','.rawValue','app.removeToolButton']
+monitorizedElements = ['/EmbeddedFiles ',
+                       '/EmbeddedFile',
+                       '/JBIG2Decode',
+                       'getPageNthWord',
+                       'arguments.callee',
+                       '/U3D',
+                       '/PRC',
+                       '/RichMedia',
+                       '.rawValue',
+                       'keep.previous']
+jsVulns = ['mailto',
+           'Collab.collectEmailInfo',
+           'util.printf',
+           'getAnnots',
+           'getIcon',
+           'spell.customDictionaryOpen',
+           'media.newPlayer',
+           'doc.printSeps',
+           'app.removeToolButton']
 singUniqueName = 'CoolType.SING.uniqueName'
 bmpVuln = 'BMP/RLE heap corruption'
-vulnsDict = {'mailto':['CVE-2007-5020'],'Collab.collectEmailInfo':['CVE-2007-5659'],'util.printf':['CVE-2008-2992'],'/JBIG2Decode':['CVE-2009-0658'],'getIcon':['CVE-2009-0927'],'getAnnots':['CVE-2009-1492'],'spell.customDictionaryOpen':['CVE-2009-1493'],'media.newPlayer':['CVE-2009-4324'],'.rawValue':['CVE-2010-0188'],singUniqueName:['CVE-2010-2883'],'doc.printSeps':['CVE-2010-4091'],'/U3D':['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462'],'/PRC':['CVE-2011-4369'],bmpVuln:['CVE-2013-2729'],'app.removeToolButton':['CVE-2013-3346']}
+vulnsDict = {'mailto':('mailto',['CVE-2007-5020']),
+             'Collab.collectEmailInfo':('Collab.collectEmailInfo',['CVE-2007-5659']),
+             'util.printf':('util.printf',['CVE-2008-2992']),
+             '/JBIG2Decode':('Adobe JBIG2Decode Heap Corruption',['CVE-2009-0658']),
+             'getIcon':('getIcon',['CVE-2009-0927']),
+             'getAnnots':('getAnnots',['CVE-2009-1492']),
+             'spell.customDictionaryOpen':('spell.customDictionaryOpen',['CVE-2009-1493']),
+             'media.newPlayer':('media.newPlayer',['CVE-2009-4324']),
+             '.rawValue':('Adobe Acrobat Bundled LibTIFF Integer Overflow',['CVE-2010-0188']),
+             singUniqueName:(singUniqueName,['CVE-2010-2883']),
+             'doc.printSeps':('doc.printSeps',['CVE-2010-4091']),
+             '/U3D':('/U3D',['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462']),
+             '/PRC':('/PRC',['CVE-2011-4369']),
+             'keep.previous':('Adobe Reader XFA oneOfChild Un-initialized memory vulnerability',['CVE-2013-0640']), # https://labs.portcullis.co.uk/blog/cve-2013-0640-adobe-reader-xfa-oneofchild-un-initialized-memory-vulnerability-part-1/
+             bmpVuln:(bmpVuln,['CVE-2013-2729']),
+             'app.removeToolButton':('app.removeToolButton',['CVE-2013-3346'])}
 jsContexts = {'global':None}
+
 
 class PDFObject :
     '''
