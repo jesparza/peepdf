@@ -1,5 +1,5 @@
 -----------------------------------------------
-peepdf 0.3 r234, 2014-06-09
+peepdf 0.3 r235, 2014-06-09
 -----------------------------------------------
 
     * New features:
@@ -35,7 +35,7 @@ peepdf 0.3 r234, 2014-06-09
 
 	* Known issues
 	
-		- It exists a problem related to the GNU readline in Mac OS X (fixed in Windows) not handling correctly colorized prompts.
+		- It exists a problem related to the readline module in Mac OS X (it uses editline instead of GNU readline), not handling correctly colorized prompts.
 
 -----------------------------------------------
 peepdf Black Hat Vegas (0.2 r156), 2012-07-25
