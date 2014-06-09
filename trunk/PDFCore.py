@@ -84,7 +84,6 @@ vulnsDict = {'mailto':('mailto',['CVE-2007-5020']),
              'app.removeToolButton':('app.removeToolButton',['CVE-2013-3346'])}
 jsContexts = {'global':None}
 
-
 class PDFObject :
     '''
         Base class for all the PDF objects
@@ -692,9 +691,9 @@ class PDFHexString (PDFObject) :
         self.errors = []
         self.compressedIn = None
         self.encrypted = False
-        self.value = ''
-        self.rawValue = hex
-        self.encryptedValue = hex
+        self.value = '' # Value after hex decoding and decryption
+        self.rawValue = hex # Hex characters
+        self.encryptedValue = hex # Value after hex decoding
         self.updateNeeded = False
         self.containsJScode = False
         self.JSCode = []
@@ -709,7 +708,7 @@ class PDFHexString (PDFObject) :
             else:
                 raise Exception(ret[1])        
             
-    def update(self, decrypt = False):
+    def update(self, decrypt = False, newHexValue = True):
         '''
             Updates the object after some modification has occurred
             
@@ -717,21 +716,27 @@ class PDFHexString (PDFObject) :
             @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
         '''
         self.errors = []
-        self.value = ''
         self.containsJScode = False
         self.JSCode = []
         self.unescapedBytes = []
         self.urlsFound = []
-        tmpValue = self.rawValue
-        if len(tmpValue) % 2 != 0:
-            tmpValue += '0'
-        try:
-            for i in range(0,len(tmpValue),2):
-                self.value += chr(int(tmpValue[i:i+2],16))
-        except:
-            errorMessage = 'Error in hexadecimal conversion'
-            self.addError(errorMessage)
-            return (-1,errorMessage)
+        if not decrypt:
+            try:
+                if newHexValue:
+                    # New hexadecimal value
+                    self.value = ''
+                    tmpValue = self.rawValue
+                    if len(tmpValue) % 2 != 0:
+                        tmpValue += '0'
+                    self.value = tmpValue.decode('hex')
+                else:
+                    # New decoded value
+                    self.rawValue = self.value.encode('hex')
+                self.encryptedValue = self.value
+            except:
+                errorMessage = 'Error in hexadecimal conversion'
+                self.addError(errorMessage)
+                return (-1,errorMessage)
         if isJavascript(self.value):
             self.containsJScode = True
             self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.value, jsContexts['global'], isManualAnalysis)
@@ -753,7 +758,8 @@ class PDFHexString (PDFObject) :
         if password != None:
             self.encryptionKey = password
         try:
-            self.encryptedValue = RC4(self.rawValue,self.encryptionKey)
+            self.encryptedValue = RC4(self.value,self.encryptionKey)
+            self.rawValue = self.encryptedValue.encode('hex')
         except:
             errorMessage = 'Error encrypting with RC4'
             self.addError(errorMessage)
@@ -773,11 +779,11 @@ class PDFHexString (PDFObject) :
         try:
             cleanString = unescapeString(self.encryptedValue)
             if algorithm == 'RC4':
-                self.rawValue = RC4(cleanString,self.encryptionKey)
+                self.value = RC4(cleanString,self.encryptionKey)
             elif algorithm == 'AES':
                 ret = AES.decryptData(cleanString,self.encryptionKey)
                 if ret[0] != -1:
-                    self.rawValue = ret[1]
+                    self.value = ret[1]
                 else:
                     errorMessage = 'AES decryption error: '+ret[1]
                     self.addError(errorMessage)
@@ -790,7 +796,7 @@ class PDFHexString (PDFObject) :
         return ret
 
     def getEncryptedValue(self):
-        return '<'+self.encryptedValue+'>'
+        return '<'+self.rawValue+'>'
 
     def getJSCode(self):
         '''
