@@ -1,4 +1,4 @@
-#summary The Downloads for peepdf will be stored now at http://eternal-todo.com/tools/peepdf-pdf-analysis-tool#releases.
+#summary The Downloads for peepdf will be stored now at [http://eternal-todo.com/tools/peepdf-pdf-analysis-tool#releases http://eternal-todo.com/tools/peepdf-pdf-analysis-tool#releases].
 #labels Phase-Support,Featured
 
 ----
