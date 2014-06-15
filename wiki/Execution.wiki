@@ -142,15 +142,16 @@ PPDF> help
 
 Documented commands (type help <topic>):
 ========================================
-bytes           errors       js_eval           open          sctest    
-changelog       exit         js_join           quit          search    
-create          filters      js_unescape       rawobject     set       
-decode          hash         log               rawstream     show      
-decrypt         help         malformed_output  references    stream    
-embed           info         metadata          replace       tree      
-encode          js_analyse   modify            reset         vtcheck   
-encode_strings  js_beautify  object            save          xor       
-encrypt         js_code      offsets           save_version  xor_search  
+bytes           exit         js_join           quit          set       
+changelog       filters      js_unescape       rawobject     show      
+create          hash         js_vars           rawstream     stream    
+decode          help         log               references    tree      
+decrypt         info         malformed_output  replace       vtcheck   
+embed           js_analyse   metadata          reset         xor       
+encode          js_beautify  modify            save          xor_search
+encode_strings  js_code      object            save_version
+encrypt         js_eval      offsets           sctest      
+errors          js_jjdecode  open              search        
 }}}
 <br/>
 Also, it's possible to launch the interactive console wihout specifying any PDF file:
@@ -161,14 +162,14 @@ $ peepdf.py -i
 PPDF> 
 }}}
 <br/>
-But now we cannot launch all the commands until one PDF file has been opened, but we can execute Javascript and shellcodes, encode/decode contents, etc. The available commands will be the following:
+But now we cannot launch all the commands until a PDF file has been opened, but we can execute Javascript and shellcodes, encode/decode contents, etc. The available commands will be the following:
 {{{
-create              js_beautify             open              show
-decode              js_eval                 quit              vtcheck
-encode              js_join                 replace           xor
-exit                js_unescape             reset             xor_search
-help                log                     sctest            
-js_analyse          malformed_output        set      
+create              decode                  encode            exit
+help                js_analyse              js_beautify       js_eval
+js_jjdecode         js_join                 js_unescape       js_vars
+log                 malformed_output        open              quit
+replace             reset                   sctest            set
+show                vtcheck                 xor               xor_search
 }}} 
 <br/>
 ===Batch mode===
