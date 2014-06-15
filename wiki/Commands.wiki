@@ -36,8 +36,10 @@ There are a lot of commands that can be used in the interactive console of peepd
   * [#js_beautify js_beautify]
   * [#js_code js_code]
   * [#js_eval js_eval]
+  * [#js_jjdecode js_jjdecode]
   * [#js_join js_join]
   * [#js_unescape js_unescape]
+  * [#js_vars js_vars]
 ===Shellcode analysis===
   * [#sctest sctest]
 ===Misc===
@@ -609,6 +611,31 @@ The content of the variable is 10
 First, we put Javascript code in a variable. After that we can use the _js_eval_ command to execute it. There is a warning
 because the code is very short to be identified as Javascript code.
 <br/>
+===js_jjdecode===
+{{{
+Usage: js_jjdecode variable $var_name
+Usage: js_jjdecode file $file_name
+Usage: js_jjdecode object $object_id [$version]
+
+Decodes the Javascript code stored in the specified variable, file or object using the jjencode/decode algorithm by Yosuke Hasegawa (http://utf-8.jp/public/jjencode.html)
+}}}
+{{{
+PPDF> show encoded_stream
+
+Q=~[];Q={___:++Q,$$$$:(![]+"")[Q],__$:++Q,$_$_:(![]+"")[Q],_$_:++Q,$_$$:({}+"")[Q],$$_$:(Q[Q]+"")[Q],_$$:++Q,$$$_:(!""+"")[Q],$__:++Q,$_$:++Q,$$__:({}+"")[Q],$$_:++Q,$$$:++Q,$___:++Q,$__$:++Q};Q.$_=(Q.$_=Q+"")[Q.$_$]+(Q._$=Q.$_[Q.__$])+(Q.$$=(Q.$+"")[Q.__$])+((!Q)+"")[Q._$$]+(Q.__=Q.$_[Q.$$_])+(Q.$=(!""+"")[Q.__$])+(Q._=(!""+"")[Q._$_])+Q.$_[Q.$_$]+Q.__+Q._$+Q.$;Q.$$=Q.$+(!""+"")[Q._$$]+Q.__+Q._+Q.$+Q.$$;
+[...]
+
+PPDF> js_jjdecode variable encoded_stream
+
+var shellcode = unescape("%u00E8...");
+var executable = "";
+var rop9 = "";
+rop9 += unescape("%u313d%u4a82"); 
+rop9 += unescape("%ua713%u4a82"); 
+rop9 += unescape("%u1f90%u4a80"); 
+[...]
+}}}
+<br/>
 ===js_join===
 {{{
 Usage: js_join variable var_name
@@ -642,6 +669,22 @@ aux = "%u6554%u7473"
 54 65 73 74                                       |Test|
 }}}
 [#Console_commands Index]
+<br/>
+===js_vars===
+{{{
+Usage: js_vars [$var_name]
+
+Shows the Javascript variables defined in the execution context or the content of the specified variable
+}}}
+{{{
+PPDF> js_vars
+
+['shellcode', 'executable', 'rop9', 'rop10', 'rop11', 'r11', 'obj_size', 'rop', 'ret_addr', 'rop_addr', 'r_addr', 'payload', 'vv', 'part1', 'part2', 'part2_len', 'arr', 'heapSpray', 'evalCode']
+
+PPDF> js_vars obj_size
+
+844
+}}}
 <br/>
 ===log===
 {{{
