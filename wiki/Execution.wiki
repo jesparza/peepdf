@@ -44,6 +44,10 @@ Also, there are three more parameters:
   * _-c_: checks the hash of the PDF file on VirusTotal.
   * _-m_: avoids performing any automatic Javascript analysis. This can be helpful when the analysis does not end due to a endless loop in the Javascript code.
 <br/>
+Before executing peepdf it is recommended to try to update it, just in case there are new changes in the project. See the next section to know how to do it.
+<br/>
+
+===Updating peepdf===
 In order to update the tool you can just use the _-u_ parameter:
 {{{
 $ ./peepdf.py -u
