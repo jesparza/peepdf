@@ -4725,11 +4725,16 @@ class PDFFile :
             self.addError(ret[1])
         objectStreamOffset = self.body[version].getNextOffset()
         if self.encrypted:
-            key = computeObjectKey(id, 0, self.encryptionKey, self.encryptionKeyLength/8)
-            ret = objectStream.encrypt(key)
+            ret = computeObjectKey(id, 0, self.encryptionKey, self.encryptionKeyLength/8)
             if ret[0] == -1:
                 errorMessage = ret[1]
                 self.addError(ret[1])
+            else:
+                key = ret[1]
+                ret = objectStream.encrypt(key)
+                if ret[0] == -1:
+                    errorMessage = ret[1]
+                    self.addError(ret[1])
         self.body[version].setNextOffset(objectStreamOffset+len(objectStream.getRawValue()))
         self.body[version].setObject(id,objectStream,objectStreamOffset)
         # Xref stream
@@ -5276,7 +5281,7 @@ class PDFFile :
                 if ret[0] != -1:
                     computedUserPass = ret[1]
                 else:
-                    errorMessage = 'Decryption error: '+ret[1]
+                    errorMessage = ret[1]
                     if isForceMode:
                         self.addError(errorMessage)
                     else:
@@ -5306,7 +5311,7 @@ class PDFFile :
             if ret[0] != -1:
                 encryptionKey = ret[1]
             else:
-                errorMessage = 'Decryption error: '+ret[1]
+                errorMessage = ret[1]
                 if isForceMode:
                     encryptionKey = ''
                     self.addError(errorMessage)
@@ -5329,16 +5334,31 @@ class PDFFile :
                                 key = self.encryptionKey
                                 if objectType in ['string','hexstring','array','dictionary']:
                                     if revision < 5:
-                                        key = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes,strAlgorithm[0])
+                                        ret = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes,strAlgorithm[0])
+                                        if ret[0] == -1:
+                                            errorMessage = ret[1]
+                                            self.addError(ret[1])
+                                        else:
+                                            key = ret[1]
                                     ret = object.decrypt(key, strAlgorithm[0])
                                 else:
                                     if object.getElement('/Type') != None and object.getElement('/Type').getValue() == '/EmbeddedFile':
                                         if revision < 5:
-                                            key = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes,embedAlgorithm[0])
+                                            ret = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes,embedAlgorithm[0])
+                                            if ret[0] == -1:
+                                                errorMessage = ret[1]
+                                                self.addError(ret[1])
+                                            else:
+                                                key = ret[1]
                                         altAlgorithm = embedAlgorithm[0]
                                     else:
                                         if revision < 5:
-                                            key = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes,stmAlgorithm[0])
+                                            ret = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes,stmAlgorithm[0])
+                                            if ret[0] == -1:
+                                                errorMessage = ret[1]
+                                                self.addError(ret[1])
+                                            else:
+                                                key = ret[1]
                                         altAlgorithm = stmAlgorithm[0]
                                     ret = object.decrypt(key,strAlgorithm[0], altAlgorithm)
                                 if ret[0] == -1:
@@ -5412,16 +5432,23 @@ class PDFFile :
                 trailer.setDictEntry('/ID',fileIdArray)
                 self.setTrailer([trailer,trailerStream])
                                 
-            dictO = computeOwnerPass(password,password,128,revision = 3)
+            ret = computeOwnerPass(password,password,128,revision = 3)
+            if ret[0] != -1:
+                dictO = ret[1]
+            else:
+                if isForceMode:
+                    self.addError(ret[1])
+                else:
+                    return (-1,ret[1])
             self.setOwnerPass(dictO)
             ret = computeUserPass(password,dictO,fileId,permissionNum,128,revision = 3)
             if ret[0] != -1:
                 dictU = ret[1]
             else:
                 if isForceMode:
-                    self.addError('Decryption error: '+ret[1])
+                    self.addError(ret[1])
                 else:
-                    return (-1,'Decryption error: '+ret[1])
+                    return (-1,ret[1])
             self.setUserPass(dictU)
             ret = computeEncryptionKey(password, dictO, dictU, dictOE, dictUE, fileId, permissionNum, 128, revision = 3, encryptMetadata = encryptMetadata, passwordType = 'USER')
             if ret[0] != -1:
@@ -5429,9 +5456,9 @@ class PDFFile :
             else:
                 encryptionKey = ''
                 if isForceMode:
-                    self.addError('Decryption error: '+ret[1])
+                    self.addError(ret[1])
                 else:
-                    return (-1,'Decryption error: '+ret[1])
+                    return (-1,ret[1])
             self.setEncryptionKey(encryptionKey)
             self.setEncryptionKeyLength(128)
             encryptDict = PDFDictionary(elements = {'/V':PDFNum('2'),'/Length':PDFNum('128'),'/Filter':PDFName('Standard'),
@@ -5460,15 +5487,20 @@ class PDFFile :
                         if object != None and not object.isCompressed():
                             objectType = object.getType()
                             if objectType in ['string','hexstring','array','dictionary'] or (objectType == 'stream' and (object.getElement('/Type') == None or (object.getElement('/Type').getValue() not in ['/XRef','/Metadata'] or (object.getElement('/Type').getValue() == '/Metadata' and encryptMetadata)))):
-                                key = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes)
-                                ret = object.encrypt(key)
+                                ret = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes)
                                 if ret[0] == -1:
                                     errorMessage = ret[1]
                                     self.addError(ret[1])
-                                ret = self.body[v].setObject(id,object)
-                                if ret[0] == -1:
-                                    errorMessage = ret[1]
-                                    self.addError(ret[1])
+                                else:
+                                    key = ret[1]
+                                    ret = object.encrypt(key)
+                                    if ret[0] == -1:
+                                        errorMessage = ret[1]
+                                        self.addError(ret[1])
+                                    ret = self.body[v].setObject(id,object)
+                                    if ret[0] == -1:
+                                        errorMessage = ret[1]
+                                        self.addError(ret[1])
         else:
             errorMessage = 'Trailer not found'
             self.addError(errorMessage)
@@ -6875,9 +6907,10 @@ class PDFParser :
                         encryptDict = trailer.getDictEntry('/Encrypt')
                         if encryptDict != None:
                             pdfFile.setEncrypted(True)
-                    fileId = streamTrailer.getDictEntry('/ID')
-                    if fileId == None and trailer != None:
+                    if trailer != None:
                         fileId = trailer.getDictEntry('/ID')
+                    if fileId == None:
+                        fileId = streamTrailer.getDictEntry('/ID')
             else:
                 ret = self.createPDFTrailer(trailerContent, trailerOffset)
                 if ret[0] != -1 and not pdfFile.isEncrypted():
