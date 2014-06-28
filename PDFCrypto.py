@@ -25,7 +25,7 @@
     Module to manage cryptographic operations with PDF files
 '''    
 
-import hashlib,struct,random,warnings,aes
+import hashlib,struct,random,warnings,aes,sys
 from itertools import cycle, izip
 warnings.filterwarnings("ignore")
 
@@ -48,38 +48,41 @@ def computeEncryptionKey(password, dictOwnerPass, dictUserPass, dictOE, dictUE, 
         @param passwordType: It specifies the given password type. It can be 'USER', 'OWNER' or None.
         @return: A tuple (status,statusContent), where statusContent is the encryption key in case status = 0 or an error message in case status = -1
     '''
-    if revision != 5:
-        keyLength = dictKeyLength/8
-        lenPass = len(password)
-        if lenPass > 32:
-            password = password[:32]
-        elif lenPass < 32:
-            password += paddingString[:32-lenPass]
-        md5input = password + dictOwnerPass + struct.pack('<I',abs(int(pElement))) + fileID
-        if revision > 3 and not encryptMetadata:
-            md5input += '\xFF'*4
-        key = hashlib.md5(md5input).digest()
-        if revision > 2:
-            counter = 0
-            while counter < 50:
-                key = hashlib.md5(key[:keyLength]).digest()
-                counter += 1
-            key = key[:keyLength]
-        elif revision == 2:
-            key = key[:5]
-        return (0, key)
-    else:
-        if passwordType == 'USER':
-            password = password.encode('utf-8')[:127]
-            kSalt = dictUserPass[40:48]
-            intermediateKey = hashlib.sha256(password + kSalt).digest()
-            ret = aes.decryptData('\0'*16+dictUE, intermediateKey)
-        elif passwordType == 'OWNER':
-            password = password.encode('utf-8')[:127]
-            kSalt = dictOwnerPass[40:48]
-            intermediateKey = hashlib.sha256(password + kSalt + dictUserPass).digest()
-            ret = aes.decryptData('\0'*16+dictOE, intermediateKey)
-        return ret
+    try:
+        if revision != 5:
+            keyLength = dictKeyLength/8
+            lenPass = len(password)
+            if lenPass > 32:
+                password = password[:32]
+            elif lenPass < 32:
+                password += paddingString[:32-lenPass]
+            md5input = password + dictOwnerPass + struct.pack('<i',int(pElement)) + fileID
+            if revision > 3 and not encryptMetadata:
+                md5input += '\xFF'*4
+            key = hashlib.md5(md5input).digest()
+            if revision > 2:
+                counter = 0
+                while counter < 50:
+                    key = hashlib.md5(key[:keyLength]).digest()
+                    counter += 1
+                key = key[:keyLength]
+            elif revision == 2:
+                key = key[:5]
+            return (0, key)
+        else:
+            if passwordType == 'USER':
+                password = password.encode('utf-8')[:127]
+                kSalt = dictUserPass[40:48]
+                intermediateKey = hashlib.sha256(password + kSalt).digest()
+                ret = aes.decryptData('\0'*16+dictUE, intermediateKey)
+            elif passwordType == 'OWNER':
+                password = password.encode('utf-8')[:127]
+                kSalt = dictOwnerPass[40:48]
+                intermediateKey = hashlib.sha256(password + kSalt + dictUserPass).digest()
+                ret = aes.decryptData('\0'*16+dictOE, intermediateKey)
+            return ret
+    except:
+        return (-1, 'ComputeEncryptionKey error: %s %s' % (str(sys.exc_info()[0]),str(sys.exc_info()[1])))
 
 def computeObjectKey(id, generationNum, encryptionKey, keyLengthBytes, algorithm = 'RC4'):
     '''
@@ -90,18 +93,21 @@ def computeObjectKey(id, generationNum, encryptionKey, keyLengthBytes, algorithm
         @param encryptionKey: The encryption key
         @param keyLengthBytes: The length of the encryption key in bytes
         @param algorithm: The algorithm used in the encryption/decryption process
-        @return: The computed key in string format
+        @return A tuple (status,statusContent), where statusContent is the computed key in case status = 0 or an error message in case status = -1
     '''    
-    key = encryptionKey + struct.pack('<i',id)[:3] + struct.pack('<i',generationNum)[:2]
-    if algorithm == 'AES':
-        key += '\x73\x41\x6C\x54' # sAlT
-    key = hashlib.md5(key).digest()
-    if keyLengthBytes+5 < 16:
-        key = key[:keyLengthBytes+5]
-    else:
-        key = key[:16]
-    # AES: block size = 16 bytes, initialization vector (16 bytes), random, first bytes encrypted string
-    return key
+    try:
+        key = encryptionKey + struct.pack('<i',id)[:3] + struct.pack('<i',generationNum)[:2]
+        if algorithm == 'AES':
+            key += '\x73\x41\x6C\x54' # sAlT
+        key = hashlib.md5(key).digest()
+        if keyLengthBytes+5 < 16:
+            key = key[:keyLengthBytes+5]
+        else:
+            key = key[:16]
+        # AES: block size = 16 bytes, initialization vector (16 bytes), random, first bytes encrypted string
+        return (0, key)
+    except:
+        return (-1, 'ComputeObjectKey error: %s %s' % (str(sys.exc_info()[0]),str(sys.exc_info()[1])))
 
 def computeOwnerPass(ownerPassString, userPassString, keyLength = 128, revision = 3):
     '''
@@ -111,37 +117,40 @@ def computeOwnerPass(ownerPassString, userPassString, keyLength = 128, revision 
         @param userPassString: The user password entered by the user
         @param keyLength: The length of the key
         @param revision: The algorithm revision
-        @return: The computed password in string format
+        @return A tuple (status,statusContent), where statusContent is the computed password in case status = 0 or an error message in case status = -1
     '''
-    # TODO: revision 5
-    keyLength = keyLength/8
-    lenPass = len(ownerPassString)
-    if lenPass > 32:
-        ownerPassString = ownerPassString[:32]
-    elif lenPass < 32:
-        ownerPassString += paddingString[:32-lenPass]
-    rc4Key = hashlib.md5(ownerPassString).digest()
-    if revision > 2:
-        counter = 0
-        while counter < 50:
-            rc4Key = hashlib.md5(rc4Key).digest()
-            counter += 1
-    rc4Key = rc4Key[:keyLength]
-    lenPass = len(userPassString)
-    if lenPass > 32:
-        userPassString = userPassString[:32]
-    elif lenPass < 32:
-        userPassString += paddingString[:32-lenPass]
-    ownerPass = RC4(userPassString,rc4Key)
-    if revision > 2:
-        counter = 1
-        while counter <= 19:
-            newKey = ''
-            for i in range(len(rc4Key)):
-                newKey += chr(ord(rc4Key[i]) ^ counter)
-            ownerPass = RC4(ownerPass,newKey)
-            counter += 1
-    return ownerPass
+    try:
+        # TODO: revision 5
+        keyLength = keyLength/8
+        lenPass = len(ownerPassString)
+        if lenPass > 32:
+            ownerPassString = ownerPassString[:32]
+        elif lenPass < 32:
+            ownerPassString += paddingString[:32-lenPass]
+        rc4Key = hashlib.md5(ownerPassString).digest()
+        if revision > 2:
+            counter = 0
+            while counter < 50:
+                rc4Key = hashlib.md5(rc4Key).digest()
+                counter += 1
+        rc4Key = rc4Key[:keyLength]
+        lenPass = len(userPassString)
+        if lenPass > 32:
+            userPassString = userPassString[:32]
+        elif lenPass < 32:
+            userPassString += paddingString[:32-lenPass]
+        ownerPass = RC4(userPassString,rc4Key)
+        if revision > 2:
+            counter = 1
+            while counter <= 19:
+                newKey = ''
+                for i in range(len(rc4Key)):
+                    newKey += chr(ord(rc4Key[i]) ^ counter)
+                ownerPass = RC4(ownerPass,newKey)
+                counter += 1
+        return (0, ownerPass)
+    except:
+        return (-1, 'ComputeOwnerPass error: %s %s' % (str(sys.exc_info()[0]),str(sys.exc_info()[1])))
 
 def computeUserPass(userPassString, dictO, fileID, pElement, keyLength = 128, revision = 3, encryptMetadata = False):
     '''
@@ -166,24 +175,28 @@ def computeUserPass(userPassString, dictO, fileID, pElement, keyLength = 128, re
         rc4Key = ret[1]
     else:
         return ret
-    if revision == 2:
-        userPass = RC4(paddingString,rc4Key)
-    elif revision > 2:
-        counter = 1
-        md5Input = paddingString + fileID
-        hashResult = hashlib.md5(md5Input).digest()
-        userPass = RC4(hashResult,rc4Key)    
-        while counter <= 19:
-            newKey = ''
-            for i in range(len(rc4Key)):
-                newKey += chr(ord(rc4Key[i]) ^ counter)
-            userPass = RC4(userPass,newKey)
-            counter += 1
-        counter = 0
-        while counter < 16:
-            userPass += chr(random.randint(32,255))
-            counter += 1
-    return (0, userPass)
+    try:
+        if revision == 2:
+            userPass = RC4(paddingString,rc4Key)
+        elif revision > 2:
+            counter = 1
+            md5Input = paddingString + fileID
+            hashResult = hashlib.md5(md5Input).digest()
+            userPass = RC4(hashResult,rc4Key)    
+            while counter <= 19:
+                newKey = ''
+                for i in range(len(rc4Key)):
+                    newKey += chr(ord(rc4Key[i]) ^ counter)
+                userPass = RC4(userPass,newKey)
+                counter += 1
+            counter = 0
+            while counter < 16:
+                userPass += chr(random.randint(32,255))
+                counter += 1
+        return (0, userPass)
+    except:
+        return (-1, 'ComputeUserPass error: %s %s' % (str(sys.exc_info()[0]),str(sys.exc_info()[1])))
+    
 
 def isUserPass(password, computedUserPass, dictU, revision):
     '''
