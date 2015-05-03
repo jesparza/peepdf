@@ -234,16 +234,15 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.3'
-revision = '248'
+revision = '249'
 stats = ''
 pdf = None
 fileName = None
 statsDict = None
 vtJsonDict = None
 newLine = os.linesep
-errorsFile = 'errors.txt'
-peepdfRoot = os.path.dirname(sys.argv[0])
-absPeepdfRoot = os.path.abspath(peepdfRoot)
+absPeepdfRoot = os.path.dirname(os.path.realpath(sys.argv[0]))
+errorsFile = os.path.join(absPeepdfRoot, 'errors.txt')
 
 versionHeader = 'Version: peepdf ' + version + ' r' + revision
 peepdfHeader = versionHeader + newLine*2 +\
@@ -540,10 +539,10 @@ try:
                         except:
                             errorMessage = '*** Error: Exception not handled using the interactive console!! Please, report it to the author!!'
                             print errorColor + errorMessage + resetColor + newLine
-                            traceback.print_exc(file=open(errorsFile,'a'))
+                            traceback.print_exc(file=open(errorsFile, 'a'))
 except Exception as e:
     if len(e.args) == 2:
-        excName,excReason = e.args
+        excName, excReason = e.args
     else:
         excName = excReason = None
     if excName == None or excName != 'PeepException':
@@ -553,7 +552,7 @@ except Exception as e:
 finally:
     if os.path.exists(errorsFile):
         message = newLine + 'Please, don\'t forget to report the errors found:' + newLine*2 
-        message += '\t- Sending the file "errors.txt" to the author (mailto:peepdfREMOVETHIS@eternal-todo.com)"' + newLine
-        message += '\t- And/Or creating an issue on the project webpage (https://code.google.com/p/peepdf/issues/list)' + newLine
+        message += '\t- Sending the file "%s" to the author (mailto:peepdfREMOVETHIS@eternal-todo.com)%s' % (errorsFile, newLine)
+        message += '\t- And/Or creating an issue on the project webpage (https://github.com/jesparza/peepdf/issues)' + newLine
         message = errorColor + message + resetColor
         sys.exit(message)
