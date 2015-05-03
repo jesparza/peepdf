@@ -27,7 +27,7 @@
     Initial script to launch the tool
 '''
 
-import sys, os, optparse, re, urllib2, datetime, hashlib, traceback
+import sys, os, optparse, re, urllib2, datetime, hashlib, traceback, json
 from datetime import datetime
 from PDFCore import PDFParser, vulnsDict
 from PDFUtils import vtcheck
@@ -52,27 +52,17 @@ except:
 
 def getRepPaths(url, path = ''):
     paths = []
-    dumbReDirs = '<li><a[^>]*?>(.*?)/</a></li>'
-    dumbReFiles = '<li><a[^>]*?>([^/]*?)</a></li>'
-    
     try:
         browsingPage = urllib2.urlopen(url+path).read()
     except:
         sys.exit('[x] Connection error while getting browsing page "'+url+path+'"')
-    dirs = re.findall(dumbReDirs, browsingPage)
-    files = re.findall(dumbReFiles, browsingPage)
-    for file in files:
-        if file != '..':
-            if path == '':
-                paths.append(file)
-            else:
-                paths.append(path + '/' + file)
-    for dir in dirs:
-        if path == '':
-            dirPaths = getRepPaths(url, dir)
-        else:
-            dirPaths = getRepPaths(url, path+'/'+dir)
-        paths += dirPaths
+    browsingPageObject = json.loads(browsingPage)
+    for file in browsingPageObject:
+    	if file['type'] == 'file':
+    		paths.append(file['path'])
+    	elif file['type'] == 'dir':
+    		dirPaths = getRepPaths(url, file['path'])
+    		paths += dirPaths
     return paths
 
 def getLocalFilesInfo(filesList):
@@ -291,10 +281,11 @@ try:
         newVersion = ''
         localVersion = 'v'+version+' r'+revision
         reVersion = 'version = \'(\d\.\d)\'\s*?revision = \'(\d+)\''
-        repURL = 'http://peepdf.googlecode.com/svn/trunk/'
+        repURL = 'https://api.github.com/repos/jesparza/peepdf/contents/'
+        rawRepURL = 'https://raw.githubusercontent.com/jesparza/peepdf/master/'
         print '[-] Checking if there are new updates...'
         try:
-            remotePeepContent = urllib2.urlopen(repURL+'peepdf.py').read()
+            remotePeepContent = urllib2.urlopen(rawRepURL+'peepdf.py').read()
         except:
             sys.exit('[x] Connection error while trying to connect with the repository')
         repVer = re.findall(reVersion, remotePeepContent)
@@ -313,7 +304,7 @@ try:
             print '[-] Checking files...'
             for path in pathNames:
                 try:
-                    fileContent = urllib2.urlopen(repURL+path).read()
+                    fileContent = urllib2.urlopen(rawRepURL+path).read()
                 except:
                     sys.exit('[x] Connection error while getting file "'+path+'"')
                 if localFilesInfo.has_key(path):
