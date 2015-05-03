@@ -70,10 +70,8 @@ def getRepPaths(url, path=''):
 def getLocalFilesInfo(filesList):
     localFilesInfo = {}
     print '[-] Getting local files information...'
-    peepdfRoot = os.path.dirname(sys.argv[0])
-    absPeepdfRoot = os.path.abspath(peepdfRoot)
     for path in filesList:
-        absFilePath = absPeepdfRoot+path
+        absFilePath = os.path.join(absPeepdfRoot, path)
         if os.path.exists(absFilePath):
             content = open(absFilePath, 'rb').read()
             shaHash = hashlib.sha256(content).hexdigest()
@@ -236,7 +234,7 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.3'
-revision = '246'
+revision = '248'
 stats = ''
 pdf = None
 fileName = None
@@ -244,6 +242,8 @@ statsDict = None
 vtJsonDict = None
 newLine = os.linesep
 errorsFile = 'errors.txt'
+peepdfRoot = os.path.dirname(sys.argv[0])
+absPeepdfRoot = os.path.abspath(peepdfRoot)
 
 versionHeader = 'Version: peepdf ' + version + ' r' + revision
 peepdfHeader = versionHeader + newLine*2 +\
@@ -318,17 +318,18 @@ try:
                     # Checking hash
                     shaHash = hashlib.sha256(fileContent).hexdigest()
                     if shaHash != localFilesInfo[path][0]:
-                        open(localFilesInfo[path][1],'wb').write(fileContent)
+                        open(localFilesInfo[path][1], 'wb').write(fileContent)
                         print '[+] File "'+path+'" updated successfully'
                 else:
                     # File does not exist
                     index = path.rfind('/')
                     if index != -1:
                         dirsPath = path[:index]
-                        if not os.path.exists(dirsPath):
+                        absDirsPath = os.path.join(absPeepdfRoot, dirsPath)
+                        if not os.path.exists(absDirsPath):
                             print '[+] New directory "'+dirsPath+'" created successfully'
-                            os.makedirs(dirsPath)
-                    open(path,'wb').write(fileContent)
+                            os.makedirs(absDirsPath)
+                    open(os.path.join(absPeepdfRoot, path), 'wb').write(fileContent)
                     print '[+] New file "'+path+'" created successfully'
             message = '[+] peepdf updated successfully'
             if newVersion != '':
@@ -439,7 +440,7 @@ try:
                                  if statsDict['Detection report'] != '':
                                      detectionReportInfo = beforeStaticLabel + 'Detection report: ' + resetColor + statsDict['Detection report'] + newLine
                             else:
-								 detectionRate = 'File not found on VirusTotal'
+                                 detectionRate = 'File not found on VirusTotal'
                             stats += beforeStaticLabel + 'Detection: ' + resetColor + detectionRate + newLine
                             stats += detectionReportInfo
                     stats += beforeStaticLabel + 'Version: ' + resetColor + statsDict['Version'] + newLine
