@@ -5,7 +5,7 @@
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2011-2014 Jose Miguel Esparza
+#    Copyright (C) 2011-2015 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
@@ -50,7 +50,8 @@ try:
 except:
     COLORIZED_OUTPUT = False
 
-def getRepPaths(url, path = ''):
+
+def getRepPaths(url, path=''):
     paths = []
     try:
         browsingPage = urllib2.urlopen(url+path).read()
@@ -58,26 +59,29 @@ def getRepPaths(url, path = ''):
         sys.exit('[x] Connection error while getting browsing page "'+url+path+'"')
     browsingPageObject = json.loads(browsingPage)
     for file in browsingPageObject:
-    	if file['type'] == 'file':
-    		paths.append(file['path'])
-    	elif file['type'] == 'dir':
-    		dirPaths = getRepPaths(url, file['path'])
-    		paths += dirPaths
+        if file['type'] == 'file':
+            paths.append(file['path'])
+        elif file['type'] == 'dir':
+            dirPaths = getRepPaths(url, file['path'])
+            paths += dirPaths
     return paths
+
 
 def getLocalFilesInfo(filesList):
     localFilesInfo = {}
     print '[-] Getting local files information...'
     for path in filesList:
-        if os.path.exists(path):
-            content = open(path,'rb').read()
+        absFilePath = os.path.join(absPeepdfRoot, path)
+        if os.path.exists(absFilePath):
+            content = open(absFilePath, 'rb').read()
             shaHash = hashlib.sha256(content).hexdigest()
-            localFilesInfo[path] = shaHash
+            localFilesInfo[path] = [shaHash, absFilePath]
     print '[+] Done'
     return localFilesInfo
 
+
 def getPeepXML(statsDict, version, revision):
-    root = etree.Element('peepdf_analysis', version = version+' r'+revision, url = 'http://peepdf.eternal-todo.com', author = 'Jose Miguel Esparza')
+    root = etree.Element('peepdf_analysis', version=version+' r'+revision, url='http://peepdf.eternal-todo.com', author='Jose Miguel Esparza')
     analysisDate = etree.SubElement(root, 'date')
     analysisDate.text = datetime.today().strftime('%Y-%m-%d %H:%M')
     basicInfo = etree.SubElement(root, 'basic')
@@ -230,7 +234,7 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.3'
-revision = '247'   
+revision = '248'
 stats = ''
 pdf = None
 fileName = None
@@ -238,16 +242,18 @@ statsDict = None
 vtJsonDict = None
 newLine = os.linesep
 errorsFile = 'errors.txt'
+peepdfRoot = os.path.dirname(sys.argv[0])
+absPeepdfRoot = os.path.abspath(peepdfRoot)
 
 versionHeader = 'Version: peepdf ' + version + ' r' + revision
-peepdfHeader =  versionHeader + newLine*2 +\
+peepdfHeader = versionHeader + newLine*2 +\
                url + newLine +\
                peepTwitter + newLine +\
                email + newLine*2 +\
                author + newLine +\
                twitter + newLine
 
-argsParser = optparse.OptionParser(usage='Usage: '+sys.argv[0]+' [options] PDF_file',description=versionHeader)
+argsParser = optparse.OptionParser(usage='Usage: peepdf.py [options] PDF_file',description=versionHeader)
 argsParser.add_option('-i', '--interactive', action='store_true', dest='isInteractive', default=False, help='Sets console mode.')
 argsParser.add_option('-s', '--load-script', action='store', type='string', dest='scriptFile', help='Loads the commands stored in the specified file and execute them.')
 argsParser.add_option('-c', '--check-vt', action='store_true', dest='checkOnVT', default=False, help='Checks the hash of the PDF file on VirusTotal.')
@@ -289,7 +295,7 @@ try:
         except:
             sys.exit('[x] Connection error while trying to connect with the repository')
         repVer = re.findall(reVersion, remotePeepContent)
-        if repVer != []:
+        if repVer:
             newVersion = 'v'+repVer[0][0]+' r'+repVer[0][1]
         else:
             sys.exit('[x] Error getting the version number from the repository')
@@ -298,7 +304,7 @@ try:
         else:
             print '[+] There are new updates!!'
             print '[-] Getting paths from the repository...'
-            pathNames = getRepPaths(repURL,'')
+            pathNames = getRepPaths(repURL, '')
             print '[+] Done'
             localFilesInfo = getLocalFilesInfo(pathNames)
             print '[-] Checking files...'
@@ -307,22 +313,23 @@ try:
                     fileContent = urllib2.urlopen(rawRepURL+path).read()
                 except:
                     sys.exit('[x] Connection error while getting file "'+path+'"')
-                if localFilesInfo.has_key(path):
+                if path in localFilesInfo:
                     # File exists
                     # Checking hash
                     shaHash = hashlib.sha256(fileContent).hexdigest()
-                    if shaHash != localFilesInfo[path]:
-                        open(path,'wb').write(fileContent)
+                    if shaHash != localFilesInfo[path][0]:
+                        open(localFilesInfo[path][1], 'wb').write(fileContent)
                         print '[+] File "'+path+'" updated successfully'
                 else:
                     # File does not exist
                     index = path.rfind('/')
                     if index != -1:
                         dirsPath = path[:index]
-                        if not os.path.exists(dirsPath):
+                        absDirsPath = os.path.join(absPeepdfRoot, dirsPath)
+                        if not os.path.exists(absDirsPath):
                             print '[+] New directory "'+dirsPath+'" created successfully'
-                            os.makedirs(dirsPath)
-                    open(path,'wb').write(fileContent)
+                            os.makedirs(absDirsPath)
+                    open(os.path.join(absPeepdfRoot, path), 'wb').write(fileContent)
                     print '[+] New file "'+path+'" created successfully'
             message = '[+] peepdf updated successfully'
             if newVersion != '':
@@ -424,16 +431,16 @@ try:
                             if statsDict['Detection'] != None:
                                  detectionColor = ''
                                  if COLORIZED_OUTPUT and not options.avoidColors:
-                                	 detectionLevel = statsDict['Detection'][0]/(statsDict['Detection'][1]/3)
-                                	 if detectionLevel == 0:
-                                	 	 detectionColor = alertColor
-                                	 elif detectionLevel == 1:
-                                	 	 detectionColor = warningColor  
+                                     detectionLevel = statsDict['Detection'][0]/(statsDict['Detection'][1]/3)
+                                     if detectionLevel == 0:
+                                         detectionColor = alertColor
+                                     elif detectionLevel == 1:
+                                         detectionColor = warningColor
                                  detectionRate = '%s%d%s/%d' % (detectionColor, statsDict['Detection'][0], resetColor, statsDict['Detection'][1])
                                  if statsDict['Detection report'] != '':
                                      detectionReportInfo = beforeStaticLabel + 'Detection report: ' + resetColor + statsDict['Detection report'] + newLine
                             else:
-								 detectionRate = 'File not found on VirusTotal'
+                                 detectionRate = 'File not found on VirusTotal'
                             stats += beforeStaticLabel + 'Detection: ' + resetColor + detectionRate + newLine
                             stats += detectionReportInfo
                     stats += beforeStaticLabel + 'Version: ' + resetColor + statsDict['Version'] + newLine
