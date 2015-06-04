@@ -491,7 +491,6 @@ try:
                         events = statsVersion['Events']
                         vulns = statsVersion['Vulns']
                         elements = statsVersion['Elements']
-                        suspiciousProperties = pdf.getSuspiciousProperties()
                         if events != None or actions != None or vulns != None or elements != None:
                             stats += newLine + beforeStaticLabel + '\tSuspicious elements:' + resetColor + newLine
                             if events != None:
@@ -522,10 +521,6 @@ try:
                                         stats = stats[:-1] + '): ' + resetColor + str(elements[element]) + newLine
                                     else:
                                         stats += '\t\t' + beforeStaticLabel + element + ': ' + resetColor + str(elements[element]) + newLine
-                        if suspiciousProperties != None:
-                            stats += newLine + beforeStaticLabel + '\tSuspicious Properties:' + resetColor + newLine
-                            for property in suspiciousProperties:
-                                stats += '\t\t' + beforeStaticLabel + property + resetColor + newLine
                         if COLORIZED_OUTPUT and not options.avoidColors:
                             beforeStaticLabel = staticColor
                         urls = statsVersion['URLs']
@@ -534,6 +529,13 @@ try:
                             for url in urls:
                                 stats += '\t\t' + url + newLine
                         stats += newLine * 2
+                    if COLORIZED_OUTPUT and not options.avoidColors:
+                       beforeStaticLabel = warningColor
+                    suspiciousProperties = pdf.getSuspiciousProperties()
+                    if suspiciousProperties != None:
+                        stats += newLine + beforeStaticLabel + 'Suspicious Properties:' + resetColor + newLine
+                        for property in suspiciousProperties:
+                            stats += '\t' + beforeStaticLabel + property + resetColor + newLine
                 if fileName != None:
                     print stats
                 if options.isInteractive:

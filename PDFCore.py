@@ -6706,7 +6706,7 @@ class PDFParser :
                 break
             headerOffset += len(line)
         file.close()
-        
+
         # Getting the specification version
         versionLine = versionLine.replace('\r','')
         versionLine = versionLine.replace('\n','')
@@ -6742,7 +6742,6 @@ class PDFParser :
                 pdfFile.binaryChars = binaryLine[1:5]
             else:
                 pdfFile.binary = False
-            
         # Reading the rest of the file
         fileContent = open(fileName,'rb').read()
         pdfFile.setSize(len(fileContent))
