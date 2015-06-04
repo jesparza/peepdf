@@ -420,7 +420,6 @@ try:
                     if stats != '':
                         stats += newLine
                     statsDict = pdf.getStats()
-                                                    
                     stats += beforeStaticLabel + 'File: ' + resetColor + statsDict['File'] + newLine
                     stats += beforeStaticLabel + 'MD5: ' + resetColor + statsDict['MD5'] + newLine
                     stats += beforeStaticLabel + 'SHA1: ' + resetColor + statsDict['SHA1'] + newLine
@@ -492,6 +491,7 @@ try:
                         events = statsVersion['Events']
                         vulns = statsVersion['Vulns']
                         elements = statsVersion['Elements']
+                        suspiciousProperties = pdf.getSuspiciousProperties()
                         if events != None or actions != None or vulns != None or elements != None:
                             stats += newLine + beforeStaticLabel + '\tSuspicious elements:' + resetColor + newLine
                             if events != None:
@@ -522,6 +522,10 @@ try:
                                         stats = stats[:-1] + '): ' + resetColor + str(elements[element]) + newLine
                                     else:
                                         stats += '\t\t' + beforeStaticLabel + element + ': ' + resetColor + str(elements[element]) + newLine
+                        if suspiciousProperties != None:
+                            stats += newLine + beforeStaticLabel + '\tSuspicious Properties:' + resetColor + newLine
+                            for property in suspiciousProperties:
+                                stats += '\t\t' + beforeStaticLabel + property + resetColor + newLine
                         if COLORIZED_OUTPUT and not options.avoidColors:
                             beforeStaticLabel = staticColor
                         urls = statsVersion['URLs']
