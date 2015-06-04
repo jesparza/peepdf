@@ -4616,6 +4616,7 @@ class PDFFile :
         self.version = ''
         self.headerOffset = 0
         self.garbageHeader = ''
+        self.garbageAfterEOF = ''
         self.suspiciousProperties = {}
         self.updates = 0
         self.endLine = ''
@@ -6521,6 +6522,9 @@ class PDFFile :
     def setGarbageHeader(self, garbage):
         self.garbageHeader = garbage
 
+    def setGarbageAfterEOF(self, garbage):
+        self.garbageAfterEOF = garbage
+
     def setHeaderOffset(self, offset):
         self.headerOffset = offset
 
@@ -6751,6 +6755,10 @@ class PDFParser :
             self.readUntilSymbol(fileContent, '%%EOF')
             self.readUntilEndOfLine(fileContent)
             self.fileParts.append(fileContent[:self.charCounter])
+            garbageAfterEOF = fileContent[self.charCounter:]
+            pdfFile.setGarbageAfterEOF(garbageAfterEOF)
+            if garbageAfterEOF.split() != []:
+                pdfFile.suspiciousProperties['Garbage Bytes after %%EOF'] = '#TODO'
             fileContent = fileContent[self.charCounter:]
             self.charCounter = 0
         else:
