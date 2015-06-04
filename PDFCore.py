@@ -4616,7 +4616,7 @@ class PDFFile :
         self.version = ''
         self.headerOffset = 0
         self.garbageHeader = ''
-        self.suspiciousElements = {}
+        self.suspiciousProperties = {}
         self.updates = 0
         self.endLine = ''
         self.trailer = [] # PDFTrailer[]
@@ -6078,8 +6078,11 @@ class PDFFile :
             stats['Versions'].append(statsVersion)
         return stats
 
-    def getSuspiciousComponents (self) :
-        pass
+    def getSuspiciousProperties (self) :
+        if len(self.suspiciousProperties) > 0:
+            return self.suspiciousProperties
+        else:
+            return None
             
     def getTrailer (self, version = None) :
         if version == None:
@@ -6715,7 +6718,8 @@ class PDFParser :
             pdfFile.setVersion(matchVersion[0][1])
         if garbageHeader != '':
             pdfFile.setGarbageHeader(garbageHeader)
-            
+            if garbageHeader.split() != []:
+                pdfFile.suspiciousProperties['Garbage Header before PDF Header'] = '#TODO'
         # Getting the end of line
         if len(binaryLine) > 3:
             if binaryLine[-2:] == '\r\n':
