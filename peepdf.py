@@ -340,13 +340,15 @@ try:
             fileName = args[0]
             if not os.path.exists(fileName):
                 sys.exit('Error: The file "'+fileName+'" does not exist!!')
+            elif not os.path.isfile(fileName):
+                sys.exit('Error: "'+fileName+'" is not a file!!')
         elif len(args) > 1 or (len(args) == 0 and not options.isInteractive):
             sys.exit(argsParser.print_help())
             
         if options.scriptFile != None:
             if not os.path.exists(options.scriptFile):
                 sys.exit('Error: The script file "'+options.scriptFile+'" does not exist!!')
-            
+
         if fileName != None:
             pdfParser = PDFParser()
             ret,pdf = pdfParser.parse(fileName, options.isForceMode, options.isLooseMode, options.isManualAnalysis)
