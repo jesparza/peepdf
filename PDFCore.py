@@ -6707,6 +6707,9 @@ class PDFParser :
             headerOffset += len(line)
         file.close()
 
+        headerLength = len(versionLine) + len(binaryLine)
+        if headerLength > 20:
+            pdfFile.suspiciousProperties['Header too large'] = '#TODO'
         # Getting the specification version
         versionLine = versionLine.replace('\r','')
         versionLine = versionLine.replace('\n','')
