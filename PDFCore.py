@@ -4616,7 +4616,8 @@ class PDFFile :
         self.version = ''
         self.headerOffset = 0
         self.garbageHeader = ''
-        self.suspiciousElements = {}
+        self.garbageAfterEOF = ''
+        self.suspiciousProperties = {}
         self.updates = 0
         self.endLine = ''
         self.trailer = [] # PDFTrailer[]
@@ -6078,8 +6079,11 @@ class PDFFile :
             stats['Versions'].append(statsVersion)
         return stats
 
-    def getSuspiciousComponents (self) :
-        pass
+    def getSuspiciousProperties (self) :
+        if len(self.suspiciousProperties) > 0:
+            return self.suspiciousProperties
+        else:
+            return None
             
     def getTrailer (self, version = None) :
         if version == None:
@@ -6518,6 +6522,9 @@ class PDFFile :
     def setGarbageHeader(self, garbage):
         self.garbageHeader = garbage
 
+    def setGarbageAfterEOF(self, garbage):
+        self.garbageAfterEOF = garbage
+
     def setHeaderOffset(self, offset):
         self.headerOffset = offset
 
@@ -6699,7 +6706,10 @@ class PDFParser :
                 break
             headerOffset += len(line)
         file.close()
-        
+
+        headerLength = len(versionLine) + len(binaryLine)
+        if headerLength > 20:
+            pdfFile.suspiciousProperties['Header too large'] = '#TODO'
         # Getting the specification version
         versionLine = versionLine.replace('\r','')
         versionLine = versionLine.replace('\n','')
@@ -6715,7 +6725,8 @@ class PDFParser :
             pdfFile.setVersion(matchVersion[0][1])
         if garbageHeader != '':
             pdfFile.setGarbageHeader(garbageHeader)
-            
+            if garbageHeader.split() != []:
+                pdfFile.suspiciousProperties['Garbage Header before PDF Header'] = '#TODO'
         # Getting the end of line
         if len(binaryLine) > 3:
             if binaryLine[-2:] == '\r\n':
@@ -6734,7 +6745,6 @@ class PDFParser :
                 pdfFile.binaryChars = binaryLine[1:5]
             else:
                 pdfFile.binary = False
-            
         # Reading the rest of the file
         fileContent = open(fileName,'rb').read()
         pdfFile.setSize(len(fileContent))
@@ -6757,6 +6767,11 @@ class PDFParser :
                     self.fileParts.append(fileContent)
                 else:
                     sys.exit(errorMessage)
+            else:
+                garbageAfterEOF = fileContent
+                pdfFile.setGarbageAfterEOF(garbageAfterEOF)
+                if garbageAfterEOF.split() != []:
+                    pdfFile.suspiciousProperties['Garbage Bytes after last %%EOF'] = '#TODO'
         pdfFile.setUpdates(len(self.fileParts) - 1)
         
         # Getting the body, cross reference table and trailer of each part of the file
