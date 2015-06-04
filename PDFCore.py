@@ -6755,10 +6755,6 @@ class PDFParser :
             self.readUntilSymbol(fileContent, '%%EOF')
             self.readUntilEndOfLine(fileContent)
             self.fileParts.append(fileContent[:self.charCounter])
-            garbageAfterEOF = fileContent[self.charCounter:]
-            pdfFile.setGarbageAfterEOF(garbageAfterEOF)
-            if garbageAfterEOF.split() != []:
-                pdfFile.suspiciousProperties['Garbage Bytes after %%EOF'] = '#TODO'
             fileContent = fileContent[self.charCounter:]
             self.charCounter = 0
         else:
@@ -6769,6 +6765,11 @@ class PDFParser :
                     self.fileParts.append(fileContent)
                 else:
                     sys.exit(errorMessage)
+            else:
+                garbageAfterEOF = fileContent
+                pdfFile.setGarbageAfterEOF(garbageAfterEOF)
+                if garbageAfterEOF.split() != []:
+                    pdfFile.suspiciousProperties['Garbage Bytes after last %%EOF'] = '#TODO'
         pdfFile.setUpdates(len(self.fileParts) - 1)
         
         # Getting the body, cross reference table and trailer of each part of the file
