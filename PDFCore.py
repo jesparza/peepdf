@@ -4627,6 +4627,7 @@ class PDFFile :
         self.numEncodedStreams = 0
         self.numDecodingErrors = 0
         self.maxObjectId = 0
+        self.pagesCount = -1
 
     def addBody(self, newBody):
         if newBody != None and isinstance(newBody,PDFBody):
@@ -5907,7 +5908,22 @@ class PDFFile :
     
     def getPath(self):
         return self.path
-    
+
+    def getPagesCount(self):
+        catalog = self.getCatalogObject()
+        if catalog == None or len(catalog) < 1:
+            return -1
+        pagesElement = catalog[0].getElement('/Pages')
+        if pagesElement == None:
+            return -1
+        pagesElementId = pagesElement.getId()
+        pages = self.getObject(pagesElementId)
+        count = pages.getElement('/Count')
+        if count == None:
+            return -1
+        pagesCount = count.toFile()
+        return pagesCount
+
     def getReferencesIn (self, id, version = None) :
         ''' 
             Get the references in an object
@@ -5993,6 +6009,7 @@ class PDFFile :
         stats['Comments'] = str(len(self.comments))
         stats['Errors'] = self.errors
         stats['Versions'] = []
+        stats['Pages Count'] = str(self.pagesCount)
         for version in range(self.updates+1):
             statsVersion = {}
             catalogId = None
@@ -6013,6 +6030,9 @@ class PDFFile :
                 statsVersion['Info'] = str(infoId)
             else:
                 statsVersion['Info'] = None
+            if catalogId != None:
+                self.pagesCount = self.getPagesCount()
+                stats['Pages Count'] = str(self.pagesCount)
             objectsById = sorted(self.body[version].getObjectsIds(), key=lambda x: int(x))
             statsVersion['Objects'] = [str(self.body[version].getNumObjects()),objectsById]
             if self.body[version].containsCompressedObjects():
