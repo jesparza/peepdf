@@ -6097,6 +6097,7 @@ class PDFFile :
             else:
                 statsVersion['URLs'] = None
             stats['Versions'].append(statsVersion)
+            stats['suspiciousProperties'] = self.getSuspiciousProperties()
         return stats
 
     def getSuspiciousProperties (self) :
