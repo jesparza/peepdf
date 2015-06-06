@@ -534,7 +534,7 @@ try:
                         stats += newLine * 2
                     if COLORIZED_OUTPUT and not options.avoidColors:
                        beforeStaticLabel = warningColor
-                    suspiciousProperties = pdf.getSuspiciousProperties()
+                    suspiciousProperties = statsDict['suspiciousProperties']
                     if suspiciousProperties != None:
                         stats += newLine + beforeStaticLabel + 'Suspicious Properties:' + resetColor + newLine
                         for property in suspiciousProperties:
