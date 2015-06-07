@@ -5913,6 +5913,8 @@ class PDFFile :
         catalog = self.getCatalogObject()
         if catalog == None or len(catalog) < 1:
             return -1
+        if catalog[0] is None:
+            return -1
         pagesElement = catalog[0].getElement('/Pages')
         if pagesElement == None:
             return -1
@@ -6096,6 +6098,7 @@ class PDFFile :
             stats['Versions'].append(statsVersion)
         stats['Pages Count'] = str(self.pagesCount)
         self.pagesCount = self.getPagesCount()
+        self.verifyXrefOffsets()
         stats['suspiciousProperties'] = self.getSuspiciousProperties()
         return stats
 
@@ -6667,6 +6670,35 @@ class PDFFile :
     def updateTrailer (self, version) :
         #TODO
         pass
+
+    def verifyXrefOffsets(self):
+        for version in range(self.updates+1):
+            realObjectOffsetsArray = self.getOffsets(version)[0]['objects']
+            realObjectOffsets = {}
+            for i in realObjectOffsetsArray:
+                realObjectOffsets[i[0]] = i[1]
+            XrefSection = self.getXrefSection(version)[1]
+            for section in XrefSection:
+                if section is None:
+                    continue
+                for i in section.getSubsectionsArray():
+                    for count, j in enumerate(i.getEntries()):
+                        if j.getType() not in ('n', '1'):
+                            continue
+                        objectId = i.getObjectId(count)
+                        objectOffset = j.getObjectOffset()
+                        if objectId not in realObjectOffsets.keys():
+                            try:
+                                l = self.body[version].suspiciousElements['Objects not in xref(version %s)' %(version)]
+                            except KeyError:
+                                self.body[version].suspiciousElements['Objects not in xref(version %s)' %(version)] = []
+                                l = self.body[version].suspiciousElements['Objects not in xref(version %s)' %(version)]
+                            if objectId not in l:
+                                l.append(objectId)
+                            continue
+                        if realObjectOffsets[objectId] != objectOffset:
+                            self.suspiciousProperties['Xref Table broken'] = "#TODO"
+                            break
 
 
 class PDFParser :
