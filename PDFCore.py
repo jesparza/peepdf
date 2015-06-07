@@ -6030,9 +6030,6 @@ class PDFFile :
                 statsVersion['Info'] = str(infoId)
             else:
                 statsVersion['Info'] = None
-            if catalogId != None:
-                self.pagesCount = self.getPagesCount()
-                stats['Pages Count'] = str(self.pagesCount)
             objectsById = sorted(self.body[version].getObjectsIds(), key=lambda x: int(x))
             statsVersion['Objects'] = [str(self.body[version].getNumObjects()),objectsById]
             if self.body[version].containsCompressedObjects():
@@ -6097,7 +6094,9 @@ class PDFFile :
             else:
                 statsVersion['URLs'] = None
             stats['Versions'].append(statsVersion)
-            stats['suspiciousProperties'] = self.getSuspiciousProperties()
+        stats['Pages Count'] = str(self.pagesCount)
+        self.pagesCount = self.getPagesCount()
+        stats['suspiciousProperties'] = self.getSuspiciousProperties()
         return stats
 
     def getSuspiciousProperties (self) :
