@@ -537,8 +537,8 @@ try:
                     suspiciousProperties = statsDict['suspiciousProperties']
                     if suspiciousProperties != None:
                         stats += newLine + beforeStaticLabel + 'Suspicious Properties:' + resetColor + newLine
-                        for property in suspiciousProperties:
-                            stats += '\t' + beforeStaticLabel + property + resetColor + newLine
+                        for suspicious in suspiciousProperties:
+                            stats += '\t' + beforeStaticLabel + suspicious + resetColor + newLine
                 if fileName != None:
                     print stats
                 if options.isInteractive:
