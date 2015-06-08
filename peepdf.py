@@ -493,6 +493,7 @@ try:
                         actions = statsVersion['Actions']
                         events = statsVersion['Events']
                         vulns = statsVersion['Vulns']
+                        properties = statsVersion['Properties']
                         elements = statsVersion['Elements']
                         if events != None or actions != None or vulns != None or elements != None:
                             stats += newLine + beforeStaticLabel + '\tSuspicious elements:' + resetColor + newLine
@@ -524,6 +525,10 @@ try:
                                         stats = stats[:-1] + '): ' + resetColor + str(elements[element]) + newLine
                                     else:
                                         stats += '\t\t' + beforeStaticLabel + element + ': ' + resetColor + str(elements[element]) + newLine
+                        if properties != None:
+                            stats += newLine + beforeStaticLabel + '\tSuspicious Properties:' + resetColor + newLine
+                            for p in properties:
+                                stats += '\t\t' + beforeStaticLabel + p + newLine
                         if COLORIZED_OUTPUT and not options.avoidColors:
                             beforeStaticLabel = staticColor
                         urls = statsVersion['URLs']

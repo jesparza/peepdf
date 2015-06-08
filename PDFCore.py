@@ -3783,6 +3783,7 @@ class PDFBody :
         self.suspiciousEvents = {}
         self.suspiciousActions = {}
         self.suspiciousElements = {}
+        self.suspiciousProperties = []
         self.vulns = {}
         self.JSCode = []
         self.URLs = []
@@ -4016,6 +4017,9 @@ class PDFBody :
     
     def getSuspiciousEvents(self):
         return self.suspiciousEvents
+
+    def getSuspiciousProperties(self):
+        return self.suspiciousProperties
     
     def getURLs(self):
         return self.URLs
@@ -6075,6 +6079,7 @@ class PDFFile :
             vulns = self.body[version].getVulns()
             elements = self.body[version].getSuspiciousElements()
             urls = self.body[version].getURLs()
+            properties = self.body[version].getSuspiciousProperties()
             if len(events) > 0:
                 statsVersion['Events'] = events
             else:
@@ -6095,6 +6100,10 @@ class PDFFile :
                 statsVersion['URLs'] = urls
             else:
                 statsVersion['URLs'] = None
+            if len(properties) > 0:
+                statsVersion['Properties'] = properties
+            else:
+                statsVersion['Properties'] = None
             stats['Versions'].append(statsVersion)
         stats['Pages Count'] = str(self.pagesCount)
         self.pagesCount = self.getPagesCount()
@@ -6708,7 +6717,18 @@ class PDFParser :
         self.delimiters = [('<<','>>','dictionary'),('(',')','string'),('<','>','hexadecimal'),('[',']','array'),('{','}',''),('/','','name'),('%','','comment')]
         self.fileParts = []
         self.charCounter = 0    
-    
+
+    def detectGarbageBetweenObjects(self, bodyContent, looseMode = False):
+        if bodyContent is None:
+            return False
+        if not looseMode:
+            regExp = re.compile('endobj\s*?(.*?)\s*?\d{1,10}\s\d{1,10}\sobj',re.DOTALL)
+            matchingObjects = filter(None, regExp.findall(bodyContent))
+            if matchingObjects != []:
+                return True
+            else:
+                return False
+
     def parse (self, fileName, forceMode = False, looseMode = False, manualAnalysis = False) :
         '''
             Main method to parse a PDF document
@@ -6939,6 +6959,9 @@ class PDFParser :
                             pdfFile.addError('Error parsing object: '+str(objectHeader)+' ('+str(ret[1])+')')
             else:
                 pdfFile.addError('No indirect objects found in the body')
+            GarbageBytesPresent = self.detectGarbageBetweenObjects(bodyContent, looseMode=looseMode)
+            if GarbageBytesPresent is True:
+                body.suspiciousProperties.append('Garbage bytes between objects')
             if pdfIndirectObject != None:
                 body.setNextOffset(pdfIndirectObject.getOffset())
             ret = body.updateObjects()
