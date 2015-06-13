@@ -6105,10 +6105,16 @@ class PDFFile :
             else:
                 statsVersion['Properties'] = None
             stats['Versions'].append(statsVersion)
-        stats['Pages Count'] = str(self.pagesCount)
         self.pagesCount = self.getPagesCount()
-        self.verifyXrefOffsets()
-        stats['suspiciousProperties'] = self.getSuspiciousProperties()
+        if self.pagesCount not in (None, -1):
+            stats['Pages Count'] = str(self.pagesCount)
+        else:
+            stats['Pages Count'] = None
+        suspiciousProperties = self.getSuspiciousProperties()
+        if suspiciousProperties is not None:
+            stats['suspiciousProperties'] = suspiciousProperties
+        else:
+            stats['suspiciousProperties'] = None
         return stats
 
     def getSuspiciousProperties (self) :
@@ -6687,27 +6693,30 @@ class PDFFile :
             for i in realObjectOffsetsArray:
                 realObjectOffsets[i[0]] = i[1]
             XrefSection = self.getXrefSection(version)[1]
+            xrefObjectList = []
             for section in XrefSection:
                 if section is None:
                     continue
                 for i in section.getSubsectionsArray():
                     for count, j in enumerate(i.getEntries()):
+                        objectId = i.getObjectId(count)
+                        xrefObjectList.append(objectId)
                         if j.getType() not in ('n', '1'):
                             continue
-                        objectId = i.getObjectId(count)
                         objectOffset = j.getObjectOffset()
-                        if objectId not in realObjectOffsets.keys():
-                            try:
-                                l = self.body[version].suspiciousElements['Objects not in xref(version %s)' %(version)]
-                            except KeyError:
-                                self.body[version].suspiciousElements['Objects not in xref(version %s)' %(version)] = []
-                                l = self.body[version].suspiciousElements['Objects not in xref(version %s)' %(version)]
-                            if objectId not in l:
-                                l.append(objectId)
-                            continue
-                        if realObjectOffsets[objectId] != objectOffset:
+                        if objectId not in realObjectOffsets.keys() or realObjectOffsets[objectId] != objectOffset:
                             self.suspiciousProperties['Xref Table broken'] = "#TODO"
-                            break
+            for objectId in realObjectOffsets.keys():
+                if objectId not in xrefObjectList:
+                    try:
+                        l = self.body[version].suspiciousElements['Objects not in xref(version %s)' %(version)]
+                    except KeyError:
+                        self.body[version].suspiciousElements['Objects not in xref(version %s)' %(version)] = []
+                        l = self.body[version].suspiciousElements['Objects not in xref(version %s)' %(version)]
+                    if objectId not in l:
+                        l.append(objectId)
+                    continue
+
 
 
 class PDFParser :
@@ -7039,6 +7048,7 @@ class PDFParser :
             ret = pdfFile.decrypt()
             if ret[0] == -1:
                 pdfFile.addError(ret[1])
+        pdfFile.verifyXrefOffsets()
         return (0,pdfFile)
 
     def parsePDFSections(self, content, forceMode = False, looseMode = False):

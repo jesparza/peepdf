@@ -95,6 +95,10 @@ def getPeepXML(statsDict, version, revision):
     sha256.text = statsDict['SHA256']
     size = etree.SubElement(basicInfo, 'size')
     size.text = statsDict['Size']
+    pagesCount = statsDict['Pages Count']
+    if pagesCount not in (None, -1):
+        pages = etree.SubElement(basicInfo, 'pages')
+        pages.text = statsDict['Pages Count']
     detection = etree.SubElement(basicInfo, 'detection')
     if statsDict['Detection'] != [] and statsDict['Detection'] != None:
         detectionRate = etree.SubElement(detection, 'rate')
@@ -180,6 +184,7 @@ def getPeepXML(statsDict, version, revision):
         actions = statsVersion['Actions']
         events = statsVersion['Events']
         vulns = statsVersion['Vulns']
+        properties = statsVersion['Properties']
         elements = statsVersion['Elements']
         suspicious = etree.SubElement(versionInfo, 'suspicious_elements')
         if events != None or actions != None or vulns != None or elements != None:
@@ -219,12 +224,22 @@ def getPeepXML(statsDict, version, revision):
                             cve.text = vulnCVE
                     for id in vulns[vuln]:
                         etree.SubElement(vulnInfo, 'container_object', id = str(id))
+        suspiciousProperties = etree.SubElement(versionInfo, 'suspicious_properties')
+        if properties is not None:
+            propertiesInfo = etree.SubElement(suspiciousProperties, 'suspicious_properties')
+            for p in properties:
+                etree.SubElement(propertiesInfo, 'property', name=p)
         urls = statsVersion['URLs']
         suspiciousURLs = etree.SubElement(versionInfo, 'suspicious_urls')
         if urls != None:
             for url in urls:
                 urlInfo = etree.SubElement(versionInfo, 'url')
                 urlInfo.text = url
+    suspiciousProperties = statsDict['suspiciousProperties']
+    suspiciousPropertiesInfo = etree.SubElement(root, 'Suspicious_properties')
+    if suspiciousProperties != None:
+        for suspicious in suspiciousProperties:
+            etree.SubElement(suspiciousPropertiesInfo, 'property', name=suspicious )
     return etree.tostring(root, pretty_print=True)
 
     
@@ -351,6 +366,7 @@ try:
 
         if fileName != None:
             pdfParser = PDFParser()
+            #print options.isForceMode, options.isLooseMode, options.isManualAnalysis
             ret,pdf = pdfParser.parse(fileName, options.isForceMode, options.isLooseMode, options.isManualAnalysis)
             if options.checkOnVT:
                 # Checks the MD5 on VirusTotal
@@ -373,6 +389,7 @@ try:
                     else:
                         pdf.addError('Bad response from VirusTotal!!')
             statsDict = pdf.getStats()
+            print ">>", statsDict['Versions'][0]['Properties']
         
         if options.xmlOutput:
             try:
