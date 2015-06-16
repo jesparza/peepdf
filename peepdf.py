@@ -389,8 +389,7 @@ try:
                     else:
                         pdf.addError('Bad response from VirusTotal!!')
             statsDict = pdf.getStats()
-            print ">>", statsDict['Versions'][0]['Properties']
-        
+
         if options.xmlOutput:
             try:
                 from lxml import etree
