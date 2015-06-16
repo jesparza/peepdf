@@ -510,7 +510,6 @@ class PDFName (PDFObject) :
         r = re.findall('.*?(#\d\d).*?', name)
         for i in r:
             name = name.replace(i, chr(int(i[1:])))
-        print name
         return name
 
     def update(self):
