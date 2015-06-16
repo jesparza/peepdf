@@ -489,6 +489,7 @@ class PDFName (PDFObject) :
         self.JSCode = []
         self.references = []
         self.compressedIn = None
+        name = self.normalize(name)
         if name[0] == '/':
             self.rawValue = self.value = self.encryptedValue = name
         else:
@@ -504,6 +505,13 @@ class PDFName (PDFObject) :
                 self.addError(ret[1])
             else:
                 raise Exception(ret[1])
+
+    def normalize(self, name):
+        r = re.findall('.*?(#\d\d).*?', name)
+        for i in r:
+            name = name.replace(i, chr(int(i[1:])))
+        print name
+        return name
 
     def update(self):
         self.errors = []
