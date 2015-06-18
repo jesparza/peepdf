@@ -489,11 +489,12 @@ class PDFName (PDFObject) :
         self.JSCode = []
         self.references = []
         self.compressedIn = None
-        #name = self.normalize(name)
+        self.name = name
         if name[0] == '/':
             self.rawValue = self.value = self.encryptedValue = name
         else:
             self.rawValue = self.value = self.encryptedValue = '/' + name
+        self.obfuscated = False
         self.updateNeeded = False
         self.containsJScode = False
         self.encryptedValue = ''
@@ -506,11 +507,14 @@ class PDFName (PDFObject) :
             else:
                 raise Exception(ret[1])
 
-    def normalize(self, name):
-        r = re.findall('/.*?(#\d\d).*?', name)
-        for i in r:
-            pass
-        return name
+    def isObfuscated(self):
+        r = re.findall('.*?(#[\dA-F][\dA-F]).*?', self.name)
+        r = filter(None, r)
+        if r != []:
+            self.obfuscated = True
+            return True
+        else:
+            return False
 
     def update(self):
         self.errors = []
@@ -6736,7 +6740,8 @@ class PDFParser :
         self.comments = []
         self.delimiters = [('<<','>>','dictionary'),('(',')','string'),('<','>','hexadecimal'),('[',']','array'),('{','}',''),('/','','name'),('%','','comment')]
         self.fileParts = []
-        self.charCounter = 0    
+        self.charCounter = 0
+        self.tempVarObfuscation = False
 
     def detectGarbageBetweenObjects(self, bodyContent, looseMode = False):
         if bodyContent is None:
@@ -6937,6 +6942,7 @@ class PDFParser :
                         else:
                             auxContent = auxContent[index+len(objectHeader):]
                             relativeOffset += len(objectHeader)
+                    self.tempVarObfuscation= False
                     ret = self.createPDFIndirectObject(rawObject, forceMode, looseMode)
                     if ret[0] != -1:
                         pdfIndirectObject = ret[1]
@@ -6974,6 +6980,15 @@ class PDFParser :
                                 except KeyError:
                                     body.suspiciousElements['Objects with missing terminator'] = []
                                     l = body.suspiciousElements['Objects with missing terminator']
+                                objectId = pdfIndirectObject.getId()
+                                if objectId not in l:
+                                    l.append(objectId)
+                            if self.tempVarObfuscation == True:
+                                try:
+                                    l = body.suspiciousElements['Objects with obfuscated names']
+                                except KeyError:
+                                    body.suspiciousElements['Objects with obfuscated names'] = []
+                                    l = body.suspiciousElements['Objects with obfuscated names']
                                 objectId = pdfIndirectObject.getId()
                                 if objectId not in l:
                                     l.append(objectId)
@@ -7824,6 +7839,9 @@ class PDFParser :
                 elif delim[2] == 'name':
                     ret,raw = self.readUntilNotRegularChar(content)
                     pdfObject = PDFName(raw)
+                    obfuscation = pdfObject.isObfuscated()
+                    if obfuscation is True:
+                        self.tempVarObfuscation = True
                     break
                 elif delim[2] == 'comment':
                     ret = self.readUntilEndOfLine(content)
