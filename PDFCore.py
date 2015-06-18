@@ -3208,6 +3208,7 @@ class PDFIndirectObject :
         self.generationNumber = 0 # int
         self.id = None # int
         self.size = 0 # int
+        self.terminatorPresent = True
         
     def contains(self, string):
         return self.object.contains(string)
@@ -3244,6 +3245,9 @@ class PDFIndirectObject :
 
     def isFaulty(self):
         return self.object.isFaulty()
+
+    def isTerminated(self):
+        return self.terminatorPresent
     
     def setGenerationNumber(self, generationNumber):
         self.generationNumber = generationNumber
@@ -6962,12 +6966,22 @@ class PDFParser :
                                 if not forceMode:
                                     sys.exit('Error: An error has occurred while parsing an indirect object!!')
                                 else:
-                                    pdfFile.addError('Object is None')        
+                                    pdfFile.addError('Object is None')
+                            terminatorPresent = pdfIndirectObject.isTerminated()
+                            if terminatorPresent is False:
+                                try:
+                                    l = body.suspiciousElements['Objects with missing terminator']
+                                except KeyError:
+                                    body.suspiciousElements['Objects with missing terminator'] = []
+                                    l = body.suspiciousElements['Objects with missing terminator']
+                                objectId = pdfIndirectObject.getId()
+                                if objectId not in l:
+                                    l.append(objectId)
                         else:
                             if not forceMode:
                                 sys.exit('Error: Bad indirect object!!')
                             else:
-                                pdfFile.addError('Indirect object is None')    
+                                pdfFile.addError('Indirect object is None')
                     else:
                         if not forceMode:
                             sys.exit('Error: An error has occurred while parsing an indirect object!!')
@@ -7131,6 +7145,8 @@ class PDFParser :
             object = ret[1]
             pdfIndirectObject.setObject(object)
             ret = self.readSymbol(rawIndirectObject, 'endobj', False)
+            if ret[0] == -1:
+                pdfIndirectObject.terminatorPresent = False
             pdfIndirectObject.setSize(self.charCounter)
         except:
             errorMessage = 'Unspecified parsing error'
