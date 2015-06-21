@@ -6775,12 +6775,12 @@ class PDFFile :
             realObjectOffsets = {}
             for offsetIdTuple in realObjectOffsetsArray:
                 realObjectOffsets[offsetIdTuple[0]] = offsetIdTuple[1]
-            XrefSection = self.getXrefSection(version)[1]
+            xrefSection = self.getXrefSection(version)[1]
             xrefObjectList = []
-            if filter(None, XrefSection) == []:
+            if filter(None, xrefSection) == []:
                 self.body[version].suspiciousProperties.append('Xref Table missing')
                 continue
-            for section in XrefSection:
+            for section in xrefSection:
                 if section is None:
                     continue
                 for subsection in section.getSubsectionsArray():
