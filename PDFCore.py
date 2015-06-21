@@ -6894,8 +6894,10 @@ class PDFParser :
             pdfFile.setVersion(matchVersion[0][1])
         if garbageHeader != '' and matchVersion != []:
             pdfFile.setGarbageHeader(garbageHeader)
-            if garbageHeader.split() != []:
+            if not garbageHeader.isspace():
                 pdfFile.suspiciousProperties['Garbage Header before PDF Header'] = '#TODO'
+            elif len(garbageHeader) > 4:
+                pdfFile.suspiciousProperties['Large Gap before Header'] = '#TODO'
         # Getting the end of line
         if len(binaryLine) > 3:
             if binaryLine[-2:] == '\r\n':
