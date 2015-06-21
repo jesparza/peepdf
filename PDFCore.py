@@ -26,6 +26,8 @@
 '''
 
 import sys,os,re,hashlib,struct,aes as AES
+import magic
+from difflib import SequenceMatcher
 from PDFUtils import *
 from PDFCrypto import *
 from JSAnalysis import *
@@ -2600,7 +2602,53 @@ class PDFStream (PDFDictionary) :
         self.modifiedRawStream = True
         ret = self.update()
         return ret
-    
+
+    def verifySubType(self):
+        stats = self.getStats()
+        if 'Subtype' in stats.keys():
+            subType = stats['Subtype']
+            if subType == None:
+                return -1
+            subType = subType.lower()
+            if subType[0] == '/':
+                subType = subType[1:]
+            subTypeDict = {
+                'image': 'image',
+                'form': 'text',
+                'xml': 'text',
+                'text': 'text',
+            }
+            ignoreSubTypeList = [
+                'application/zlib'
+            ]
+            subTypeFound = False
+            for st in subTypeDict:
+                if st.lower() in subType:
+                    subTypeKey = st
+                    subTypeFound = True
+                    break
+            if self.decodingError is True:
+                stream = self.getRawStream()
+            else:
+                stream = self.getStream()
+            if stream.isspace():
+                return True
+            m = magic.Magic(mime=True)
+            subTypeMagic = m.from_buffer(stream)
+            subTypeMagic = subTypeMagic.lower()
+            if SequenceMatcher(None, subType, subTypeMagic).ratio() >= 0.8:
+                return True
+            if subTypeMagic in ignoreSubTypeList:
+                return -1
+            if subTypeFound is False:
+                return -1
+            if subTypeDict[subTypeKey] not in subTypeMagic:
+                return False
+            else:
+                return True
+        else:
+            return -1
+
 
 class PDFObjectStream (PDFStream) :
     def __init__(self, rawDict = '', rawStream = '', elements = {}, rawNames = {}, compressedObjectsDict = {}) :
@@ -3870,6 +3918,9 @@ class PDFBody :
                 self.numStreams -= 1
                 if id in self.streams:
                     self.streams.remove(id)
+                l = self.suspiciousElements['streams with invalid /Subtype']
+                if id in l:
+                    l.remove(id)
                 if pdfObject.isEncoded():
                     if id in self.encodedStreams:
                         self.encodedStreams.remove(id)
@@ -4099,6 +4150,16 @@ class PDFBody :
                                 compressedObject = compressedObjectsDict[compressedId][1]
                                 self.setObject(compressedId, compressedObject, offset)
                             del(compressedObjectsDict)
+                subTypeValid = pdfObject.verifySubType()
+                if subTypeValid is False:
+                    try:
+                        l = self.suspiciousElements['streams with invalid /Subtype']
+                    except KeyError:
+                        self.suspiciousElements['streams with invalid /Subtype'] = []
+                        l = self.suspiciousElements['streams with invalid /Subtype']
+                    objectId = pdfIndirectObject.getId()
+                    if objectId not in l:
+                        l.append(objectId)
         pdfIndirectObject.setObject(pdfObject)
         self.objects[id] = pdfIndirectObject
         self.errors += pdfObject.getErrors()
