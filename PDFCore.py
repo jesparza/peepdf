@@ -5461,14 +5461,14 @@ class PDFFile :
     def detectGarbageBetweenObjects(self, bodyContent, looseMode = False):
         if bodyContent is None:
             return False
-        if not looseMode:
-            largeGap = False
-            regExp = re.compile('endobj\s*?(.*?)\d{1,10}\s\d{1,10}\sobj',re.DOTALL)
-            for garbage in regExp.findall(bodyContent):
-                if len(garbage) > 4:
-                    largeGap = True
-                    break
-            return largeGap
+        largeGap = False
+        regExp = re.compile('endobj(.*?)\d{1,10}\s\d{1,10}\sobj',re.DOTALL)
+        print regExp.findall(bodyContent)
+        for garbage in regExp.findall(bodyContent):
+            if len(garbage) > 2:
+                largeGap = True
+                break
+        return largeGap
 
     def encodeChars(self):
         errorMessage = ''
