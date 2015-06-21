@@ -4707,7 +4707,7 @@ class PDFFile :
         self.numEncodedStreams = 0
         self.numDecodingErrors = 0
         self.maxObjectId = 0
-        self.pagesCount = -1
+        self.pagesCount = 0
 
     def addBody(self, newBody):
         if newBody != None and isinstance(newBody,PDFBody):
@@ -5992,18 +5992,18 @@ class PDFFile :
     def getPagesCount(self):
         catalog = self.getCatalogObject()
         if catalog == None or len(catalog) < 1:
-            return -1
+            return 0
         if catalog[0] is None:
-            return -1
+            return 0
         pagesElement = catalog[0].getElement('/Pages')
         if pagesElement == None:
-            return -1
+            return 0
         pagesElementId = pagesElement.getId()
         pages = self.getObject(pagesElementId)
         count = pages.getElement('/Count')
         if count == None:
-            return -1
-        pagesCount = count.toFile()
+            return 0
+        pagesCount = count.getValue()
         return pagesCount
 
     def getReferencesIn (self, id, version = None) :
