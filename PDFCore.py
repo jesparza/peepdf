@@ -5992,12 +5992,15 @@ class PDFFile :
     def getPagesCount(self):
         catalog = self.getCatalogObject()
         if catalog == None or len(catalog) < 1:
-            return 0
+            self.addError('Pages Number not found as Catalog is None')
+            return None
         if catalog[0] is None:
-            return 0
+            self.addError('Pages Number not found as Catalog is None')
+            return None
         pagesElement = catalog[0].getElement('/Pages')
         if pagesElement == None:
-            return 0
+            self.addError('/Pages element missing')
+            return None
         pagesElementId = pagesElement.getId()
         pages = self.getObject(pagesElementId)
         count = pages.getElement('/Count')
