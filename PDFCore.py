@@ -6764,12 +6764,19 @@ class PDFFile :
 
     def verifyXrefOffsets(self):
         for version in range(self.updates+1):
-            realObjectOffsetsArray = self.getOffsets(version)[0]['objects']
+            realObjectOffsetsArray = self.getOffsets(version)[0]
+            if 'objects' in realObjectOffsetsArray:
+                realObjectOffsetsArray = realObjectOffsetsArray['objects']
+            else:
+                return -1
             realObjectOffsets = {}
             for i in realObjectOffsetsArray:
                 realObjectOffsets[i[0]] = i[1]
             XrefSection = self.getXrefSection(version)[1]
             xrefObjectList = []
+            if filter(None, XrefSection) == []:
+                self.body[version].suspiciousProperties.append('Xref Table missing')
+                continue
             for section in XrefSection:
                 if section is None:
                     continue
