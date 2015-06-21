@@ -5457,7 +5457,19 @@ class PDFFile :
     def deleteObject (self, id) :
         # Remove references too 
         pass
-    
+
+    def detectGarbageBetweenObjects(self, bodyContent, looseMode = False):
+        if bodyContent is None:
+            return False
+        if not looseMode:
+            largeGap = False
+            regExp = re.compile('endobj\s*?(.*?)\d{1,10}\s\d{1,10}\sobj',re.DOTALL)
+            for garbage in regExp.findall(bodyContent):
+                if len(garbage) > 4:
+                    largeGap = True
+                    break
+            return largeGap
+
     def encodeChars(self):
         errorMessage = ''
         for i in range(self.updates+1):
@@ -6814,17 +6826,6 @@ class PDFParser :
         self.charCounter = 0
         self.tempVarObfuscation = False
 
-    def detectGarbageBetweenObjects(self, bodyContent, looseMode = False):
-        if bodyContent is None:
-            return False
-        if not looseMode:
-            regExp = re.compile('endobj\s*?(.*?)\s*?\d{1,10}\s\d{1,10}\sobj',re.DOTALL)
-            matchingObjects = filter(None, regExp.findall(bodyContent))
-            if matchingObjects != []:
-                return True
-            else:
-                return False
-
     def parse (self, fileName, forceMode = False, looseMode = False, manualAnalysis = False) :
         '''
             Main method to parse a PDF document
@@ -7075,9 +7076,9 @@ class PDFParser :
                             pdfFile.addError('Error parsing object: '+str(objectHeader)+' ('+str(ret[1])+')')
             else:
                 pdfFile.addError('No indirect objects found in the body')
-            GarbageBytesPresent = self.detectGarbageBetweenObjects(bodyContent, looseMode=looseMode)
-            if GarbageBytesPresent is True:
-                body.suspiciousProperties.append('Garbage bytes between objects')
+            garbageBytesPresent = pdfFile.detectGarbageBetweenObjects(bodyContent, looseMode=looseMode)
+            if garbageBytesPresent is True:
+                pdfFile.suspiciousProperties['Garbage bytes between objects'] = '#TODO'
             if pdfIndirectObject != None:
                 body.setNextOffset(pdfIndirectObject.getOffset())
             ret = body.updateObjects()
