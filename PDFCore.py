@@ -6795,10 +6795,10 @@ class PDFFile :
             for objectId in realObjectOffsets.keys():
                 if objectId not in xrefObjectList:
                     try:
-                        l = self.body[version].suspiciousElements['Objects not in xref(version %s)' %(version)]
+                        l = self.body[version].suspiciousElements['Objects not in xref']
                     except KeyError:
-                        self.body[version].suspiciousElements['Objects not in xref(version %s)' %(version)] = []
-                        l = self.body[version].suspiciousElements['Objects not in xref(version %s)' %(version)]
+                        self.body[version].suspiciousElements['Objects not in xref'] = []
+                        l = self.body[version].suspiciousElements['Objects not in xref']
                     if objectId not in l:
                         l.append(objectId)
                     continue
