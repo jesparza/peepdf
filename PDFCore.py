@@ -6773,8 +6773,8 @@ class PDFFile :
             else:
                 return -1
             realObjectOffsets = {}
-            for i in realObjectOffsetsArray:
-                realObjectOffsets[i[0]] = i[1]
+            for offsetIdTuple in realObjectOffsetsArray:
+                realObjectOffsets[offsetIdTuple[0]] = offsetIdTuple[1]
             XrefSection = self.getXrefSection(version)[1]
             xrefObjectList = []
             if filter(None, XrefSection) == []:
@@ -6783,13 +6783,13 @@ class PDFFile :
             for section in XrefSection:
                 if section is None:
                     continue
-                for i in section.getSubsectionsArray():
-                    for count, j in enumerate(i.getEntries()):
-                        objectId = i.getObjectId(count)
+                for subsection in section.getSubsectionsArray():
+                    for count, objectEntry in enumerate(subsection.getEntries()):
+                        objectId = subsection.getObjectId(count)
                         xrefObjectList.append(objectId)
-                        if j.getType() not in ('n', '1'):
+                        if objectEntry.getType() not in ('n', '1'):
                             continue
-                        objectOffset = j.getObjectOffset()
+                        objectOffset = objectEntry.getObjectOffset()
                         if objectId not in realObjectOffsets.keys() or realObjectOffsets[objectId] != objectOffset:
                             self.suspiciousProperties['Xref Table broken'] = "#TODO"
             for objectId in realObjectOffsets.keys():
