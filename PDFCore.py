@@ -6894,7 +6894,7 @@ class PDFParser :
             pdfFile.setVersion(matchVersion[0][1])
         if garbageHeader != '' and matchVersion != []:
             pdfFile.setGarbageHeader(garbageHeader)
-            if not garbageHeader.isspace():
+            if not garbageHeader.isspace() and garbageHeader != '':
                 pdfFile.suspiciousProperties['Garbage Header before PDF Header'] = '#TODO'
             elif len(garbageHeader) > 4:
                 pdfFile.suspiciousProperties['Large Gap before Header'] = '#TODO'
@@ -6941,8 +6941,10 @@ class PDFParser :
             else:
                 garbageAfterEOF = fileContent
                 pdfFile.setGarbageAfterEOF(garbageAfterEOF)
-                if garbageAfterEOF.split() != []:
+                if not garbageAfterEOF.isspace() and garbageAfterEOF != '':
                     pdfFile.suspiciousProperties['Garbage Bytes after last %%EOF'] = '#TODO'
+                elif len(garbageAfterEOF) > 4:
+                    pdfFile.suspiciousProperties['Large gap after last %%EOF'] = '#TODO'
         pdfFile.setUpdates(len(self.fileParts) - 1)
         
         # Getting the body, cross reference table and trailer of each part of the file
