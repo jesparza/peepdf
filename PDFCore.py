@@ -6888,7 +6888,7 @@ class PDFParser :
                 sys.exit('Error: Bad PDF header!! (' + versionLine + ')')
         else:
             pdfFile.setVersion(matchVersion[0][1])
-        if garbageHeader != '':
+        if garbageHeader != '' and matchVersion != []:
             pdfFile.setGarbageHeader(garbageHeader)
             if garbageHeader.split() != []:
                 pdfFile.suspiciousProperties['Garbage Header before PDF Header'] = '#TODO'
@@ -7035,7 +7035,7 @@ class PDFParser :
                                     xrefObject = pdfIndirectObject
                                     ret = self.createPDFCrossRefSectionFromStream(pdfIndirectObject)
                                     if ret[0] != -1:
-                                        xrefStreamSection = ret[1]    
+                                        xrefStreamSection = ret[1]
                             else:
                                 if not forceMode:
                                     sys.exit('Error: An error has occurred while parsing an indirect object!!')
