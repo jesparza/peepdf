@@ -5463,7 +5463,6 @@ class PDFFile :
             return False
         largeGap = False
         regExp = re.compile('endobj(.*?)\d{1,10}\s\d{1,10}\sobj',re.DOTALL)
-        print regExp.findall(bodyContent)
         for garbage in regExp.findall(bodyContent):
             if len(garbage) > 2:
                 largeGap = True
@@ -6876,9 +6875,10 @@ class PDFParser :
             headerOffset += len(line)
         file.close()
 
-        headerLength = len(versionLine) + len(binaryLine)
-        if headerLength > 20:
+        if len(versionLine) > 10:
             pdfFile.suspiciousProperties['Header too large'] = '#TODO'
+        if len(binaryLine) > 7:
+            pdfFile.suspiciousProperties['Binary Header too large'] = '#TODO'
         # Getting the specification version
         versionLine = versionLine.replace('\r','')
         versionLine = versionLine.replace('\n','')
