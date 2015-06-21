@@ -544,8 +544,8 @@ try:
                                         stats += '\t\t' + beforeStaticLabel + element + ': ' + resetColor + str(elements[element]) + newLine
                         if properties != None:
                             stats += newLine + beforeStaticLabel + '\tSuspicious Properties:' + resetColor + newLine
-                            for p in properties:
-                                stats += '\t\t' + beforeStaticLabel + p + newLine
+                            for prop in properties:
+                                stats += '\t\t' + beforeStaticLabel + prop + newLine
                         if COLORIZED_OUTPUT and not options.avoidColors:
                             beforeStaticLabel = staticColor
                         urls = statsVersion['URLs']
