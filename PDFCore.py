@@ -6874,7 +6874,12 @@ class PDFParser :
                 break
             headerOffset += len(line)
         file.close()
-
+        validBinaryLine = False
+        for i in range(4):
+            if ord(binaryLine[i]) >= 128:
+                validBinaryLine = True
+        if validBinaryLine is False:
+            binaryLine = ''
         if len(versionLine) > 10:
             pdfFile.suspiciousProperties['Header too large'] = '#TODO'
         if len(binaryLine) > 7:
