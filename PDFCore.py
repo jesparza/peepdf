@@ -6091,7 +6091,7 @@ class PDFFile :
         stats['Comments'] = str(len(self.comments))
         stats['Errors'] = self.errors
         stats['Versions'] = []
-        stats['Pages Count'] = str(self.pagesCount)
+        stats['Pages Number'] = str(self.pagesCount)
         for version in range(self.updates+1):
             statsVersion = {}
             catalogId = None
@@ -6183,9 +6183,9 @@ class PDFFile :
             stats['Versions'].append(statsVersion)
         self.pagesCount = self.getPagesCount()
         if self.pagesCount not in (None, -1):
-            stats['Pages Count'] = str(self.pagesCount)
+            stats['Pages Number'] = str(self.pagesCount)
         else:
-            stats['Pages Count'] = None
+            stats['Pages Number'] = None
         suspiciousProperties = self.getSuspiciousProperties()
         if suspiciousProperties is not None:
             stats['suspiciousProperties'] = suspiciousProperties

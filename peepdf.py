@@ -95,10 +95,10 @@ def getPeepXML(statsDict, version, revision):
     sha256.text = statsDict['SHA256']
     size = etree.SubElement(basicInfo, 'size')
     size.text = statsDict['Size']
-    pagesCount = statsDict['Pages Count']
+    pagesCount = statsDict['Pages Number']
     if pagesCount not in (None, -1):
         pages = etree.SubElement(basicInfo, 'pages')
-        pages.text = statsDict['Pages Count']
+        pages.text = statsDict['Pages Number']
     detection = etree.SubElement(basicInfo, 'detection')
     if statsDict['Detection'] != [] and statsDict['Detection'] != None:
         detectionRate = etree.SubElement(detection, 'rate')
@@ -441,9 +441,9 @@ try:
                     stats += beforeStaticLabel + 'SHA1: ' + resetColor + statsDict['SHA1'] + newLine
                     #stats += beforeStaticLabel + 'SHA256: ' + resetColor + statsDict['SHA256'] + newLine
                     stats += beforeStaticLabel + 'Size: ' + resetColor + statsDict['Size'] + ' bytes' + newLine
-                    pagesCount = statsDict['Pages Count']
+                    pagesCount = statsDict['Pages Number']
                     if pagesCount not in (None, '-1'):
-                        stats += beforeStaticLabel + 'Pages Count: ' + resetColor + statsDict['Pages Count'] + newLine
+                        stats += beforeStaticLabel + 'Pages Number: ' + resetColor + statsDict['Pages Number'] + newLine
                     if options.checkOnVT:
                         if statsDict['Detection'] != []:
                             detectionReportInfo = ''
