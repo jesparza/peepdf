@@ -6779,6 +6779,7 @@ class PDFFile :
         pass
 
     def verifyXrefOffsets(self):
+        linearezedXrefObjectList = []
         for version in range(self.updates+1):
             realObjectOffsetsArray = self.getOffsets(version)[0]
             if 'objects' in realObjectOffsetsArray:
@@ -6799,22 +6800,38 @@ class PDFFile :
                 for subsection in section.getSubsectionsArray():
                     for count, objectEntry in enumerate(subsection.getEntries()):
                         objectId = subsection.getObjectId(count)
-                        xrefObjectList.append(objectId)
+                        if objectId not in xrefObjectList:
+                            xrefObjectList.append(objectId)
+                        if objectId not in linearezedXrefObjectList:
+                            linearezedXrefObjectList.append(objectId)
                         if objectEntry.getType() not in ('n', '1'):
                             continue
                         objectOffset = objectEntry.getObjectOffset()
-                        if objectId not in realObjectOffsets.keys() or realObjectOffsets[objectId] != objectOffset:
+                        if (objectId not in realObjectOffsets.keys() and not self.linearized)  or\
+                                (objectId in realObjectOffsets.keys() and realObjectOffsets[objectId] != objectOffset):
                             self.suspiciousProperties['Xref Table broken'] = "#TODO"
-            for objectId in realObjectOffsets.keys():
-                if objectId not in xrefObjectList:
-                    try:
-                        l = self.body[version].suspiciousElements['Objects not in xref']
-                    except KeyError:
-                        self.body[version].suspiciousElements['Objects not in xref'] = []
-                        l = self.body[version].suspiciousElements['Objects not in xref']
-                    if objectId not in l:
-                        l.append(objectId)
-                    continue
+                if not self.linearized:
+                    xrefList = xrefObjectList
+                else:
+                    xrefList = linearezedXrefObjectList
+                for objectId in realObjectOffsets.keys():
+                    if objectId not in xrefList:
+                        try:
+                            l = self.body[version].suspiciousElements['Objects not in xref']
+                        except KeyError:
+                            self.body[version].suspiciousElements['Objects not in xref'] = []
+                            l = self.body[version].suspiciousElements['Objects not in xref']
+                        if objectId not in l:
+                            l.append(objectId)
+                        continue
+                    elif self.linearized:
+                        xrefList.remove(objectId)
+                        try:
+                            l = self.body[version].suspiciousElements['Objects not in xref']
+                            if objectId in l:
+                                l.append(objectId)
+                        except KeyError:
+                            pass
 
 
 
