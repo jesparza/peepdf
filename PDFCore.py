@@ -3940,9 +3940,12 @@ class PDFBody :
                                     self.compressedObjects.remove(compressedId)
                                 self.delObject(compressedId)
                             del(compressedObjectsDict)
-        obfuscatedList = self.suspiciousElements['Objects with obfuscated names']
-        if id in obfuscatedList:
-            obfuscatedList.remove(id)
+        try:
+            obfuscatedList = self.suspiciousElements['Objects with obfuscated names']
+            if id in obfuscatedList:
+                obfuscatedList.remove(id)
+        except KeyError:
+            pass
         objectErrors = pdfObject.getErrors()
         if objectErrors != []:
             index = 0
