@@ -496,7 +496,6 @@ class PDFName (PDFObject) :
             self.rawValue = self.value = self.encryptedValue = name
         else:
             self.rawValue = self.value = self.encryptedValue = '/' + name
-        self.obfuscated = False
         self.updateNeeded = False
         self.containsJScode = False
         self.encryptedValue = ''
@@ -508,15 +507,6 @@ class PDFName (PDFObject) :
                 self.addError(ret[1])
             else:
                 raise Exception(ret[1])
-
-    def isObfuscated(self):
-        r = re.findall('.*?(#[\dA-F][\dA-F]).*?', self.name)
-        r = filter(None, r)
-        if r != []:
-            self.obfuscated = True
-            return True
-        else:
-            return False
 
     def update(self):
         self.errors = []
@@ -3950,6 +3940,9 @@ class PDFBody :
                                     self.compressedObjects.remove(compressedId)
                                 self.delObject(compressedId)
                             del(compressedObjectsDict)
+        obfuscatedList = self.suspiciousElements['Objects with obfuscated names']
+        if id in obfuscatedList:
+            obfuscatedList.remove(id)
         objectErrors = pdfObject.getErrors()
         if objectErrors != []:
             index = 0
@@ -4160,6 +4153,15 @@ class PDFBody :
                     objectId = pdfIndirectObject.getId()
                     if objectId not in l:
                         l.append(objectId)
+        if pdfObject.rawValue.replace('(', '').replace(')', '') != pdfObject.value.replace('(', '').replace(')', ''):
+            try:
+                l = self.suspiciousElements['Objects with obfuscated names']
+            except KeyError:
+                self.suspiciousElements['Objects with obfuscated names'] = []
+                l = self.suspiciousElements['Objects with obfuscated names']
+            objectId = pdfIndirectObject.getId()
+            if objectId not in l:
+                l.append(objectId)
         pdfIndirectObject.setObject(pdfObject)
         self.objects[id] = pdfIndirectObject
         self.errors += pdfObject.getErrors()
@@ -7064,15 +7066,6 @@ class PDFParser :
                                 objectId = pdfIndirectObject.getId()
                                 if objectId not in l:
                                     l.append(objectId)
-                            if self.tempVarObfuscation == True:
-                                try:
-                                    l = body.suspiciousElements['Objects with obfuscated names']
-                                except KeyError:
-                                    body.suspiciousElements['Objects with obfuscated names'] = []
-                                    l = body.suspiciousElements['Objects with obfuscated names']
-                                objectId = pdfIndirectObject.getId()
-                                if objectId not in l:
-                                    l.append(objectId)
                         else:
                             if not forceMode:
                                 sys.exit('Error: Bad indirect object!!')
@@ -7920,9 +7913,6 @@ class PDFParser :
                 elif delim[2] == 'name':
                     ret,raw = self.readUntilNotRegularChar(content)
                     pdfObject = PDFName(raw)
-                    obfuscation = pdfObject.isObfuscated()
-                    if obfuscation is True:
-                        self.tempVarObfuscation = True
                     break
                 elif delim[2] == 'comment':
                     ret = self.readUntilEndOfLine(content)
