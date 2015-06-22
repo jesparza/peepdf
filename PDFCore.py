@@ -5472,7 +5472,7 @@ class PDFFile :
         largeGap = False
         regExp = re.compile('endobj(.*?)\d{1,10}\s\d{1,10}\sobj',re.DOTALL)
         for garbage in regExp.findall(bodyContent):
-            if len(garbage) > 2:
+            if len(garbage) > 3:
                 largeGap = True
                 break
         return largeGap
