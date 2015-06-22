@@ -6870,7 +6870,7 @@ class PDFParser :
         isManualAnalysis = manualAnalysis
         
         # Reading the file header
-        file = open(fileName,'rb')
+        file = open(fileName,'rbU')
         for line in file:
             if versionLine == '':
                 pdfHeaderIndex = line.find('%PDF-')
@@ -6896,12 +6896,13 @@ class PDFParser :
                 break
             headerOffset += len(line)
         file.close()
-        validBinaryLine = False
-        for i in range(4):
-            if ord(binaryLine[i]) >= 128:
-                validBinaryLine = True
-        if validBinaryLine is False:
-            binaryLine = ''
+        if binaryLine != '':
+            validBinaryLine = False
+            for i in range(4):
+                if ord(binaryLine[i]) >= 128:
+                    validBinaryLine = True
+            if validBinaryLine is False:
+                binaryLine = ''
         if len(versionLine) > 10:
             pdfFile.suspiciousProperties['Header too large'] = '#TODO'
         if len(binaryLine) > 7:
