@@ -4156,7 +4156,10 @@ class PDFBody :
                     objectId = pdfIndirectObject.getId()
                     if objectId not in l:
                         l.append(objectId)
-        if pdfObject.rawValue.replace('(', '').replace(')', '') != pdfObject.value.replace('(', '').replace(')', ''):
+        ignoreCharList = '()\\'
+        rawValue = pdfObject.rawValue.translate(None, ignoreCharList)
+        newValue = pdfObject.value.translate(None, ignoreCharList)
+        if rawValue != newValue:
             try:
                 l = self.suspiciousElements['Objects with obfuscated names']
             except KeyError:
