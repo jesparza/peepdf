@@ -5891,27 +5891,6 @@ class PDFFile :
                 infoId = streamTrailer.getInfoId()
             return infoId
 
-    def __checkReferenceConnection(self, object, objectId,  targetObjectId, version, isolatedList=[], stackList=[]):
-        if object.getReferences() == []:
-            if objectId == targetObjectId:
-                return True
-            else:
-                return False
-        isConnected = False
-        stackList.append(objectId)
-        for reference in object.getReferences():
-            referenceId = reference.split()[0]
-            referenceId = int(referenceId)
-            if referenceId in isolatedList or referenceId in stackList:
-                continue
-            referenceObject = self.getObject(referenceId, version = version)
-            stackList.append(referenceId)
-            isRefered = self._checkReferenceConnection(referenceObject, referenceId, targetObjectId, version, isolatedList)
-            stackList.remove(referenceId)
-            if isRefered is True:
-                isConnected = True
-                break
-        return isConnected
 
     def _updateReferenceList(self, object, objectId, version, isolatedList=[]):
         if objectId in isolatedList:
