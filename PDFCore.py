@@ -4779,7 +4779,7 @@ class PDFFile :
             self.trailer.append(newTrailerArray)
             return (0,'')
         else:
-            return (-1,'Bad PDFTrailer array supplied')    
+            return (-1,'Bad PDFTrailer array supplied')
 
     def createObjectStream(self, version = None, id = None, objectIds = []):
         errorMessage = ''
@@ -5890,7 +5890,61 @@ class PDFFile :
             if infoId == None and streamTrailer != None:
                 infoId = streamTrailer.getInfoId()
             return infoId
-            
+
+    def __checkReferenceConnection(self, object, objectId,  targetObjectId, version, isolatedList=[], stackList=[]):
+        if object.getReferences() == []:
+            if objectId == targetObjectId:
+                return True
+            else:
+                return False
+        isConnected = False
+        stackList.append(objectId)
+        for reference in object.getReferences():
+            referenceId = reference.split()[0]
+            referenceId = int(referenceId)
+            if referenceId in isolatedList or referenceId in stackList:
+                continue
+            referenceObject = self.getObject(referenceId, version = version)
+            stackList.append(referenceId)
+            isRefered = self._checkReferenceConnection(referenceObject, referenceId, targetObjectId, version, isolatedList)
+            stackList.remove(referenceId)
+            if isRefered is True:
+                isConnected = True
+                break
+        return isConnected
+
+    def _updateReferenceList(self, object, objectId, version, isolatedList=[]):
+        if objectId in isolatedList:
+            isolatedList.remove(objectId)
+        else:
+            return 0
+        for reference in object.getReferences():
+            referenceId = reference.split()[0]
+            referenceId = int(referenceId)
+            referenceObject = self.getObject(referenceId, version = version)
+            self._updateReferenceList(referenceObject, referenceId, version, isolatedList)
+
+    def getIsolatedObjects(self):
+        isolatedListDict = {}
+        for version in range(self.updates+1):
+            trailer, streamTrailer = self.trailer[version]
+            if trailer != None:
+                catalogId = trailer.getCatalogId()
+                infoId = trailer.getInfoId()
+            if catalogId == None and streamTrailer != None:
+                catalogId = streamTrailer.getCatalogId()
+            if infoId == None and streamTrailer != None:
+                infoId = streamTrailer.getInfoId()
+            catalog = self.getCatalogObject(version = version)
+            objectsDict = self.body[version].getObjects()
+            isolatedList = objectsDict.keys()
+            if infoId in isolatedList:
+                isolatedList.remove(infoId)
+            self._updateReferenceList(catalog, catalogId, version=version, isolatedList=isolatedList)
+            isolatedListDict[version] = isolatedList
+        return isolatedListDict
+
+
     def getJavascriptCode (self, version = None) :
         JSCode = []
         if version == None:
@@ -7210,6 +7264,18 @@ class PDFParser :
             if ret[0] == -1:
                 pdfFile.addError(ret[1])
         pdfFile.verifyXrefOffsets()
+        isolatedObjectsDict = pdfFile.getIsolatedObjects()
+        if isolatedObjectsDict not in (None, {}):
+            for version in isolatedObjectsDict.keys():
+                isolatedObjectVersion = version
+                for isolatedObjectId in isolatedObjectsDict[version]:
+                    try:
+                        l = pdfFile.body[isolatedObjectVersion].suspiciousElements['Objects not referenced from Catalog']
+                    except KeyError:
+                        pdfFile.body[isolatedObjectVersion].suspiciousElements['Objects not referenced from Catalog'] = []
+                        l = pdfFile.body[isolatedObjectVersion].suspiciousElements['Objects not referenced from Catalog']
+                    if isolatedObjectId not in l:
+                        l.append(isolatedObjectId)
         return (0,pdfFile)
 
     def parsePDFSections(self, content, forceMode = False, looseMode = False):
@@ -7258,7 +7324,7 @@ class PDFParser :
             return [bodyContent,xrefContent,trailerContent]
         
         return [content,xrefContent,trailerContent]
-    
+
     def createPDFIndirectObject (self, rawIndirectObject, forceMode = False, looseMode = False) :
         '''
             Create a PDFIndirectObject instance from the raw content of the PDF file
