@@ -5891,7 +5891,6 @@ class PDFFile :
                 infoId = streamTrailer.getInfoId()
             return infoId
 
-
     def _updateReferenceList(self, object, objectId, version, isolatedList=[]):
         if objectId in isolatedList:
             isolatedList.remove(objectId)
@@ -5905,6 +5904,8 @@ class PDFFile :
 
     def getIsolatedObjects(self):
         isolatedListDict = {}
+        objectsDict= {}
+        catalogLinear = None
         for version in range(self.updates+1):
             trailer, streamTrailer = self.trailer[version]
             if trailer != None:
@@ -5914,13 +5915,38 @@ class PDFFile :
                 catalogId = streamTrailer.getCatalogId()
             if infoId == None and streamTrailer != None:
                 infoId = streamTrailer.getInfoId()
-            catalog = self.getCatalogObject(version = version)
+            if self.linearized:
+                objectsDict.update(self.body[version].getObjects())
+                if catalogId is not None:
+                    catalogIdLinear = catalogId
+                    infoIdLinear = infoId
+                if catalogIdLinear is not None:
+                    catalog = self.getObject(catalogIdLinear, version = version)
+                else:
+                    catalog = self.getObject(catalogId, version = version)
+                if catalog is not None:
+                    catalogLinear = catalog
+                continue
             objectsDict = self.body[version].getObjects()
+            catalog = self.getCatalogObject(version = version)
             isolatedList = objectsDict.keys()
             if infoId in isolatedList:
                 isolatedList.remove(infoId)
             self._updateReferenceList(catalog, catalogId, version=version, isolatedList=isolatedList)
             isolatedListDict[version] = isolatedList
+        if self.linearized:
+            isolatedList = objectsDict.keys()
+            isolatedList.remove(infoIdLinear)
+            self._updateReferenceList(catalogLinear, catalogIdLinear, version=None, isolatedList=isolatedList)
+            for objectId in isolatedList:
+                for version in range(self.updates+1):
+                    if objectId in self.body[version].getObjects().keys():
+                        if version in isolatedListDict.keys():
+                            isolatedListDict[version].append(objectId)
+                        else:
+                            isolatedListDict[version] = []
+                            isolatedListDict[version].append(objectId)
+                        break
         return isolatedListDict
 
 
