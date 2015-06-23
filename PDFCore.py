@@ -405,6 +405,7 @@ class PDFBool (PDFObject) :
         self.referencesInElements = {}
         self.value = self.rawValue = self.encryptedValue = value
         self.compressedIn = None
+        self.nameObfuscated = False
 
 
 class PDFNull (PDFObject) :
@@ -422,6 +423,7 @@ class PDFNull (PDFObject) :
         self.containsJScode = False
         self.referencesInElements = {}
         self.references = []
+        self.nameObfuscated = False
 
 
 class PDFNum (PDFObject) :
@@ -439,6 +441,7 @@ class PDFNum (PDFObject) :
         self.containsJScode = False
         self.referencesInElements = {}
         self.references = []
+        self.nameObfuscated = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -514,6 +517,7 @@ class PDFName (PDFObject) :
         errorMessage = ''
         self.value = self.rawValue
         self.encryptedValue = self.rawValue
+        self.nameObfuscated = False
         hexNumbers = re.findall('#([0-9a-f]{2})', self.value, re.DOTALL | re.IGNORECASE)
         try:
             for hexNumber in hexNumbers:
@@ -522,9 +526,8 @@ class PDFName (PDFObject) :
             errorMessage = 'Error in hexadecimal conversion'
             self.addError(errorMessage)
             return (-1,errorMessage)
-        ignoreCharList = ['(', ')', '\n', '\r', '\\r','\\n', '\\']
-        rawValue = str(self.rawValue).translate(None, ''.join(ignoreCharList))
-        newValue = str(self.value).translate(None, ''.join(ignoreCharList))
+        rawValue = str(self.rawValue)
+        newValue = str(self.value)
         if newValue != rawValue:
             self.nameObfuscated = True
         else:
@@ -557,6 +560,7 @@ class PDFString (PDFObject) :
         self.unescapedBytes = []
         self.urlsFound = []
         self.references = []
+        self.nameObfuscated = False
         self.referencesInElements = {}
         ret = self.update()
         if ret[0] == -1:
@@ -712,6 +716,7 @@ class PDFHexString (PDFObject) :
         self.urlsFound = []
         self.referencesInElements = {}
         self.references = []
+        self.nameObfuscated = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -854,6 +859,7 @@ class PDFReference (PDFObject) :
         self.containsJScode = False
         self.referencesInElements = {}
         self.references = []
+        self.nameObfuscated = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -950,8 +956,11 @@ class PDFArray (PDFObject) :
         self.JSCode = []
         self.unescapedBytes = []
         self.urlsFound = []
+        self.nameObfuscated = False
         for element in self.elements:
             if element != None:
+                if element.nameObfuscated is True:
+                    self.nameObfuscated = True
                 type = element.getType()
                 if type == 'reference':
                     self.references.append(element.getValue())
@@ -979,13 +988,6 @@ class PDFArray (PDFObject) :
         self.encryptedValue = self.encryptedValue[:-1] + ' ]'
         self.rawValue = self.rawValue[:-1] + ' ]'
         self.value = self.value[:-1] + ' ]'
-        ignoreCharList = ['(', ')', '\n', '\r', '\\r','\\n', '\\']
-        rawValue = str(self.rawValue).translate(None, ''.join(ignoreCharList))
-        newValue = str(self.value).translate(None, ''.join(ignoreCharList))
-        if newValue != rawValue:
-            self.nameObfuscated = True
-        else:
-            self.nameObfuscated = False
         if errorMessage != '':
             return (-1,'Errors while updating PDFArray')
         else:
@@ -1227,6 +1229,7 @@ class PDFDictionary (PDFObject):
         self.value = '<< '
         self.rawValue = '<< '
         self.encryptedValue = '<< '
+        self.nameObfuscated = False
         keys = self.elements.keys()
         values = self.elements.values()
         for i in range(len(keys)):
@@ -1239,6 +1242,8 @@ class PDFDictionary (PDFObject):
                     return (-1,errorMessage)
             else:
                 valueObject = values[i]
+            if valueObject.nameObfuscated is True:
+                self.nameObfuscated = True
             v = valueObject.getValue()
             type = valueObject.getType()
             if keys[i] == '/Type':
@@ -1277,13 +1282,6 @@ class PDFDictionary (PDFObject):
         self.encryptedValue = self.encryptedValue[:-1] + ' >>'
         self.rawValue = self.rawValue[:-1] + ' >>'
         self.value = self.value[:-1] + ' >>'
-        ignoreCharList = ['(', ')', '\n', '\r', '\\r','\\n', '\\']
-        rawValue = str(self.rawValue).translate(None, ''.join(ignoreCharList))
-        newValue = str(self.value).translate(None, ''.join(ignoreCharList))
-        if newValue != rawValue:
-            self.nameObfuscated = True
-        else:
-            self.nameObfuscated = False
         if errorMessage != '':
             return (-1,errorMessage)
         return (0,'')
@@ -1633,6 +1631,7 @@ class PDFStream (PDFDictionary) :
         self.encryptedValue = '<< '
         keys = self.elements.keys()
         values = self.elements.values()
+        self.nameObfuscated = False
         if not onlyElements:
             self.references = []
             self.errors = []
@@ -1716,6 +1715,8 @@ class PDFStream (PDFDictionary) :
                 
         for i in range(len(keys)):
             valueElement = values[i]
+            if valueElement.nameObfuscated is True:
+                self.nameObfuscated = True
             if valueElement == None:
                 errorMessage = 'Stream dictionary has a None value'
                 self.addError(errorMessage)
@@ -1988,13 +1989,6 @@ class PDFStream (PDFDictionary) :
                     self.modifiedStream = False
                     self.newFilters = False
                     self.deletedFilters = False
-        ignoreCharList = ['(', ')', '\n', '\r', '\\r','\\n', '\\']
-        rawValue = str(self.rawValue).translate(None, ''.join(ignoreCharList))
-        newValue = str(self.value).translate(None, ''.join(ignoreCharList))
-        if newValue != rawValue:
-            self.nameObfuscated = True
-        else:
-            self.nameObfuscated = False
         if self.errors != []:
             return (-1,self.errors[-1])
         else:
@@ -2711,6 +2705,7 @@ class PDFObjectStream (PDFStream) :
         self.file = None
         self.isEncodedStream = False
         self.decodingError = False
+        self.nameObfuscated = False
         if elements != {}:
             ret = self.update()
             if ret[0] == -1:
@@ -2735,6 +2730,7 @@ class PDFObjectStream (PDFStream) :
         self.encryptedValue = '<< '
         keys = self.elements.keys()
         values = self.elements.values()
+        self.nameObfuscated = False
         if not onlyElements:
             self.errors = []
             self.references = []
@@ -2840,6 +2836,8 @@ class PDFObjectStream (PDFStream) :
                     valueElement = PDFString('')
                 else:
                     return (-1,'Stream dictionary has a None value')
+            if valueElement.nameObfuscated is True:
+                self.nameObfuscated = True
             v = valueElement.getValue()
             type = valueElement.getType()
             if type == 'reference':
@@ -7384,6 +7382,8 @@ class PDFParser :
             else:
                 value = ret[1]
                 elements[key] = value
+                if name.nameObfuscated is True:
+                    value.nameObfuscated = True
             ret = self.readObject(rawContent[self.charCounter:], 'name')
             if ret[0] == -1:
                 if ret[1] != 'Empty content reading object':
@@ -7424,6 +7424,7 @@ class PDFParser :
         self.charCounter = 0
         elements = {}
         rawNames = {}
+        nameObfuscated = False
         ret = self.readObject(dict[self.charCounter:], 'name')
         if ret[0] == -1:
             if ret[1] != 'Empty content reading object':
@@ -7439,6 +7440,8 @@ class PDFParser :
         while name != None:
             key = name.getValue()
             rawNames[key] = name
+            if name.nameObfuscated is True:
+                nameObfuscated = True
             ret = self.readObject(dict[self.charCounter:])
             if ret[0] == -1:
                 if ret[1] != 'Empty content reading object':
@@ -7480,6 +7483,8 @@ class PDFParser :
                 if e.message != '':
                     errorMessage += ': '+e.message
                 return (-1, errorMessage)
+        if nameObfuscated is True:
+            pdfStream.nameObfuscated = True
         self.charCounter = realCounter
         return (0,pdfStream)
 
