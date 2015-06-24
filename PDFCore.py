@@ -5915,6 +5915,8 @@ class PDFFile :
         objectsDict= {}
         catalogLinear = None
         for version in range(self.updates+1):
+            catalogId = None
+            infoId = None
             trailer, streamTrailer = self.trailer[version]
             if trailer != None:
                 catalogId = trailer.getCatalogId()
