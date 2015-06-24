@@ -1605,6 +1605,7 @@ class PDFStream (PDFDictionary) :
         self.isEncodedStream = False
         self.decodingError = False
         self.nameObfuscated = False
+        self.terminatorPresent = True
         if elements == {}:
             errorMessage = 'No dictionary in stream object'
             if isForceMode:
@@ -2490,6 +2491,9 @@ class PDFStream (PDFDictionary) :
             @return: A boolean
         '''
         return self.decodingError
+
+    def isTerminated(self):
+        return self.terminatorPresent
     
     def replace(self, string1, string2):
         stringFound = False
@@ -2706,6 +2710,7 @@ class PDFObjectStream (PDFStream) :
         self.isEncodedStream = False
         self.decodingError = False
         self.nameObfuscated = False
+        self.terminatorPresent = True
         if elements != {}:
             ret = self.update()
             if ret[0] == -1:
@@ -3162,6 +3167,9 @@ class PDFObjectStream (PDFStream) :
             return None
         else:
             return self.indexes.index(id)
+
+    def isTerminated(self):
+        return self.terminatorPresent
                     
     def replace(self, string1, string2):
         stringFound = False
@@ -7161,6 +7169,17 @@ class PDFParser :
                                     ret = self.createPDFCrossRefSectionFromStream(pdfIndirectObject)
                                     if ret[0] != -1:
                                         xrefStreamSection = ret[1]
+                                elif objectType == 'stream':
+                                    terminatorPresent = pdfObject.isTerminated()
+                                    if terminatorPresent is False:
+                                        try:
+                                            l = body.suspiciousElements['Streams with missing terminator']
+                                        except KeyError:
+                                            body.suspiciousElements['Streams with missing terminator'] = []
+                                            l = body.suspiciousElements['Streams with missing terminator']
+                                        objectId = pdfIndirectObject.getId()
+                                        if objectId not in l:
+                                            l.append(objectId)
                             else:
                                 if not forceMode:
                                     sys.exit('Error: An error has occurred while parsing an indirect object!!')
@@ -7987,13 +8006,17 @@ class PDFParser :
                         ret = self.readUntilSymbol(content, 'endstream')
                         if ret[0] == -1:
                             stream = content[self.charCounter:]
+                            isTerminated = False
                         else:
                             stream = ret[1]
                             self.readSymbol(content, 'endstream')
+                            isTerminated = True
                         ret = self.createPDFStream(dictContent, stream)
                         if ret[0] == -1:
                             return ret
                         pdfObject = ret[1]
+                        if isTerminated is False:
+                            pdfObject.terminatorPresent = False
                         break
                     else:
                         if ret[0] != -1:
