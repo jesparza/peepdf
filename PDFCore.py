@@ -613,6 +613,12 @@ class PDFString (PDFObject) :
             ret = self.encrypt()
             if ret[0] == -1:
                 return ret
+        rawValue = str(self.rawValue)
+        newValue = str(self.value)
+        if newValue != rawValue:
+            self.nameObfuscated = True
+        else:
+            self.nameObfuscated = False
         return (0,'')
 
     def encodeChars(self):
@@ -767,6 +773,12 @@ class PDFHexString (PDFObject) :
             ret = self.encrypt()
             if ret[0] == -1:
                 return ret
+        rawValue = str(self.rawValue)
+        newValue = str(self.value)
+        if newValue != rawValue:
+            self.nameObfuscated = True
+        else:
+            self.nameObfuscated = False
         return (0,'')
 
     def encrypt(self, password = None):
@@ -3979,7 +3991,7 @@ class PDFBody :
                                 self.delObject(compressedId)
                             del(compressedObjectsDict)
         try:
-            obfuscatedList = self.suspiciousElements['Objects with obfuscated names']
+            obfuscatedList = self.suspiciousElements['Objects with obfuscated names/strings']
             if id in obfuscatedList:
                 obfuscatedList.remove(id)
         except KeyError:
@@ -4196,10 +4208,10 @@ class PDFBody :
                         l.append(objectId)
         if pdfObject.nameObfuscated is True:
             try:
-                l = self.suspiciousElements['Objects with obfuscated names']
+                l = self.suspiciousElements['Objects with obfuscated names/strings']
             except KeyError:
-                self.suspiciousElements['Objects with obfuscated names'] = []
-                l = self.suspiciousElements['Objects with obfuscated names']
+                self.suspiciousElements['Objects with obfuscated names/strings'] = []
+                l = self.suspiciousElements['Objects with obfuscated names/strings']
             objectId = pdfIndirectObject.getId()
             if objectId not in l:
                 l.append(objectId)
