@@ -5495,6 +5495,8 @@ class PDFFile :
                                     self.addError(ret[1])
         if errorMessage != '':
             return (-1, errorMessage)
+        if password == '':
+            pdfFile.suspiciousProperties['File encrypted with default password'] = '#TODO'
         return (0,'')
 
     def deleteObject (self, id) :
