@@ -57,6 +57,24 @@ monitorizedElements = ['/EmbeddedFiles ',
                        '/RichMedia',
                        '.rawValue',
                        'keep.previous']
+monitorizedIndicators = {'versionBased':{
+                             'invalidSubtype': ('Streams with invalid /Subtype', 'stream'),
+                             'invalidLength': ('Streams with invalid /Length', 'stream'),
+                             'nameObfuscated': ('Objects with obfuscated names/strings', '*'),
+                             'largeStringPresent': ('Objects with large strings', '*'),
+                             'missingXref': ('Objects not in xref', '*'),
+                             'terminatorMissing': ('Streams with missing terminator', 'stream'),
+                             'terminatorMissing': ('Objects with missing terminator', '*'),
+                             'missingCatalog': ('Objects not referenced from Catalog', '*')},
+                         'fileBased':{
+                             'brokenXref': 'Xref Table broken',
+                             'largeHeader': 'Header too large',
+                             'largeBinaryHeader': 'Binary Header too large',
+                             'garbageHeaderPresent': 'Garbage Header before PDF Header',
+                             'gapBeforeHeaderPresent': 'Large Gap before Header',
+                             'garbageAfterEOFPresent': 'Garbage Bytes after last %%EOF',
+                             'gapAfterEOFPresent': 'Large gap after last %%EOF',
+                             'garbageBetweenObjects': 'Garbage bytes between objects'}}
 jsVulns = ['mailto',
            'Collab.collectEmailInfo',
            'util.printf',
@@ -407,6 +425,9 @@ class PDFBool (PDFObject) :
         self.compressedIn = None
         self.nameObfuscated = False
         self.largeStringPresent = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
 
 
 class PDFNull (PDFObject) :
@@ -426,6 +447,9 @@ class PDFNull (PDFObject) :
         self.references = []
         self.nameObfuscated = False
         self.largeStringPresent = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
 
 
 class PDFNum (PDFObject) :
@@ -445,6 +469,9 @@ class PDFNum (PDFObject) :
         self.references = []
         self.nameObfuscated = False
         self.largeStringPresent = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -509,6 +536,9 @@ class PDFName (PDFObject) :
         self.referencesInElements = {}
         self.nameObfuscated = False
         self.largeStringPresent = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -567,6 +597,9 @@ class PDFString (PDFObject) :
         self.nameObfuscated = False
         self.largeStringPresent = False
         self.referencesInElements = {}
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -731,6 +764,9 @@ class PDFHexString (PDFObject) :
         self.references = []
         self.nameObfuscated = False
         self.largeStringPresent = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -883,6 +919,9 @@ class PDFReference (PDFObject) :
         self.references = []
         self.nameObfuscated = False
         self.largeStringPresent = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -956,6 +995,9 @@ class PDFArray (PDFObject) :
         self.references = []
         self.nameObfuscated = False
         self.largeStringPresent = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -1232,6 +1274,9 @@ class PDFDictionary (PDFObject):
         self.references = []
         self.nameObfuscated = False
         self.largeStringPresent = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -1637,8 +1682,11 @@ class PDFStream (PDFDictionary) :
         self.decodingError = False
         self.nameObfuscated = False
         self.largeStringPresent = False
-        self.terminatorPresent = True
         self.invalidLength = False
+        self.invalidSubtype = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
         if elements == {}:
             errorMessage = 'No dictionary in stream object'
             if isForceMode:
@@ -1668,6 +1716,7 @@ class PDFStream (PDFDictionary) :
         self.nameObfuscated = False
         self.largeStringPresent = False
         self.invalidLength = False
+        self.invalidSubtype = False
         if not onlyElements:
             self.references = []
             self.errors = []
@@ -2029,6 +2078,7 @@ class PDFStream (PDFDictionary) :
                     self.modifiedStream = False
                     self.newFilters = False
                     self.deletedFilters = False
+        self.verifySubType()
         if self.errors != []:
             return (-1,self.errors[-1])
         else:
@@ -2532,7 +2582,7 @@ class PDFStream (PDFDictionary) :
         return self.decodingError
 
     def isTerminated(self):
-        return self.terminatorPresent
+        return not self.terminatorMissing
     
     def replace(self, string1, string2):
         stringFound = False
@@ -2702,6 +2752,7 @@ class PDFStream (PDFDictionary) :
             if subTypeFound is False:
                 return -1
             if subTypeDict[subTypeKey] not in subTypeMagic:
+                self.invalidSubtype = True
                 return False
             else:
                 return True
@@ -2750,8 +2801,9 @@ class PDFObjectStream (PDFStream) :
         self.decodingError = False
         self.nameObfuscated = False
         self.largeStringPresent = False
-        self.terminatorPresent = True
+        self.terminatorMissing = False
         self.invalidLength = False
+        self.invalidSubtype = False
         if elements != {}:
             ret = self.update()
             if ret[0] == -1:
@@ -2779,6 +2831,7 @@ class PDFObjectStream (PDFStream) :
         self.nameObfuscated = False
         self.largeStringPresent = False
         self.invalidLength = False
+        self.invalidSubtype = False
         if not onlyElements:
             self.errors = []
             self.references = []
@@ -3191,6 +3244,7 @@ class PDFObjectStream (PDFStream) :
                     self.modifiedStream = False
                     self.newFilters = False
                     self.deletedFilters = False
+        self.verifySubType()
         if self.errors != []:
             return (-1,self.errors[-1])
         else:
@@ -3217,7 +3271,7 @@ class PDFObjectStream (PDFStream) :
             return self.indexes.index(id)
 
     def isTerminated(self):
-        return self.terminatorPresent
+        return not self.terminatorMissing
                     
     def replace(self, string1, string2):
         stringFound = False
@@ -3336,7 +3390,9 @@ class PDFIndirectObject :
         self.generationNumber = 0 # int
         self.id = None # int
         self.size = 0 # int
-        self.terminatorPresent = True
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
         
     def contains(self, string):
         return self.object.contains(string)
@@ -3375,7 +3431,7 @@ class PDFIndirectObject :
         return self.object.isFaulty()
 
     def isTerminated(self):
-        return self.terminatorPresent
+        return not self.terminatorMissing
     
     def setGenerationNumber(self, generationNumber):
         self.generationNumber = generationNumber
@@ -3994,12 +4050,6 @@ class PDFBody :
                 self.numStreams -= 1
                 if id in self.streams:
                     self.streams.remove(id)
-                try:
-                    l = self.suspiciousElements['streams with invalid /Subtype']
-                    if id in l:
-                        l.remove(id)
-                except KeyError:
-                    pass
                 if pdfObject.isEncoded():
                     if id in self.encodedStreams:
                         self.encodedStreams.remove(id)
@@ -4029,24 +4079,6 @@ class PDFBody :
                                     self.compressedObjects.remove(compressedId)
                                 self.delObject(compressedId)
                             del(compressedObjectsDict)
-        try:
-            l = self.suspiciousElements['streams with invalid /Length']
-            if id in l:
-                l.remove(id)
-        except KeyError:
-            pass
-        try:
-            obfuscatedList = self.suspiciousElements['Objects with obfuscated names/strings']
-            if id in obfuscatedList:
-                obfuscatedList.remove(id)
-        except KeyError:
-            pass
-        try:
-            largeStringList = self.suspiciousElements['Objects with large strings']
-            if id in largeStringList:
-                largeStringList.remove(id)
-        except KeyError:
-            pass
         objectErrors = pdfObject.getErrors()
         if objectErrors != []:
             index = 0
@@ -4247,46 +4279,6 @@ class PDFBody :
                                 compressedObject = compressedObjectsDict[compressedId][1]
                                 self.setObject(compressedId, compressedObject, offset)
                             del(compressedObjectsDict)
-                subTypeValid = pdfObject.verifySubType()
-                if subTypeValid is False:
-                    try:
-                        l = self.suspiciousElements['streams with invalid /Subtype']
-                    except KeyError:
-                        self.suspiciousElements['streams with invalid /Subtype'] = []
-                        l = self.suspiciousElements['streams with invalid /Subtype']
-                    objectId = pdfIndirectObject.getId()
-                    if objectId not in l:
-                        l.append(objectId)
-        if objectType == 'stream':
-            if pdfObject.invalidLength is True:
-                try:
-                    l = self.suspiciousElements['streams with invalid /Length']
-                except KeyError:
-                    self.suspiciousElements['streams with invalid /Length'] = []
-                    l = self.suspiciousElements['streams with invalid /Length']
-                objectId = pdfIndirectObject.getId()
-                if objectId not in l:
-                    l.append(objectId)
-        if pdfObject.nameObfuscated is True:
-            try:
-                l = self.suspiciousElements['Objects with obfuscated names/strings']
-            except KeyError:
-                self.suspiciousElements['Objects with obfuscated names/strings'] = []
-                l = self.suspiciousElements['Objects with obfuscated names/strings']
-            objectId = pdfIndirectObject.getId()
-            if objectId not in l:
-                l.append(objectId)
-        if pdfObject.largeStringPresent is True:
-            objectId = pdfIndirectObject.getId()
-            if ('/JS' in self.suspiciousActions and objectId not in self.suspiciousActions['/JS']) or \
-                            '/JS' not in self.suspiciousActions:
-                try:
-                    l = self.suspiciousElements['Objects with large strings']
-                except KeyError:
-                    self.suspiciousElements['Objects with large strings'] = []
-                    l = self.suspiciousElements['Objects with large strings']
-                if objectId not in l:
-                    l.append(objectId)
         pdfIndirectObject.setObject(pdfObject)
         self.objects[id] = pdfIndirectObject
         self.errors += pdfObject.getErrors()
@@ -4459,6 +4451,26 @@ class PDFBody :
                         self.suspiciousElements[printedElement].append(id)
                 elif not delete:
                     self.suspiciousElements[printedElement] = [id]
+        objectType = pdfObject.getType()
+        for rawIndicatorVar in monitorizedIndicators['versionBased'].keys():
+            indicatorType = monitorizedIndicators['versionBased'][rawIndicatorVar][1]
+            if indicatorType != objectType and indicatorType != '*':
+                continue
+            indicatorVar = 'pdfObject.' + str(rawIndicatorVar)
+            try:
+                indicatorVar = eval(indicatorVar)
+            except AttributeError:
+                continue
+            if indicatorVar not in (None, False) or delete:
+                printedIndicator = monitorizedIndicators['versionBased'][rawIndicatorVar][0]
+                if self.suspiciousElements.has_key(printedIndicator):
+                    if delete:
+                        if id in self.suspiciousElements[printedIndicator]:
+                            self.suspiciousElements[printedIndicator].remove(id)
+                    elif id not in self.suspiciousElements[printedIndicator]:
+                        self.suspiciousElements[printedIndicator].append(id)
+                elif not delete:
+                    self.suspiciousElements[printedIndicator] = [id]
         if pdfObject.containsJS():
             if delete:
                 jsCodeArray = pdfObject.getJSCode()
@@ -4835,6 +4847,15 @@ class PDFFile :
         self.numDecodingErrors = 0
         self.maxObjectId = 0
         self.pagesCount = 0
+        self.brokenXref = False
+        self.largeHeader = False
+        self.largeBinaryHeader= False
+        self.garbageHeaderPresent = False
+        self.gapBeforeHeaderPresent = False
+        self.garbageAfterEOFPresent = False
+        self.gapAfterEOFPresent = False
+        self.garbageBetweenObjects = False
+
 
     def addBody(self, newBody):
         if newBody != None and isinstance(newBody,PDFBody):
@@ -6025,14 +6046,19 @@ class PDFFile :
                     catalog = self.getObject(catalogId, version = version)
                 if catalog is not None:
                     catalogLinear = catalog
-                continue
-            objectsDict = self.body[version].getObjects()
-            catalog = self.getCatalogObject(version = version)
-            isolatedList = objectsDict.keys()
-            if infoId in isolatedList:
-                isolatedList.remove(infoId)
-            self._updateReferenceList(catalog, catalogId, version=version, isolatedList=isolatedList)
-            isolatedListDict[version] = isolatedList
+            else:
+                objectsDict = self.body[version].getObjects()
+                catalog = self.getCatalogObject(version = version)
+                isolatedList = objectsDict.keys()
+                if infoId in isolatedList:
+                    isolatedList.remove(infoId)
+                self._updateReferenceList(catalog, catalogId, version=version, isolatedList=isolatedList)
+                isolatedListDict[version] = isolatedList
+                for objectId in isolatedList:
+                    indirectObj = self.getObject(objectId, indirect=True)
+                    indirectObj.getObject().missingCatalog = True
+                    self.body[version].deregisterObject(indirectObj)
+                    self.body[version].registerObject(indirectObj)
         if self.linearized:
             isolatedList = objectsDict.keys()
             if infoIdLinear in isolatedList:
@@ -6046,6 +6072,10 @@ class PDFFile :
                         else:
                             isolatedListDict[version] = []
                             isolatedListDict[version].append(objectId)
+                        indirectObj = self.getObject(objectId, indirect=True)
+                        indirectObj.getObject().missingCatalog = True
+                        self.body[version].deregisterObject(indirectObj)
+                        self.body[version].registerObject(indirectObj)
                         break
         return isolatedListDict
 
@@ -6956,6 +6986,15 @@ class PDFFile :
             if streamTrailer != None:
                 if streamTrailer.getDictEntry('/Encrypt') != None:
                     self.setEncrypted(True)
+        for rawIndicatorVar in monitorizedIndicators['fileBased'].keys():
+            indicatorVar = 'self.' + str(rawIndicatorVar)
+            try:
+                indicatorVar = eval(indicatorVar)
+            except AttributeError:
+                continue
+            if indicatorVar not in (None, False):
+                printedIndicator = monitorizedIndicators['fileBased'][rawIndicatorVar]
+                self.suspiciousProperties[printedIndicator] = []
         return (0,'')
 
     def updateBody (self, version) :
@@ -7001,30 +7040,19 @@ class PDFFile :
                         objectOffset = objectEntry.getObjectOffset()
                         if (objectId not in realObjectOffsets.keys() and not self.linearized)  or\
                                 (objectId in realObjectOffsets.keys() and realObjectOffsets[objectId] != objectOffset):
-                            self.suspiciousProperties['Xref Table broken'] = "#TODO"
+                            self.brokenXref = True
                 if not self.linearized:
                     xrefList = xrefObjectList
                 else:
                     xrefList = linearezedXrefObjectList
                 for objectId in realObjectOffsets.keys():
                     if objectId not in xrefList:
-                        try:
-                            l = self.body[version].suspiciousElements['Objects not in xref']
-                        except KeyError:
-                            self.body[version].suspiciousElements['Objects not in xref'] = []
-                            l = self.body[version].suspiciousElements['Objects not in xref']
-                        if objectId not in l:
-                            l.append(objectId)
-                        continue
+                        indirectObj = self.getObject(objectId, indirect=True)
+                        indirectObj.getObject().missingXref = True
+                        self.body[version].deregisterObject(indirectObj)
+                        self.body[version].registerObject(indirectObj)
                     elif self.linearized:
                         xrefList.remove(objectId)
-                        try:
-                            l = self.body[version].suspiciousElements['Objects not in xref']
-                            if objectId in l:
-                                l.append(objectId)
-                        except KeyError:
-                            pass
-
 
 
 class PDFParser :
@@ -7093,9 +7121,9 @@ class PDFParser :
             if validBinaryLine is False:
                 binaryLine = ''
         if len(versionLine) > 10:
-            pdfFile.suspiciousProperties['Header too large'] = '#TODO'
+            pdfFile.largeHeader = True
         if len(binaryLine) > 7:
-            pdfFile.suspiciousProperties['Binary Header too large'] = '#TODO'
+            pdfFile.largeBinaryHeader = True
         # Getting the specification version
         versionLine = versionLine.replace('\r','')
         versionLine = versionLine.replace('\n','')
@@ -7112,9 +7140,9 @@ class PDFParser :
         if garbageHeader != '' and matchVersion != []:
             pdfFile.setGarbageHeader(garbageHeader)
             if not garbageHeader.isspace() and garbageHeader != '':
-                pdfFile.suspiciousProperties['Garbage Header before PDF Header'] = '#TODO'
+                pdfFile.garbageHeaderPresent = True
             elif len(garbageHeader) > 4:
-                pdfFile.suspiciousProperties['Large Gap before Header'] = '#TODO'
+                pdfFile.gapBeforeHeaderPresent = True
         # Getting the end of line
         if len(binaryLine) > 3:
             if binaryLine[-2:] == '\r\n':
@@ -7159,9 +7187,9 @@ class PDFParser :
                 garbageAfterEOF = fileContent
                 pdfFile.setGarbageAfterEOF(garbageAfterEOF)
                 if not garbageAfterEOF.isspace() and garbageAfterEOF != '':
-                    pdfFile.suspiciousProperties['Garbage Bytes after last %%EOF'] = '#TODO'
+                    pdfFile.garbageAfterEOFPresent = True
                 elif len(garbageAfterEOF) > 4:
-                    pdfFile.suspiciousProperties['Large gap after last %%EOF'] = '#TODO'
+                    pdfFile.gapAfterEOFPresent = True
         pdfFile.setUpdates(len(self.fileParts) - 1)
         
         # Getting the body, cross reference table and trailer of each part of the file
@@ -7261,32 +7289,12 @@ class PDFParser :
                                     ret = self.createPDFCrossRefSectionFromStream(pdfIndirectObject)
                                     if ret[0] != -1:
                                         xrefStreamSection = ret[1]
-                                elif objectType == 'stream':
-                                    terminatorPresent = pdfObject.isTerminated()
-                                    if terminatorPresent is False:
-                                        try:
-                                            l = body.suspiciousElements['Streams with missing terminator']
-                                        except KeyError:
-                                            body.suspiciousElements['Streams with missing terminator'] = []
-                                            l = body.suspiciousElements['Streams with missing terminator']
-                                        objectId = pdfIndirectObject.getId()
-                                        if objectId not in l:
-                                            l.append(objectId)
                             else:
                                 if not forceMode:
                                     sys.exit('Error: An error has occurred while parsing an indirect object!!')
                                 else:
                                     pdfFile.addError('Object is None')
                             terminatorPresent = pdfIndirectObject.isTerminated()
-                            if terminatorPresent is False:
-                                try:
-                                    l = body.suspiciousElements['Objects with missing terminator']
-                                except KeyError:
-                                    body.suspiciousElements['Objects with missing terminator'] = []
-                                    l = body.suspiciousElements['Objects with missing terminator']
-                                objectId = pdfIndirectObject.getId()
-                                if objectId not in l:
-                                    l.append(objectId)
                         else:
                             if not forceMode:
                                 sys.exit('Error: Bad indirect object!!')
@@ -7301,7 +7309,7 @@ class PDFParser :
                 pdfFile.addError('No indirect objects found in the body')
             garbageBytesPresent = pdfFile.detectGarbageBetweenObjects(bodyContent, looseMode=looseMode)
             if garbageBytesPresent is True:
-                pdfFile.suspiciousProperties['Garbage bytes between objects'] = '#TODO'
+                pdfFile.garbageBetweenObjects = True
             if pdfIndirectObject != None:
                 body.setNextOffset(pdfIndirectObject.getOffset())
             ret = body.updateObjects()
@@ -7380,18 +7388,8 @@ class PDFParser :
             if ret[0] == -1:
                 pdfFile.addError(ret[1])
         pdfFile.verifyXrefOffsets()
-        isolatedObjectsDict = pdfFile.getIsolatedObjects()
-        if isolatedObjectsDict not in (None, {}):
-            for version in isolatedObjectsDict.keys():
-                isolatedObjectVersion = version
-                for isolatedObjectId in isolatedObjectsDict[version]:
-                    try:
-                        l = pdfFile.body[isolatedObjectVersion].suspiciousElements['Objects not referenced from Catalog']
-                    except KeyError:
-                        pdfFile.body[isolatedObjectVersion].suspiciousElements['Objects not referenced from Catalog'] = []
-                        l = pdfFile.body[isolatedObjectVersion].suspiciousElements['Objects not referenced from Catalog']
-                    if isolatedObjectId not in l:
-                        l.append(isolatedObjectId)
+        pdfFile.getIsolatedObjects()
+        pdfFile.updateStats()
         return (0,pdfFile)
 
     def parsePDFSections(self, content, forceMode = False, looseMode = False):
@@ -7468,7 +7466,7 @@ class PDFParser :
             pdfIndirectObject.setObject(object)
             ret = self.readSymbol(rawIndirectObject, 'endobj', False)
             if ret[0] == -1:
-                pdfIndirectObject.terminatorPresent = False
+                pdfIndirectObject.terminatorMissing = True
             pdfIndirectObject.setSize(self.charCounter)
         except:
             errorMessage = 'Unspecified parsing error'
@@ -8108,7 +8106,7 @@ class PDFParser :
                             return ret
                         pdfObject = ret[1]
                         if isTerminated is False:
-                            pdfObject.terminatorPresent = False
+                            pdfObject.terminatorMissing = True
                         break
                     else:
                         if ret[0] != -1:
