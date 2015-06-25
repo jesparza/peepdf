@@ -4278,8 +4278,8 @@ class PDFBody :
                 l.append(objectId)
         if pdfObject.largeStringPresent is True:
             objectId = pdfIndirectObject.getId()
-            if ('\JS' in self.suspiciousActions and objectId in self.suspiciousActions['\JS']) or \
-                            '\JS' not in self.suspiciousActions:
+            if ('/JS' in self.suspiciousActions and objectId not in self.suspiciousActions['/JS']) or \
+                            '/JS' not in self.suspiciousActions:
                 try:
                     l = self.suspiciousElements['Objects with large strings']
                 except KeyError:
