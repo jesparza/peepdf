@@ -1629,7 +1629,7 @@ class PDFStream (PDFDictionary) :
         self.urlsFound = []
         self.referencesInElements = {}
         self.references = []
-        self.size = 0
+        self.size = None
         self.filter = None
         self.filterParams = None
         self.file = None
@@ -1638,6 +1638,7 @@ class PDFStream (PDFDictionary) :
         self.nameObfuscated = False
         self.largeStringPresent = False
         self.terminatorPresent = True
+        self.invalidLength = False
         if elements == {}:
             errorMessage = 'No dictionary in stream object'
             if isForceMode:
@@ -1666,6 +1667,7 @@ class PDFStream (PDFDictionary) :
         values = self.elements.values()
         self.nameObfuscated = False
         self.largeStringPresent = False
+        self.invalidLength = False
         if not onlyElements:
             self.references = []
             self.errors = []
@@ -1702,7 +1704,9 @@ class PDFStream (PDFDictionary) :
                 self.addError('Missing /Length in stream object')
             else:
                 return (-1,'Missing /Length in stream object')
-            
+        if self.size != None:
+            if abs(int(self.size) - len(self.rawStream)) > 4:
+                self.invalidLength = True
         if self.elements.has_key('/F'):
             self.file = self.elements['/F'].getValue()
             if os.path.exists(self.file):
@@ -2747,6 +2751,7 @@ class PDFObjectStream (PDFStream) :
         self.nameObfuscated = False
         self.largeStringPresent = False
         self.terminatorPresent = True
+        self.invalidLength = False
         if elements != {}:
             ret = self.update()
             if ret[0] == -1:
@@ -2773,6 +2778,7 @@ class PDFObjectStream (PDFStream) :
         values = self.elements.values()
         self.nameObfuscated = False
         self.largeStringPresent = False
+        self.invalidLength = False
         if not onlyElements:
             self.errors = []
             self.references = []
@@ -2824,7 +2830,10 @@ class PDFObjectStream (PDFStream) :
                 self.addError('Missing /Length in stream object')
             else:
                 return (-1,'Missing /Length in stream object')
-            
+
+        if self.size != None:
+            if abs(int(self.size) - len(self.rawStream)) > 4:
+                self.invalidLength = True
         if self.elements.has_key('/F'):
             self.file = self.elements['/F'].getValue()
             if os.path.exists(self.file):
@@ -4018,6 +4027,12 @@ class PDFBody :
                                 self.delObject(compressedId)
                             del(compressedObjectsDict)
         try:
+            l = self.suspiciousElements['streams with invalid /Length']
+            if id in l:
+                l.remove(id)
+        except KeyError:
+            pass
+        try:
             obfuscatedList = self.suspiciousElements['Objects with obfuscated names/strings']
             if id in obfuscatedList:
                 obfuscatedList.remove(id)
@@ -4239,6 +4254,16 @@ class PDFBody :
                     objectId = pdfIndirectObject.getId()
                     if objectId not in l:
                         l.append(objectId)
+        if objectType == 'stream':
+            if pdfObject.invalidLength is True:
+                try:
+                    l = self.suspiciousElements['streams with invalid /Length']
+                except KeyError:
+                    self.suspiciousElements['streams with invalid /Length'] = []
+                    l = self.suspiciousElements['streams with invalid /Length']
+                objectId = pdfIndirectObject.getId()
+                if objectId not in l:
+                    l.append(objectId)
         if pdfObject.nameObfuscated is True:
             try:
                 l = self.suspiciousElements['Objects with obfuscated names/strings']
