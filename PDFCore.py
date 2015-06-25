@@ -5969,9 +5969,12 @@ class PDFFile :
             self._updateReferenceList(referenceObject, referenceId, version, isolatedList)
 
     def getIsolatedObjects(self):
+        if filter(None, self.getCatalogObjectId()) == []:
+            return {}
         isolatedListDict = {}
         objectsDict= {}
-        catalogLinear = None
+        catalogIdLinear = None
+        infoIdLinear = None
         for version in range(self.updates+1):
             catalogId = None
             infoId = None
@@ -6004,7 +6007,8 @@ class PDFFile :
             isolatedListDict[version] = isolatedList
         if self.linearized:
             isolatedList = objectsDict.keys()
-            isolatedList.remove(infoIdLinear)
+            if infoIdLinear in isolatedList:
+                isolatedList.remove(infoIdLinear)
             self._updateReferenceList(catalogLinear, catalogIdLinear, version=None, isolatedList=isolatedList)
             for objectId in isolatedList:
                 for version in range(self.updates+1):
