@@ -406,6 +406,7 @@ class PDFBool (PDFObject) :
         self.value = self.rawValue = self.encryptedValue = value
         self.compressedIn = None
         self.nameObfuscated = False
+        self.largeStringPresent = False
 
 
 class PDFNull (PDFObject) :
@@ -424,6 +425,7 @@ class PDFNull (PDFObject) :
         self.referencesInElements = {}
         self.references = []
         self.nameObfuscated = False
+        self.largeStringPresent = False
 
 
 class PDFNum (PDFObject) :
@@ -442,6 +444,7 @@ class PDFNum (PDFObject) :
         self.referencesInElements = {}
         self.references = []
         self.nameObfuscated = False
+        self.largeStringPresent = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -505,6 +508,7 @@ class PDFName (PDFObject) :
         self.encrypted = False
         self.referencesInElements = {}
         self.nameObfuscated = False
+        self.largeStringPresent = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -561,6 +565,7 @@ class PDFString (PDFObject) :
         self.urlsFound = []
         self.references = []
         self.nameObfuscated = False
+        self.largeStringPresent = False
         self.referencesInElements = {}
         ret = self.update()
         if ret[0] == -1:
@@ -619,6 +624,8 @@ class PDFString (PDFObject) :
             self.nameObfuscated = True
         else:
             self.nameObfuscated = False
+        if len(newValue) > 2000:
+            self.largeStringPresent = True
         return (0,'')
 
     def encodeChars(self):
@@ -723,6 +730,7 @@ class PDFHexString (PDFObject) :
         self.referencesInElements = {}
         self.references = []
         self.nameObfuscated = False
+        self.largeStringPresent = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -779,6 +787,8 @@ class PDFHexString (PDFObject) :
             self.nameObfuscated = True
         else:
             self.nameObfuscated = False
+        if len(newValue) > 2000:
+            self.largeStringPresent = True
         return (0,'')
 
     def encrypt(self, password = None):
@@ -872,6 +882,7 @@ class PDFReference (PDFObject) :
         self.referencesInElements = {}
         self.references = []
         self.nameObfuscated = False
+        self.largeStringPresent = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -944,6 +955,7 @@ class PDFArray (PDFObject) :
         self.referencesInElements = {}
         self.references = []
         self.nameObfuscated = False
+        self.largeStringPresent = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -969,10 +981,13 @@ class PDFArray (PDFObject) :
         self.unescapedBytes = []
         self.urlsFound = []
         self.nameObfuscated = False
+        self.largeStringPresent = False
         for element in self.elements:
             if element != None:
                 if element.nameObfuscated is True:
                     self.nameObfuscated = True
+                if element.largeStringPresent is True:
+                    self.largeStringPresent = True
                 type = element.getType()
                 if type == 'reference':
                     self.references.append(element.getValue())
@@ -1216,6 +1231,7 @@ class PDFDictionary (PDFObject):
         self.numElements = len(self.elements)
         self.references = []
         self.nameObfuscated = False
+        self.largeStringPresent = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -1242,6 +1258,7 @@ class PDFDictionary (PDFObject):
         self.rawValue = '<< '
         self.encryptedValue = '<< '
         self.nameObfuscated = False
+        self.largeStringPresent = False
         keys = self.elements.keys()
         values = self.elements.values()
         for i in range(len(keys)):
@@ -1256,6 +1273,8 @@ class PDFDictionary (PDFObject):
                 valueObject = values[i]
             if valueObject.nameObfuscated is True:
                 self.nameObfuscated = True
+            if valueObject.largeStringPresent is True:
+                self.largeStringPresent = True
             v = valueObject.getValue()
             type = valueObject.getType()
             if keys[i] == '/Type':
@@ -1617,6 +1636,7 @@ class PDFStream (PDFDictionary) :
         self.isEncodedStream = False
         self.decodingError = False
         self.nameObfuscated = False
+        self.largeStringPresent = False
         self.terminatorPresent = True
         if elements == {}:
             errorMessage = 'No dictionary in stream object'
@@ -1645,6 +1665,7 @@ class PDFStream (PDFDictionary) :
         keys = self.elements.keys()
         values = self.elements.values()
         self.nameObfuscated = False
+        self.largeStringPresent = False
         if not onlyElements:
             self.references = []
             self.errors = []
@@ -1730,6 +1751,8 @@ class PDFStream (PDFDictionary) :
             valueElement = values[i]
             if valueElement.nameObfuscated is True:
                 self.nameObfuscated = True
+            if valueElement.largeStringPresent is True:
+                self.largeStringPresent = True
             if valueElement == None:
                 errorMessage = 'Stream dictionary has a None value'
                 self.addError(errorMessage)
@@ -2722,6 +2745,7 @@ class PDFObjectStream (PDFStream) :
         self.isEncodedStream = False
         self.decodingError = False
         self.nameObfuscated = False
+        self.largeStringPresent = False
         self.terminatorPresent = True
         if elements != {}:
             ret = self.update()
@@ -2748,6 +2772,7 @@ class PDFObjectStream (PDFStream) :
         keys = self.elements.keys()
         values = self.elements.values()
         self.nameObfuscated = False
+        self.largeStringPresent = False
         if not onlyElements:
             self.errors = []
             self.references = []
@@ -2855,6 +2880,8 @@ class PDFObjectStream (PDFStream) :
                     return (-1,'Stream dictionary has a None value')
             if valueElement.nameObfuscated is True:
                 self.nameObfuscated = True
+            if valueElement.largeStringPresent is True:
+                self.largeStringPresent = True
             v = valueElement.getValue()
             type = valueElement.getType()
             if type == 'reference':
@@ -3996,6 +4023,12 @@ class PDFBody :
                 obfuscatedList.remove(id)
         except KeyError:
             pass
+        try:
+            largeStringList = self.suspiciousElements['Objects with large strings']
+            if id in largeStringList:
+                largeStringList.remove(id)
+        except KeyError:
+            pass
         objectErrors = pdfObject.getErrors()
         if objectErrors != []:
             index = 0
@@ -4215,6 +4248,17 @@ class PDFBody :
             objectId = pdfIndirectObject.getId()
             if objectId not in l:
                 l.append(objectId)
+        if pdfObject.largeStringPresent is True:
+            objectId = pdfIndirectObject.getId()
+            if ('\JS' in self.suspiciousActions and objectId in self.suspiciousActions['\JS']) or \
+                            '\JS' not in self.suspiciousActions:
+                try:
+                    l = self.suspiciousElements['Objects with large strings']
+                except KeyError:
+                    self.suspiciousElements['Objects with large strings'] = []
+                    l = self.suspiciousElements['Objects with large strings']
+                if objectId not in l:
+                    l.append(objectId)
         pdfIndirectObject.setObject(pdfObject)
         self.objects[id] = pdfIndirectObject
         self.errors += pdfObject.getErrors()
