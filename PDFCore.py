@@ -3994,9 +3994,12 @@ class PDFBody :
                 self.numStreams -= 1
                 if id in self.streams:
                     self.streams.remove(id)
-                l = self.suspiciousElements['streams with invalid /Subtype']
-                if id in l:
-                    l.remove(id)
+                try:
+                    l = self.suspiciousElements['streams with invalid /Subtype']
+                    if id in l:
+                        l.remove(id)
+                except KeyError:
+                    pass
                 if pdfObject.isEncoded():
                     if id in self.encodedStreams:
                         self.encodedStreams.remove(id)
