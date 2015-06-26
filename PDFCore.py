@@ -60,7 +60,8 @@ monitorizedElements = ['/EmbeddedFiles ',
 monitorizedIndicators = {'versionBased':{
                              'invalidSubtype': ('Invalid stream /Subtype', 'stream'),
                              'invalidLength': ('Missing stream /Length', 'stream'),
-                             'nameObfuscated': ('Obfuscated names/strings', '*'),
+                             'nameObfuscated': ('Obfuscated names', '*'),
+                             'stringObfuscated': ('Obfuscated strings', '*'),
                              'largeStringPresent': ('Objects with large strings', '*'),
                              'missingXref': ('Missing in xref', '*'),
                              'terminatorMissing': ('Missing stream terminator', 'stream'),
@@ -424,6 +425,7 @@ class PDFBool (PDFObject) :
         self.value = self.rawValue = self.encryptedValue = value
         self.compressedIn = None
         self.nameObfuscated = False
+        self.stringObfuscated = False
         self.largeStringPresent = False
         self.missingXref = False
         self.missingCatalog = False
@@ -446,6 +448,7 @@ class PDFNull (PDFObject) :
         self.referencesInElements = {}
         self.references = []
         self.nameObfuscated = False
+        self.stringObfuscated = False
         self.largeStringPresent = False
         self.missingXref = False
         self.missingCatalog = False
@@ -468,6 +471,7 @@ class PDFNum (PDFObject) :
         self.referencesInElements = {}
         self.references = []
         self.nameObfuscated = False
+        self.stringObfuscated = False
         self.largeStringPresent = False
         self.missingXref = False
         self.missingCatalog = False
@@ -535,6 +539,7 @@ class PDFName (PDFObject) :
         self.encrypted = False
         self.referencesInElements = {}
         self.nameObfuscated = False
+        self.stringObfuscated = False
         self.largeStringPresent = False
         self.missingXref = False
         self.missingCatalog = False
@@ -595,6 +600,7 @@ class PDFString (PDFObject) :
         self.urlsFound = []
         self.references = []
         self.nameObfuscated = False
+        self.stringObfuscated = False
         self.largeStringPresent = False
         self.referencesInElements = {}
         self.missingXref = False
@@ -654,9 +660,9 @@ class PDFString (PDFObject) :
         rawValue = str(self.rawValue)
         newValue = str(self.value)
         if newValue != rawValue:
-            self.nameObfuscated = True
+            self.stringObfuscated = True
         else:
-            self.nameObfuscated = False
+            self.stringObfuscated = False
         if len(newValue) > 2000:
             self.largeStringPresent = True
         return (0,'')
@@ -763,6 +769,7 @@ class PDFHexString (PDFObject) :
         self.referencesInElements = {}
         self.references = []
         self.nameObfuscated = False
+        self.stringObfuscated = False
         self.largeStringPresent = False
         self.missingXref = False
         self.missingCatalog = False
@@ -820,9 +827,9 @@ class PDFHexString (PDFObject) :
         rawValue = str(self.rawValue)
         newValue = str(self.value)
         if newValue != rawValue:
-            self.nameObfuscated = True
+            self.stringObfuscated = True
         else:
-            self.nameObfuscated = False
+            self.stringObfuscated = False
         if len(newValue) > 2000:
             self.largeStringPresent = True
         return (0,'')
@@ -918,6 +925,7 @@ class PDFReference (PDFObject) :
         self.referencesInElements = {}
         self.references = []
         self.nameObfuscated = False
+        self.stringObfuscated = False
         self.largeStringPresent = False
         self.missingXref = False
         self.missingCatalog = False
@@ -994,6 +1002,7 @@ class PDFArray (PDFObject) :
         self.referencesInElements = {}
         self.references = []
         self.nameObfuscated = False
+        self.stringObfuscated = False
         self.largeStringPresent = False
         self.missingXref = False
         self.missingCatalog = False
@@ -1028,6 +1037,8 @@ class PDFArray (PDFObject) :
             if element != None:
                 if element.nameObfuscated is True:
                     self.nameObfuscated = True
+                if element.stringObfuscated is True:
+                    self.stringObfuscated = True
                 if element.largeStringPresent is True:
                     self.largeStringPresent = True
                 type = element.getType()
@@ -1273,6 +1284,7 @@ class PDFDictionary (PDFObject):
         self.numElements = len(self.elements)
         self.references = []
         self.nameObfuscated = False
+        self.stringObfuscated = False
         self.largeStringPresent = False
         self.missingXref = False
         self.missingCatalog = False
@@ -1318,6 +1330,8 @@ class PDFDictionary (PDFObject):
                 valueObject = values[i]
             if valueObject.nameObfuscated is True:
                 self.nameObfuscated = True
+            if valueObject.stringObfuscated is True:
+                self.stringObfuscated = True
             if valueObject.largeStringPresent is True:
                 self.largeStringPresent = True
             v = valueObject.getValue()
@@ -1681,6 +1695,7 @@ class PDFStream (PDFDictionary) :
         self.isEncodedStream = False
         self.decodingError = False
         self.nameObfuscated = False
+        self.stringObfuscated = False
         self.largeStringPresent = False
         self.invalidLength = False
         self.invalidSubtype = False
@@ -1804,6 +1819,8 @@ class PDFStream (PDFDictionary) :
             valueElement = values[i]
             if valueElement.nameObfuscated is True:
                 self.nameObfuscated = True
+            if valueElement.stringObfuscated is True:
+                self.stringObfuscated = True
             if valueElement.largeStringPresent is True:
                 self.largeStringPresent = True
             if valueElement == None:
@@ -2806,6 +2823,7 @@ class PDFObjectStream (PDFStream) :
         self.isEncodedStream = False
         self.decodingError = False
         self.nameObfuscated = False
+        self.stringObfuscated = False
         self.largeStringPresent = False
         self.terminatorMissing = False
         self.invalidLength = False
@@ -2948,6 +2966,8 @@ class PDFObjectStream (PDFStream) :
                     return (-1,'Stream dictionary has a None value')
             if valueElement.nameObfuscated is True:
                 self.nameObfuscated = True
+            if valueElement.stringObfuscated is True:
+                self.stringObfuscated = True
             if valueElement.largeStringPresent is True:
                 self.largeStringPresent = True
             v = valueElement.getValue()
