@@ -60,9 +60,10 @@ monitorizedElements = ['/EmbeddedFiles ',
 monitorizedIndicators = {'versionBased':{
                              'invalidSubtype': ('Invalid stream /Subtype', 'stream'),
                              'invalidLength': ('Missing stream /Length', 'stream'),
+                             'largeSize': ('Large streams', 'stream'),
                              'nameObfuscated': ('Obfuscated names', '*'),
                              'stringObfuscated': ('Obfuscated strings', '*'),
-                             'largeStringPresent': ('Objects with large strings', '*'),
+                             'largeStringPresent': ('Large strings', '*'),
                              'missingXref': ('Missing in xref', '*'),
                              'terminatorMissing': ('Missing stream terminator', 'stream'),
                              'terminatorMissing': ('Missing object terminator', '*'),
@@ -1689,6 +1690,7 @@ class PDFStream (PDFDictionary) :
         self.referencesInElements = {}
         self.references = []
         self.size = None
+        self.realSize = len(self.rawStream)
         self.filter = None
         self.filterParams = None
         self.file = None
@@ -1702,6 +1704,10 @@ class PDFStream (PDFDictionary) :
         self.missingXref = False
         self.missingCatalog = False
         self.terminatorMissing = False
+        if self.realSize > 50000:
+            self.largeSize = True
+        else:
+            self.largeSize = False
         if elements == {}:
             errorMessage = 'No dictionary in stream object'
             if isForceMode:
@@ -1769,7 +1775,7 @@ class PDFStream (PDFDictionary) :
             else:
                 return (-1,'Missing /Length in stream object')
         if self.size != None:
-            if abs(int(self.size) - len(self.rawStream)) > 4:
+            if abs(int(self.size) - self.realSize) > 4:
                 self.invalidLength = True
         if self.elements.has_key('/F'):
             self.file = self.elements['/F'].getValue()
@@ -2816,7 +2822,8 @@ class PDFObjectStream (PDFStream) :
         self.firstObjectOffset = 0
         self.numCompressedObjects = 0
         self.extends = None
-        self.size = 0
+        self.size = None
+        self.realSize = None
         self.filter = None
         self.filterParams = None
         self.file = None
@@ -2828,6 +2835,10 @@ class PDFObjectStream (PDFStream) :
         self.terminatorMissing = False
         self.invalidLength = False
         self.invalidSubtype = False
+        if self.realSize > 50000:
+            self.largeSize = True
+        else:
+            self.largeSize = False
         if elements != {}:
             ret = self.update()
             if ret[0] == -1:
@@ -2909,7 +2920,7 @@ class PDFObjectStream (PDFStream) :
                 return (-1,'Missing /Length in stream object')
 
         if self.size != None:
-            if abs(int(self.size) - len(self.rawStream)) > 4:
+            if abs(int(self.size) - self.realSize) > 4:
                 self.invalidLength = True
         if self.elements.has_key('/F'):
             self.file = self.elements['/F'].getValue()
