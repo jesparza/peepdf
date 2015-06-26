@@ -66,7 +66,7 @@ monitorizedElements = ['/EmbeddedFiles ',
                        'keep.previous']
 monitorizedIndicators = {'versionBased':{
                              'invalidSubtype': ('Invalid stream /Subtype', 'stream'),
-                             'invalidLength': ('Missing stream /Length', 'stream'),
+                             'invalidLength': ('Invalid stream /Length', 'stream'),
                              'largeSize': ('Large streams', 'stream'),
                              'nameObfuscated': ('Obfuscated names', '*'),
                              'stringObfuscated': ('Obfuscated strings', '*'),
