@@ -2718,6 +2718,10 @@ class PDFStream (PDFDictionary) :
             subType = stats['Subtype']
             if subType == None:
                 return -1
+            if self.getElementByName('/Type') is not None:
+                mainType = self.getElementByName('/Type').getValue()
+            else:
+                mainType = None
             subType = subType.lower()
             if subType[0] == '/':
                 subType = subType[1:]
@@ -2752,6 +2756,8 @@ class PDFStream (PDFDictionary) :
             if subTypeFound is False:
                 return -1
             if subTypeDict[subTypeKey] not in subTypeMagic:
+                if 'XObject' in mainType:
+                    return -1
                 self.invalidSubtype = True
                 return False
             else:
