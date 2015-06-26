@@ -39,6 +39,13 @@ MAL_EOBJ = 3
 MAL_ESTREAM = 4
 MAL_XREF = 5
 MAL_BAD_HEAD = 6
+MAX_HEAD_VER_LEN = 10
+MAX_HEAD_BIN_LEN = 10
+MAX_STR_LEN = 2000
+MAX_STREAM_SIZE = 50000
+MAX_OBJ_GAP = 3
+MAX_PRE_HEAD_GAP = 4
+MAX_POST_EOF_GAP = 4
 pdfFile = None
 newLine = os.linesep
 isForceMode = False
@@ -664,7 +671,7 @@ class PDFString (PDFObject) :
             self.stringObfuscated = True
         else:
             self.stringObfuscated = False
-        if len(newValue) > 2000:
+        if len(newValue) > MAX_STR_LEN:
             self.largeStringPresent = True
         return (0,'')
 
@@ -831,7 +838,7 @@ class PDFHexString (PDFObject) :
             self.stringObfuscated = True
         else:
             self.stringObfuscated = False
-        if len(newValue) > 2000:
+        if len(newValue) > MAX_STR_LEN:
             self.largeStringPresent = True
         return (0,'')
 
@@ -1704,7 +1711,7 @@ class PDFStream (PDFDictionary) :
         self.missingXref = False
         self.missingCatalog = False
         self.terminatorMissing = False
-        if self.realSize > 50000:
+        if self.realSize > MAX_STREAM_SIZE:
             self.largeSize = True
         else:
             self.largeSize = False
@@ -2835,7 +2842,7 @@ class PDFObjectStream (PDFStream) :
         self.terminatorMissing = False
         self.invalidLength = False
         self.invalidSubtype = False
-        if self.realSize > 50000:
+        if self.realSize > MAX_STREAM_SIZE:
             self.largeSize = True
         else:
             self.largeSize = False
@@ -5651,7 +5658,7 @@ class PDFFile :
         largeGap = False
         regExp = re.compile('endobj(.*?)\d{1,10}\s\d{1,10}\sobj',re.DOTALL)
         for garbage in regExp.findall(bodyContent):
-            if len(garbage) > 3:
+            if len(garbage) > MAX_OBJ_GAP:
                 largeGap = True
                 break
         return largeGap
@@ -7160,9 +7167,9 @@ class PDFParser :
                     validBinaryLine = True
             if validBinaryLine is False:
                 binaryLine = ''
-        if len(versionLine) > 10:
+        if len(versionLine) > MAX_HEAD_VER_LEN:
             pdfFile.largeHeader = True
-        if len(binaryLine) > 10:
+        if len(binaryLine) > MAX_HEAD_BIN_LEN:
             pdfFile.largeBinaryHeader = True
         # Getting the specification version
         versionLine = versionLine.replace('\r','')
@@ -7181,7 +7188,7 @@ class PDFParser :
             pdfFile.setGarbageHeader(garbageHeader)
             if not garbageHeader.isspace() and garbageHeader != '':
                 pdfFile.garbageHeaderPresent = True
-            elif len(garbageHeader) > 4:
+            elif len(garbageHeader) > MAX_PRE_HEAD_GAP:
                 pdfFile.gapBeforeHeaderPresent = True
         # Getting the end of line
         if len(binaryLine) > 3:
@@ -7228,7 +7235,7 @@ class PDFParser :
                 pdfFile.setGarbageAfterEOF(garbageAfterEOF)
                 if not garbageAfterEOF.isspace() and garbageAfterEOF != '':
                     pdfFile.garbageAfterEOFPresent = True
-                elif len(garbageAfterEOF) > 4:
+                elif len(garbageAfterEOF) > MAX_POST_EOF_GAP:
                     pdfFile.gapAfterEOFPresent = True
         pdfFile.setUpdates(len(self.fileParts) - 1)
         
