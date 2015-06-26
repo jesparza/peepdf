@@ -7122,7 +7122,7 @@ class PDFParser :
                 binaryLine = ''
         if len(versionLine) > 10:
             pdfFile.largeHeader = True
-        if len(binaryLine) > 7:
+        if len(binaryLine) > 10:
             pdfFile.largeBinaryHeader = True
         # Getting the specification version
         versionLine = versionLine.replace('\r','')
