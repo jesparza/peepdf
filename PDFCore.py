@@ -77,6 +77,7 @@ monitorizedIndicators = {'versionBased':{
                              'missingCatalog': ('Not referenced from Catalog', '*')},
                          'fileBased':{
                              'brokenXref': 'Xref Table broken',
+                             'illegalXref': 'Illegal entries in Xref',
                              'largeHeader': 'Header too large',
                              'largeBinaryHeader': 'Binary Header too large',
                              'garbageHeaderPresent': 'Garbage Header before PDF Header',
@@ -4892,6 +4893,7 @@ class PDFFile :
         self.maxObjectId = 0
         self.pagesCount = 0
         self.brokenXref = False
+        self.illegalXref = False
         self.largeHeader = False
         self.largeBinaryHeader= False
         self.garbageHeaderPresent = False
@@ -7076,6 +7078,8 @@ class PDFFile :
                 if section is None:
                     continue
                 for subsection in section.getSubsectionsArray():
+                    if subsection.getNumObjects() != len(subsection.entries):
+                        self.illegalXref = True
                     for count, objectEntry in enumerate(subsection.getEntries()):
                         objectId = subsection.getObjectId(count)
                         if objectId not in xrefObjectList:
@@ -7092,6 +7096,8 @@ class PDFFile :
                     xrefList = xrefObjectList
                 else:
                     xrefList = linearezedXrefObjectList
+                if self.illegalXref is True:
+                    continue
                 for objectId in realObjectOffsets.keys():
                     if objectId not in xrefList:
                         indirectObj = self.getObject(objectId, indirect=True)
@@ -7099,7 +7105,10 @@ class PDFFile :
                         self.body[version].deregisterObject(indirectObj)
                         self.body[version].registerObject(indirectObj)
                     elif self.linearized:
-                        xrefList.remove(objectId)
+                        indirectObj = self.getObject(objectId, indirect=True)
+                        indirectObj.getObject().missingXref = False
+                        self.body[version].deregisterObject(indirectObj)
+                        self.body[version].registerObject(indirectObj)
 
 
 class PDFParser :
