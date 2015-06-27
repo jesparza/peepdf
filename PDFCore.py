@@ -73,8 +73,9 @@ monitorizedIndicators = {'versionBased':{
                              'stringObfuscated': ('Obfuscated strings', '*'),
                              'largeStringPresent': ('Large strings', '*'),
                              'missingXref': ('Missing in xref', '*'),
-                             'terminatorMissing': ('Missing stream terminator', 'stream'),
+                             'streamTerminatorMissing': ('Missing stream terminator', 'stream'),
                              'terminatorMissing': ('Missing object terminator', '*'),
+                             'garbageInside': ('Garbage bytes between elements', '*'),
                              'missingCatalog': ('Not referenced from Catalog', '*')},
                          'fileBased':{
                              'brokenXref': 'Xref Table broken',
@@ -440,6 +441,7 @@ class PDFBool (PDFObject) :
         self.missingXref = False
         self.missingCatalog = False
         self.terminatorMissing = False
+        self.garbageInside = False
 
 
 class PDFNull (PDFObject) :
@@ -463,6 +465,7 @@ class PDFNull (PDFObject) :
         self.missingXref = False
         self.missingCatalog = False
         self.terminatorMissing = False
+        self.garbageInside = False
 
 
 class PDFNum (PDFObject) :
@@ -486,6 +489,7 @@ class PDFNum (PDFObject) :
         self.missingXref = False
         self.missingCatalog = False
         self.terminatorMissing = False
+        self.garbageInside = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -554,6 +558,7 @@ class PDFName (PDFObject) :
         self.missingXref = False
         self.missingCatalog = False
         self.terminatorMissing = False
+        self.garbageInside = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -616,6 +621,7 @@ class PDFString (PDFObject) :
         self.missingXref = False
         self.missingCatalog = False
         self.terminatorMissing = False
+        self.garbageInside = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -784,6 +790,7 @@ class PDFHexString (PDFObject) :
         self.missingXref = False
         self.missingCatalog = False
         self.terminatorMissing = False
+        self.garbageInside = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -940,6 +947,7 @@ class PDFReference (PDFObject) :
         self.missingXref = False
         self.missingCatalog = False
         self.terminatorMissing = False
+        self.garbageInside = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -1017,6 +1025,7 @@ class PDFArray (PDFObject) :
         self.missingXref = False
         self.missingCatalog = False
         self.terminatorMissing = False
+        self.garbageInside = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -1299,6 +1308,7 @@ class PDFDictionary (PDFObject):
         self.missingXref = False
         self.missingCatalog = False
         self.terminatorMissing = False
+        self.garbageInside = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -1713,6 +1723,8 @@ class PDFStream (PDFDictionary) :
         self.missingXref = False
         self.missingCatalog = False
         self.terminatorMissing = False
+        self.garbageInside = False
+        self.streamTerminatorMissing = False
         if self.realSize > MAX_STREAM_SIZE:
             self.largeSize = True
         else:
@@ -2842,6 +2854,8 @@ class PDFObjectStream (PDFStream) :
         self.stringObfuscated = False
         self.largeStringPresent = False
         self.terminatorMissing = False
+        self.garbageInside = False
+        self.streamTerminatorMissing = False
         self.invalidLength = False
         self.invalidSubtype = False
         if self.realSize > MAX_STREAM_SIZE:
@@ -3439,6 +3453,8 @@ class PDFIndirectObject :
         self.missingXref = False
         self.missingCatalog = False
         self.terminatorMissing = False
+        self.garbageInside = False
+        self.streamTerminatorMissing = False
         
     def contains(self, string):
         return self.object.contains(string)
@@ -7369,7 +7385,6 @@ class PDFParser :
                                     sys.exit('Error: An error has occurred while parsing an indirect object!!')
                                 else:
                                     pdfFile.addError('Object is None')
-                            terminatorPresent = pdfIndirectObject.isTerminated()
                         else:
                             if not forceMode:
                                 sys.exit('Error: Bad indirect object!!')
@@ -7539,7 +7554,10 @@ class PDFParser :
             pdfIndirectObject.setObject(object)
             ret = self.readSymbol(rawIndirectObject, 'endobj', False)
             if ret[0] == -1:
-                pdfIndirectObject.terminatorMissing = True
+                pdfIndirectObject.getObject().garbageInside = True
+                ret = self.readUntilSymbol(rawIndirectObject, 'endobj')
+                if ret[0] == -1:
+                    pdfIndirectObject.getObject().terminatorMissing = True
             pdfIndirectObject.setSize(self.charCounter)
         except:
             errorMessage = 'Unspecified parsing error'
@@ -8179,7 +8197,7 @@ class PDFParser :
                             return ret
                         pdfObject = ret[1]
                         if isTerminated is False:
-                            pdfObject.terminatorMissing = True
+                            pdfObject.streamTerminatorMissing = True
                         break
                     else:
                         if ret[0] != -1:
