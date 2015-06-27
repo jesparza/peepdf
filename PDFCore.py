@@ -26,6 +26,7 @@
 '''
 
 import sys,os,re,hashlib,struct,aes as AES
+from operator import itemgetter
 import magic
 from difflib import SequenceMatcher
 from PDFUtils import *
@@ -43,7 +44,7 @@ MAX_HEAD_VER_LEN = 10
 MAX_HEAD_BIN_LEN = 10
 MAX_STR_LEN = 2000
 MAX_STREAM_SIZE = 50000
-MAX_OBJ_GAP = 3
+MAX_OBJ_GAP = 4
 MAX_PRE_HEAD_GAP = 4
 MAX_POST_EOF_GAP = 4
 pdfFile = None
@@ -5654,16 +5655,34 @@ class PDFFile :
         # Remove references too 
         pass
 
-    def detectGarbageBetweenObjects(self, bodyContent, looseMode = False):
-        if bodyContent is None:
-            return False
-        largeGap = False
-        regExp = re.compile('endobj(.*?)\d{1,10}\s\d{1,10}\sobj',re.DOTALL)
-        for garbage in regExp.findall(bodyContent):
-            if len(garbage) > MAX_OBJ_GAP:
-                largeGap = True
+    def detectGarbageBetweenObjects(self):
+        offsetDict = self.getOffsets()
+        offsetList = []
+        for version, content in enumerate(offsetDict):
+            for element in content.keys():
+                offset = content[element]
+                if type(offset) == tuple:
+                    offsetList.append((version, element, offset[0], offset[0] + offset[1]))
+                elif type(offset) == list:
+                    for object in offset:
+                        offsetList.append((version, int(object[0]), object[1], object[1] + object[2]))
+        offsetList = sorted(offsetList, key=itemgetter(2))
+        garbageList = []
+        for index, offset in enumerate(offsetList):
+            if index == 0:
+                continue
+            if index == len(offsetList) - 1:
                 break
-        return largeGap
+            if offsetList[index+1][2] - offset[3] > MAX_OBJ_GAP:
+                garbageList.append((offsetList[index+1][0], offsetList[index+1][1]))
+                self.garbageBetweenObjects = True
+        text = 'Garbage Bytes before'
+        for obj in garbageList:
+            if text in self.body[obj[0]].suspiciousElements:
+                self.body[obj[0]].suspiciousElements[text].append(obj[1])
+            else:
+                self.body[obj[0]].suspiciousElements[text] = [obj[1]]
+        return False
 
     def encodeChars(self):
         errorMessage = ''
@@ -6256,7 +6275,7 @@ class PDFFile :
                 trailerSize = trailer.getSize()
                 eofOffset = trailer.getEOFOffset()
                 offsets['trailer'] = (trailerOffset,trailerSize)
-                offsets['eof'] = (eofOffset,0)
+                offsets['eof'] = (eofOffset,5)
             else:
                 offsets['trailer'] = None
                 offsets['eof'] = None
@@ -7363,9 +7382,6 @@ class PDFParser :
                             pdfFile.addError('Error parsing object: '+str(objectHeader)+' ('+str(ret[1])+')')
             else:
                 pdfFile.addError('No indirect objects found in the body')
-            garbageBytesPresent = pdfFile.detectGarbageBetweenObjects(bodyContent, looseMode=looseMode)
-            if garbageBytesPresent is True:
-                pdfFile.garbageBetweenObjects = True
             if pdfIndirectObject != None:
                 body.setNextOffset(pdfIndirectObject.getOffset())
             ret = body.updateObjects()
@@ -7445,6 +7461,7 @@ class PDFParser :
                 pdfFile.addError(ret[1])
         pdfFile.verifyXrefOffsets()
         pdfFile.getIsolatedObjects()
+        pdfFile.detectGarbageBetweenObjects()
         pdfFile.updateStats()
         return (0,pdfFile)
 
