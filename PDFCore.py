@@ -2749,7 +2749,7 @@ class PDFStream (PDFDictionary) :
             subType = stats['Subtype']
             if subType == None:
                 return -1
-            if self.getElementByName('/Type') is not None:
+            if self.getElementByName('/Type') not in (None, []):
                 mainType = self.getElementByName('/Type').getValue()
             else:
                 mainType = None
