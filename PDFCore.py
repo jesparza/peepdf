@@ -7097,6 +7097,7 @@ class PDFFile :
 
     def verifyXrefOffsets(self):
         linearezedXrefObjectList = []
+        linearizedfaultyList = {}
         for version in range(self.updates+1):
             realObjectOffsetsArray = self.getOffsets(version)[0]
             if 'objects' in realObjectOffsetsArray:
@@ -7127,7 +7128,8 @@ class PDFFile :
                             continue
                         objectOffset = objectEntry.getObjectOffset()
                         if (objectId not in realObjectOffsets.keys() and not self.linearized)  or\
-                                (objectId in realObjectOffsets.keys() and realObjectOffsets[objectId] != objectOffset):
+                                (objectId in realObjectOffsets.keys() and\
+                                     abs(realObjectOffsets[objectId] - objectOffset) > 4):
                             self.brokenXref = True
                 if not self.linearized:
                     xrefList = xrefObjectList
@@ -7141,11 +7143,19 @@ class PDFFile :
                         indirectObj.getObject().missingXref = True
                         self.body[version].deregisterObject(indirectObj)
                         self.body[version].registerObject(indirectObj)
-                    elif self.linearized:
-                        indirectObj = self.getObject(objectId, indirect=True)
-                        indirectObj.getObject().missingXref = False
-                        self.body[version].deregisterObject(indirectObj)
-                        self.body[version].registerObject(indirectObj)
+                        if self.linearized:
+                            if objectId in linearizedfaultyList.keys():
+                                linearizedfaultyList[objectId].append(version)
+                            else:
+                                linearizedfaultyList[objectId] = [version]
+                    elif self.linearized and objectId in linearizedfaultyList.keys():
+                        idVersions = linearizedfaultyList[objectId]
+                        for version in idVersions:
+                            indirectObj = self.getObject(objectId, indirect=True, version=version)
+                            indirectObj.getObject().missingXref = False
+                            self.body[version].deregisterObject(indirectObj)
+                            self.body[version].registerObject(indirectObj)
+                        del linearizedfaultyList[objectId]
 
 
 class PDFParser :
