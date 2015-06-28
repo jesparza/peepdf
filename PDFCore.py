@@ -6322,7 +6322,8 @@ class PDFFile :
             return None
         count = pages.getElement('/Count')
         if count == None:
-            return 0
+            self.addError('/Count element missing')
+            return None
         pagesCount = count.getValue()
         return pagesCount
 
