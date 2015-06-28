@@ -442,7 +442,7 @@ try:
                     #stats += beforeStaticLabel + 'SHA256: ' + resetColor + statsDict['SHA256'] + newLine
                     stats += beforeStaticLabel + 'Size: ' + resetColor + statsDict['Size'] + ' bytes' + newLine
                     pagesCount = statsDict['Pages Number']
-                    stats += beforeStaticLabel + 'Pages Number: ' + resetColor + pagesCount + newLine
+                    stats += beforeStaticLabel + 'Pages Number: ' + resetColor + str(pagesCount) + newLine
                     if options.checkOnVT:
                         if statsDict['Detection'] != []:
                             detectionReportInfo = ''
