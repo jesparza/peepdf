@@ -6506,7 +6506,7 @@ class PDFFile :
                 statsVersion['Properties'] = None
             stats['Versions'].append(statsVersion)
         self.pagesCount = self.getPagesCount()
-        if self.pagesCount not in (None, -1):
+        if self.pagesCount is not None:
             stats['Pages Number'] = str(self.pagesCount)
         else:
             stats['Pages Number'] = None
