@@ -44,7 +44,7 @@ MAX_HEAD_VER_LEN = 10
 MAX_HEAD_BIN_LEN = 10
 MAX_STR_LEN = 2000
 MAX_STREAM_SIZE = 50000
-MAX_OBJ_GAP = 4
+MAX_OBJ_GAP = 4 + 4  # compensation for ignored whitespaces
 MAX_PRE_HEAD_GAP = 4
 MAX_POST_EOF_GAP = 4
 pdfFile = None
@@ -4361,8 +4361,6 @@ class PDFBody :
             pdfIndirectObject.setObject(object)
             if offset != None:
                 pdfIndirectObject.setOffset(offset)
-            size = 12 + 3*len(newLine) + len(str(object.getRawValue())) + len(str(id))
-            pdfIndirectObject.setSize(size)
         else:
             if modification:
                 errorMessage = 'Object not found'
@@ -7558,6 +7556,8 @@ class PDFParser :
                 ret = self.readUntilSymbol(rawIndirectObject, 'endobj')
                 if ret[0] == -1:
                     pdfIndirectObject.getObject().terminatorMissing = True
+                else:
+                    self.charCounter += len('endobj')
             pdfIndirectObject.setSize(self.charCounter)
         except:
             errorMessage = 'Unspecified parsing error'
