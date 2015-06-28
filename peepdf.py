@@ -96,7 +96,7 @@ def getPeepXML(statsDict, version, revision):
     size = etree.SubElement(basicInfo, 'size')
     size.text = statsDict['Size']
     pagesCount = statsDict['Pages Number']
-    if pagesCount not in (None, -1):
+    if pagesCount is not None:
         pages = etree.SubElement(basicInfo, 'pages')
         pages.text = statsDict['Pages Number']
     detection = etree.SubElement(basicInfo, 'detection')
@@ -442,8 +442,6 @@ try:
                     #stats += beforeStaticLabel + 'SHA256: ' + resetColor + statsDict['SHA256'] + newLine
                     stats += beforeStaticLabel + 'Size: ' + resetColor + statsDict['Size'] + ' bytes' + newLine
                     pagesCount = statsDict['Pages Number']
-                    if pagesCount is None:
-                        pagesCount = 'None'
                     stats += beforeStaticLabel + 'Pages Number: ' + resetColor + pagesCount + newLine
                     if options.checkOnVT:
                         if statsDict['Detection'] != []:
