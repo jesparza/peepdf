@@ -6325,7 +6325,7 @@ class PDFFile :
             self.addError('/Count element missing')
             return None
         pagesCount = count.getValue()
-        if type(pagesCount) != int:
+        if not pagesCount.isdigit():
             self.addError('Invalid /Count value')
             return None
         return pagesCount
