@@ -6325,6 +6325,9 @@ class PDFFile :
             self.addError('/Count element missing')
             return None
         pagesCount = count.getValue()
+        if type(pagesCount) != int:
+            self.addError('Invalid /Count value')
+            return None
         return pagesCount
 
     def getReferencesIn (self, id, version = None) :
