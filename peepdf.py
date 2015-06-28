@@ -95,6 +95,10 @@ def getPeepXML(statsDict, version, revision):
     sha256.text = statsDict['SHA256']
     size = etree.SubElement(basicInfo, 'size')
     size.text = statsDict['Size']
+    pagesCount = statsDict['Pages Number']
+    if pagesCount is not None:
+        pages = etree.SubElement(basicInfo, 'pages')
+        pages.text = statsDict['Pages Number']
     detection = etree.SubElement(basicInfo, 'detection')
     if statsDict['Detection'] != [] and statsDict['Detection'] != None:
         detectionRate = etree.SubElement(detection, 'rate')
@@ -180,6 +184,7 @@ def getPeepXML(statsDict, version, revision):
         actions = statsVersion['Actions']
         events = statsVersion['Events']
         vulns = statsVersion['Vulns']
+        properties = statsVersion['Properties']
         elements = statsVersion['Elements']
         suspicious = etree.SubElement(versionInfo, 'suspicious_elements')
         if events != None or actions != None or vulns != None or elements != None:
@@ -219,12 +224,22 @@ def getPeepXML(statsDict, version, revision):
                             cve.text = vulnCVE
                     for id in vulns[vuln]:
                         etree.SubElement(vulnInfo, 'container_object', id = str(id))
+        suspiciousProperties = etree.SubElement(versionInfo, 'suspicious_properties')
+        if properties is not None:
+            propertiesInfo = etree.SubElement(suspiciousProperties, 'suspicious_properties')
+            for p in properties:
+                etree.SubElement(propertiesInfo, 'property', name=p)
         urls = statsVersion['URLs']
         suspiciousURLs = etree.SubElement(versionInfo, 'suspicious_urls')
         if urls != None:
             for url in urls:
                 urlInfo = etree.SubElement(versionInfo, 'url')
                 urlInfo.text = url
+    suspiciousProperties = statsDict['suspiciousProperties']
+    suspiciousPropertiesInfo = etree.SubElement(root, 'Suspicious_properties')
+    if suspiciousProperties != None:
+        for suspicious in suspiciousProperties:
+            etree.SubElement(suspiciousPropertiesInfo, 'property', name=suspicious )
     return etree.tostring(root, pretty_print=True)
 
     
@@ -340,15 +355,18 @@ try:
             fileName = args[0]
             if not os.path.exists(fileName):
                 sys.exit('Error: The file "'+fileName+'" does not exist!!')
+            elif not os.path.isfile(fileName):
+                sys.exit('Error: "'+fileName+'" is not a file!!')
         elif len(args) > 1 or (len(args) == 0 and not options.isInteractive):
             sys.exit(argsParser.print_help())
             
         if options.scriptFile != None:
             if not os.path.exists(options.scriptFile):
                 sys.exit('Error: The script file "'+options.scriptFile+'" does not exist!!')
-            
+
         if fileName != None:
             pdfParser = PDFParser()
+            #print options.isForceMode, options.isLooseMode, options.isManualAnalysis
             ret,pdf = pdfParser.parse(fileName, options.isForceMode, options.isLooseMode, options.isManualAnalysis)
             if options.checkOnVT:
                 # Checks the MD5 on VirusTotal
@@ -371,7 +389,7 @@ try:
                     else:
                         pdf.addError('Bad response from VirusTotal!!')
             statsDict = pdf.getStats()
-        
+
         if options.xmlOutput:
             try:
                 from lxml import etree
@@ -418,12 +436,13 @@ try:
                     if stats != '':
                         stats += newLine
                     statsDict = pdf.getStats()
-                                                    
                     stats += beforeStaticLabel + 'File: ' + resetColor + statsDict['File'] + newLine
                     stats += beforeStaticLabel + 'MD5: ' + resetColor + statsDict['MD5'] + newLine
                     stats += beforeStaticLabel + 'SHA1: ' + resetColor + statsDict['SHA1'] + newLine
                     #stats += beforeStaticLabel + 'SHA256: ' + resetColor + statsDict['SHA256'] + newLine
                     stats += beforeStaticLabel + 'Size: ' + resetColor + statsDict['Size'] + ' bytes' + newLine
+                    pagesCount = statsDict['Pages Number']
+                    stats += beforeStaticLabel + 'Pages Number: ' + resetColor + str(pagesCount) + newLine
                     if options.checkOnVT:
                         if statsDict['Detection'] != []:
                             detectionReportInfo = ''
@@ -489,6 +508,7 @@ try:
                         actions = statsVersion['Actions']
                         events = statsVersion['Events']
                         vulns = statsVersion['Vulns']
+                        properties = statsVersion['Properties']
                         elements = statsVersion['Elements']
                         if events != None or actions != None or vulns != None or elements != None:
                             stats += newLine + beforeStaticLabel + '\tSuspicious elements:' + resetColor + newLine
@@ -520,6 +540,10 @@ try:
                                         stats = stats[:-1] + '): ' + resetColor + str(elements[element]) + newLine
                                     else:
                                         stats += '\t\t' + beforeStaticLabel + element + ': ' + resetColor + str(elements[element]) + newLine
+                        if properties != None:
+                            stats += newLine + beforeStaticLabel + '\tSuspicious Properties:' + resetColor + newLine
+                            for prop in properties:
+                                stats += '\t\t' + beforeStaticLabel + prop + newLine
                         if COLORIZED_OUTPUT and not options.avoidColors:
                             beforeStaticLabel = staticColor
                         urls = statsVersion['URLs']
@@ -528,6 +552,13 @@ try:
                             for url in urls:
                                 stats += '\t\t' + url + newLine
                         stats += newLine * 2
+                    if COLORIZED_OUTPUT and not options.avoidColors:
+                       beforeStaticLabel = warningColor
+                    suspiciousProperties = statsDict['suspiciousProperties']
+                    if suspiciousProperties != None:
+                        stats += newLine + beforeStaticLabel + 'Suspicious Properties:' + resetColor + newLine
+                        for suspicious in suspiciousProperties:
+                            stats += '\t' + beforeStaticLabel + suspicious + resetColor + newLine
                 if fileName != None:
                     print stats
                 if options.isInteractive:

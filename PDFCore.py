@@ -26,6 +26,9 @@
 '''
 
 import sys,os,re,hashlib,struct,aes as AES
+from operator import itemgetter
+import magic
+from difflib import SequenceMatcher
 from PDFUtils import *
 from PDFCrypto import *
 from JSAnalysis import *
@@ -37,6 +40,13 @@ MAL_EOBJ = 3
 MAL_ESTREAM = 4
 MAL_XREF = 5
 MAL_BAD_HEAD = 6
+MAX_HEAD_VER_LEN = 10
+MAX_HEAD_BIN_LEN = 10
+MAX_STR_LEN = 2000
+MAX_STREAM_SIZE = 50000
+MAX_OBJ_GAP = 4 + 4  # compensation for ignored whitespaces
+MAX_PRE_HEAD_GAP = 4
+MAX_POST_EOF_GAP = 4
 pdfFile = None
 newLine = os.linesep
 isForceMode = False
@@ -55,6 +65,28 @@ monitorizedElements = ['/EmbeddedFiles ',
                        '/RichMedia',
                        '.rawValue',
                        'keep.previous']
+monitorizedIndicators = {'versionBased':{
+                             'invalidSubtype': ('Invalid stream /Subtype', 'stream'),
+                             'invalidLength': ('Invalid stream /Length', 'stream'),
+                             'largeSize': ('Large streams', 'stream'),
+                             'nameObfuscated': ('Obfuscated names', '*'),
+                             'stringObfuscated': ('Obfuscated strings', '*'),
+                             'largeStringPresent': ('Large strings', '*'),
+                             'missingXref': ('Missing in xref', '*'),
+                             'streamTerminatorMissing': ('Missing stream terminator', 'stream'),
+                             'terminatorMissing': ('Missing object terminator', '*'),
+                             'garbageInside': ('Garbage bytes between elements', '*'),
+                             'missingCatalog': ('Not referenced from Catalog', '*')},
+                         'fileBased':{
+                             'brokenXref': 'Xref Table broken',
+                             'illegalXref': 'Illegal entries in Xref',
+                             'largeHeader': 'Header too large',
+                             'largeBinaryHeader': 'Binary Header too large',
+                             'garbageHeaderPresent': 'Garbage Header before PDF Header',
+                             'gapBeforeHeaderPresent': 'Large Gap before Header',
+                             'garbageAfterEOFPresent': 'Garbage Bytes after last %EOF',
+                             'gapAfterEOFPresent': 'Large gap after last %EOF',
+                             'garbageBetweenObjects': 'Garbage bytes between objects'}}
 jsVulns = ['mailto',
            'Collab.collectEmailInfo',
            'util.printf',
@@ -403,6 +435,13 @@ class PDFBool (PDFObject) :
         self.referencesInElements = {}
         self.value = self.rawValue = self.encryptedValue = value
         self.compressedIn = None
+        self.nameObfuscated = False
+        self.stringObfuscated = False
+        self.largeStringPresent = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
+        self.garbageInside = False
 
 
 class PDFNull (PDFObject) :
@@ -420,6 +459,13 @@ class PDFNull (PDFObject) :
         self.containsJScode = False
         self.referencesInElements = {}
         self.references = []
+        self.nameObfuscated = False
+        self.stringObfuscated = False
+        self.largeStringPresent = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
+        self.garbageInside = False
 
 
 class PDFNum (PDFObject) :
@@ -437,6 +483,13 @@ class PDFNum (PDFObject) :
         self.containsJScode = False
         self.referencesInElements = {}
         self.references = []
+        self.nameObfuscated = False
+        self.stringObfuscated = False
+        self.largeStringPresent = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
+        self.garbageInside = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -489,6 +542,7 @@ class PDFName (PDFObject) :
         self.JSCode = []
         self.references = []
         self.compressedIn = None
+        self.name = name
         if name[0] == '/':
             self.rawValue = self.value = self.encryptedValue = name
         else:
@@ -498,6 +552,13 @@ class PDFName (PDFObject) :
         self.encryptedValue = ''
         self.encrypted = False
         self.referencesInElements = {}
+        self.nameObfuscated = False
+        self.stringObfuscated = False
+        self.largeStringPresent = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
+        self.garbageInside = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -510,6 +571,7 @@ class PDFName (PDFObject) :
         errorMessage = ''
         self.value = self.rawValue
         self.encryptedValue = self.rawValue
+        self.nameObfuscated = False
         hexNumbers = re.findall('#([0-9a-f]{2})', self.value, re.DOTALL | re.IGNORECASE)
         try:
             for hexNumber in hexNumbers:
@@ -518,6 +580,12 @@ class PDFName (PDFObject) :
             errorMessage = 'Error in hexadecimal conversion'
             self.addError(errorMessage)
             return (-1,errorMessage)
+        rawValue = str(self.rawValue)
+        newValue = str(self.value)
+        if newValue != rawValue:
+            self.nameObfuscated = True
+        else:
+            self.nameObfuscated = False
         return (0,'')
 
     def encodeChars(self):
@@ -546,7 +614,14 @@ class PDFString (PDFObject) :
         self.unescapedBytes = []
         self.urlsFound = []
         self.references = []
+        self.nameObfuscated = False
+        self.stringObfuscated = False
+        self.largeStringPresent = False
         self.referencesInElements = {}
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
+        self.garbageInside = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -598,6 +673,14 @@ class PDFString (PDFObject) :
             ret = self.encrypt()
             if ret[0] == -1:
                 return ret
+        rawValue = str(self.rawValue)
+        newValue = str(self.value)
+        if newValue != rawValue:
+            self.stringObfuscated = True
+        else:
+            self.stringObfuscated = False
+        if len(newValue) > MAX_STR_LEN:
+            self.largeStringPresent = True
         return (0,'')
 
     def encodeChars(self):
@@ -701,6 +784,13 @@ class PDFHexString (PDFObject) :
         self.urlsFound = []
         self.referencesInElements = {}
         self.references = []
+        self.nameObfuscated = False
+        self.stringObfuscated = False
+        self.largeStringPresent = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
+        self.garbageInside = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -751,6 +841,14 @@ class PDFHexString (PDFObject) :
             ret = self.encrypt()
             if ret[0] == -1:
                 return ret
+        rawValue = str(self.rawValue)
+        newValue = str(self.value)
+        if newValue != rawValue:
+            self.stringObfuscated = True
+        else:
+            self.stringObfuscated = False
+        if len(newValue) > MAX_STR_LEN:
+            self.largeStringPresent = True
         return (0,'')
 
     def encrypt(self, password = None):
@@ -843,6 +941,13 @@ class PDFReference (PDFObject) :
         self.containsJScode = False
         self.referencesInElements = {}
         self.references = []
+        self.nameObfuscated = False
+        self.stringObfuscated = False
+        self.largeStringPresent = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
+        self.garbageInside = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -914,6 +1019,13 @@ class PDFArray (PDFObject) :
         self.containsJScode = False
         self.referencesInElements = {}
         self.references = []
+        self.nameObfuscated = False
+        self.stringObfuscated = False
+        self.largeStringPresent = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
+        self.garbageInside = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -938,8 +1050,16 @@ class PDFArray (PDFObject) :
         self.JSCode = []
         self.unescapedBytes = []
         self.urlsFound = []
+        self.nameObfuscated = False
+        self.largeStringPresent = False
         for element in self.elements:
             if element != None:
+                if element.nameObfuscated is True:
+                    self.nameObfuscated = True
+                if element.stringObfuscated is True:
+                    self.stringObfuscated = True
+                if element.largeStringPresent is True:
+                    self.largeStringPresent = True
                 type = element.getType()
                 if type == 'reference':
                     self.references.append(element.getValue())
@@ -1182,6 +1302,13 @@ class PDFDictionary (PDFObject):
         self.elements = elements
         self.numElements = len(self.elements)
         self.references = []
+        self.nameObfuscated = False
+        self.stringObfuscated = False
+        self.largeStringPresent = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
+        self.garbageInside = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -1207,6 +1334,8 @@ class PDFDictionary (PDFObject):
         self.value = '<< '
         self.rawValue = '<< '
         self.encryptedValue = '<< '
+        self.nameObfuscated = False
+        self.largeStringPresent = False
         keys = self.elements.keys()
         values = self.elements.values()
         for i in range(len(keys)):
@@ -1219,6 +1348,12 @@ class PDFDictionary (PDFObject):
                     return (-1,errorMessage)
             else:
                 valueObject = values[i]
+            if valueObject.nameObfuscated is True:
+                self.nameObfuscated = True
+            if valueObject.stringObfuscated is True:
+                self.stringObfuscated = True
+            if valueObject.largeStringPresent is True and keys[i] != '/JS':
+                self.largeStringPresent = True
             v = valueObject.getValue()
             type = valueObject.getType()
             if keys[i] == '/Type':
@@ -1573,12 +1708,27 @@ class PDFStream (PDFDictionary) :
         self.urlsFound = []
         self.referencesInElements = {}
         self.references = []
-        self.size = 0
+        self.size = None
+        self.realSize = len(self.rawStream)
         self.filter = None
         self.filterParams = None
         self.file = None
         self.isEncodedStream = False
         self.decodingError = False
+        self.nameObfuscated = False
+        self.stringObfuscated = False
+        self.largeStringPresent = False
+        self.invalidLength = False
+        self.invalidSubtype = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
+        self.garbageInside = False
+        self.streamTerminatorMissing = False
+        if self.realSize > MAX_STREAM_SIZE:
+            self.largeSize = True
+        else:
+            self.largeSize = False
         if elements == {}:
             errorMessage = 'No dictionary in stream object'
             if isForceMode:
@@ -1605,6 +1755,10 @@ class PDFStream (PDFDictionary) :
         self.encryptedValue = '<< '
         keys = self.elements.keys()
         values = self.elements.values()
+        self.nameObfuscated = False
+        self.largeStringPresent = False
+        self.invalidLength = False
+        self.invalidSubtype = False
         if not onlyElements:
             self.references = []
             self.errors = []
@@ -1641,7 +1795,9 @@ class PDFStream (PDFDictionary) :
                 self.addError('Missing /Length in stream object')
             else:
                 return (-1,'Missing /Length in stream object')
-            
+        if self.size != None:
+            if abs(int(self.size) - self.realSize) > 4:
+                self.invalidLength = True
         if self.elements.has_key('/F'):
             self.file = self.elements['/F'].getValue()
             if os.path.exists(self.file):
@@ -1688,6 +1844,12 @@ class PDFStream (PDFDictionary) :
                 
         for i in range(len(keys)):
             valueElement = values[i]
+            if valueElement.nameObfuscated is True:
+                self.nameObfuscated = True
+            if valueElement.stringObfuscated is True:
+                self.stringObfuscated = True
+            if valueElement.largeStringPresent is True:
+                self.largeStringPresent = True
             if valueElement == None:
                 errorMessage = 'Stream dictionary has a None value'
                 self.addError(errorMessage)
@@ -1960,6 +2122,7 @@ class PDFStream (PDFDictionary) :
                     self.modifiedStream = False
                     self.newFilters = False
                     self.deletedFilters = False
+        self.verifySubType()
         if self.errors != []:
             return (-1,self.errors[-1])
         else:
@@ -2461,6 +2624,9 @@ class PDFStream (PDFDictionary) :
             @return: A boolean
         '''
         return self.decodingError
+
+    def isTerminated(self):
+        return not self.terminatorMissing
     
     def replace(self, string1, string2):
         stringFound = False
@@ -2589,7 +2755,60 @@ class PDFStream (PDFDictionary) :
         self.modifiedRawStream = True
         ret = self.update()
         return ret
-    
+
+    def verifySubType(self):
+        stats = self.getStats()
+        if 'Subtype' in stats.keys():
+            subType = stats['Subtype']
+            if subType == None:
+                return -1
+            if self.getElementByName('/Type') not in (None, []):
+                mainType = self.getElementByName('/Type').getValue()
+            else:
+                mainType = None
+            subType = subType.lower()
+            if subType[0] == '/':
+                subType = subType[1:]
+            subTypeDict = {
+                'image': 'image',
+                'form': 'text',
+                'xml': 'text',
+                'text': 'text',
+            }
+            ignoreSubTypeList = [
+                'application/zlib'
+            ]
+            subTypeFound = False
+            for st in subTypeDict:
+                if st.lower() in subType:
+                    subTypeKey = st
+                    subTypeFound = True
+                    break
+            if self.decodingError is True:
+                stream = self.getRawStream()
+            else:
+                stream = self.getStream()
+            if stream.isspace():
+                return True
+            m = magic.Magic(mime=True)
+            subTypeMagic = m.from_buffer(stream)
+            subTypeMagic = subTypeMagic.lower()
+            if SequenceMatcher(None, subType, subTypeMagic).ratio() >= 0.8:
+                return True
+            if subTypeMagic in ignoreSubTypeList:
+                return -1
+            if subTypeFound is False:
+                return -1
+            if subTypeDict[subTypeKey] not in subTypeMagic:
+                if 'XObject' in mainType:
+                    return -1
+                self.invalidSubtype = True
+                return False
+            else:
+                return True
+        else:
+            return -1
+
 
 class PDFObjectStream (PDFStream) :
     def __init__(self, rawDict = '', rawStream = '', elements = {}, rawNames = {}, compressedObjectsDict = {}) :
@@ -2624,12 +2843,25 @@ class PDFObjectStream (PDFStream) :
         self.firstObjectOffset = 0
         self.numCompressedObjects = 0
         self.extends = None
-        self.size = 0
+        self.size = None
+        self.realSize = None
         self.filter = None
         self.filterParams = None
         self.file = None
         self.isEncodedStream = False
         self.decodingError = False
+        self.nameObfuscated = False
+        self.stringObfuscated = False
+        self.largeStringPresent = False
+        self.terminatorMissing = False
+        self.garbageInside = False
+        self.streamTerminatorMissing = False
+        self.invalidLength = False
+        self.invalidSubtype = False
+        if self.realSize > MAX_STREAM_SIZE:
+            self.largeSize = True
+        else:
+            self.largeSize = False
         if elements != {}:
             ret = self.update()
             if ret[0] == -1:
@@ -2654,6 +2886,10 @@ class PDFObjectStream (PDFStream) :
         self.encryptedValue = '<< '
         keys = self.elements.keys()
         values = self.elements.values()
+        self.nameObfuscated = False
+        self.largeStringPresent = False
+        self.invalidLength = False
+        self.invalidSubtype = False
         if not onlyElements:
             self.errors = []
             self.references = []
@@ -2705,7 +2941,10 @@ class PDFObjectStream (PDFStream) :
                 self.addError('Missing /Length in stream object')
             else:
                 return (-1,'Missing /Length in stream object')
-            
+
+        if self.size != None:
+            if abs(int(self.size) - self.realSize) > 4:
+                self.invalidLength = True
         if self.elements.has_key('/F'):
             self.file = self.elements['/F'].getValue()
             if os.path.exists(self.file):
@@ -2759,6 +2998,12 @@ class PDFObjectStream (PDFStream) :
                     valueElement = PDFString('')
                 else:
                     return (-1,'Stream dictionary has a None value')
+            if valueElement.nameObfuscated is True:
+                self.nameObfuscated = True
+            if valueElement.stringObfuscated is True:
+                self.stringObfuscated = True
+            if valueElement.largeStringPresent is True:
+                self.largeStringPresent = True
             v = valueElement.getValue()
             type = valueElement.getType()
             if type == 'reference':
@@ -3059,6 +3304,7 @@ class PDFObjectStream (PDFStream) :
                     self.modifiedStream = False
                     self.newFilters = False
                     self.deletedFilters = False
+        self.verifySubType()
         if self.errors != []:
             return (-1,self.errors[-1])
         else:
@@ -3083,6 +3329,9 @@ class PDFObjectStream (PDFStream) :
             return None
         else:
             return self.indexes.index(id)
+
+    def isTerminated(self):
+        return not self.terminatorMissing
                     
     def replace(self, string1, string2):
         stringFound = False
@@ -3201,6 +3450,11 @@ class PDFIndirectObject :
         self.generationNumber = 0 # int
         self.id = None # int
         self.size = 0 # int
+        self.missingXref = False
+        self.missingCatalog = False
+        self.terminatorMissing = False
+        self.garbageInside = False
+        self.streamTerminatorMissing = False
         
     def contains(self, string):
         return self.object.contains(string)
@@ -3237,6 +3491,9 @@ class PDFIndirectObject :
 
     def isFaulty(self):
         return self.object.isFaulty()
+
+    def isTerminated(self):
+        return not self.terminatorMissing
     
     def setGenerationNumber(self, generationNumber):
         self.generationNumber = generationNumber
@@ -3783,6 +4040,7 @@ class PDFBody :
         self.suspiciousEvents = {}
         self.suspiciousActions = {}
         self.suspiciousElements = {}
+        self.suspiciousProperties = []
         self.vulns = {}
         self.JSCode = []
         self.URLs = []
@@ -4016,6 +4274,9 @@ class PDFBody :
     
     def getSuspiciousEvents(self):
         return self.suspiciousEvents
+
+    def getSuspiciousProperties(self):
+        return self.suspiciousProperties
     
     def getURLs(self):
         return self.URLs
@@ -4100,8 +4361,6 @@ class PDFBody :
             pdfIndirectObject.setObject(object)
             if offset != None:
                 pdfIndirectObject.setOffset(offset)
-            size = 12 + 3*len(newLine) + len(str(object.getRawValue())) + len(str(id))
-            pdfIndirectObject.setSize(size)
         else:
             if modification:
                 errorMessage = 'Object not found'
@@ -4252,6 +4511,26 @@ class PDFBody :
                         self.suspiciousElements[printedElement].append(id)
                 elif not delete:
                     self.suspiciousElements[printedElement] = [id]
+        objectType = pdfObject.getType()
+        for rawIndicatorVar in monitorizedIndicators['versionBased'].keys():
+            indicatorType = monitorizedIndicators['versionBased'][rawIndicatorVar][1]
+            if indicatorType != objectType and indicatorType != '*':
+                continue
+            indicatorVar = 'pdfObject.' + str(rawIndicatorVar)
+            try:
+                indicatorVar = eval(indicatorVar)
+            except AttributeError:
+                continue
+            if indicatorVar not in (None, False) or delete:
+                printedIndicator = monitorizedIndicators['versionBased'][rawIndicatorVar][0]
+                if self.suspiciousElements.has_key(printedIndicator):
+                    if delete:
+                        if id in self.suspiciousElements[printedIndicator]:
+                            self.suspiciousElements[printedIndicator].remove(id)
+                    elif id not in self.suspiciousElements[printedIndicator]:
+                        self.suspiciousElements[printedIndicator].append(id)
+                elif not delete:
+                    self.suspiciousElements[printedIndicator] = [id]
         if pdfObject.containsJS():
             if delete:
                 jsCodeArray = pdfObject.getJSCode()
@@ -4616,7 +4895,8 @@ class PDFFile :
         self.version = ''
         self.headerOffset = 0
         self.garbageHeader = ''
-        self.suspiciousElements = {}
+        self.garbageAfterEOF = ''
+        self.suspiciousProperties = {}
         self.updates = 0
         self.endLine = ''
         self.trailer = [] # PDFTrailer[]
@@ -4626,6 +4906,17 @@ class PDFFile :
         self.numEncodedStreams = 0
         self.numDecodingErrors = 0
         self.maxObjectId = 0
+        self.pagesCount = 0
+        self.brokenXref = False
+        self.illegalXref = False
+        self.largeHeader = False
+        self.largeBinaryHeader= False
+        self.garbageHeaderPresent = False
+        self.gapBeforeHeaderPresent = False
+        self.garbageAfterEOFPresent = False
+        self.gapAfterEOFPresent = False
+        self.garbageBetweenObjects = False
+
 
     def addBody(self, newBody):
         if newBody != None and isinstance(newBody,PDFBody):
@@ -4662,7 +4953,7 @@ class PDFFile :
             self.trailer.append(newTrailerArray)
             return (0,'')
         else:
-            return (-1,'Bad PDFTrailer array supplied')    
+            return (-1,'Bad PDFTrailer array supplied')
 
     def createObjectStream(self, version = None, id = None, objectIds = []):
         errorMessage = ''
@@ -5370,12 +5661,43 @@ class PDFFile :
                                     self.addError(ret[1])
         if errorMessage != '':
             return (-1, errorMessage)
+        if password == '':
+            pdfFile.suspiciousProperties['File encrypted with default password'] = '#TODO'
         return (0,'')
 
     def deleteObject (self, id) :
         # Remove references too 
         pass
-    
+
+    def detectGarbageBetweenObjects(self):
+        offsetDict = self.getOffsets()
+        offsetList = []
+        for version, content in enumerate(offsetDict):
+            for element in content.keys():
+                offset = content[element]
+                if type(offset) == tuple:
+                    offsetList.append((version, element, offset[0], offset[0] + offset[1]))
+                elif type(offset) == list:
+                    for object in offset:
+                        offsetList.append((version, int(object[0]), object[1], object[1] + object[2]))
+        offsetList = sorted(offsetList, key=itemgetter(2))
+        garbageList = []
+        for index, offset in enumerate(offsetList):
+            if index == 0:
+                continue
+            if index == len(offsetList) - 1:
+                break
+            if offsetList[index+1][2] - offset[3] > MAX_OBJ_GAP:
+                garbageList.append((offsetList[index+1][0], offsetList[index+1][1]))
+                self.garbageBetweenObjects = True
+        text = 'Garbage Bytes before'
+        for obj in garbageList:
+            if text in self.body[obj[0]].suspiciousElements:
+                self.body[obj[0]].suspiciousElements[text].append(obj[1])
+            else:
+                self.body[obj[0]].suspiciousElements[text] = [obj[1]]
+        return False
+
     def encodeChars(self):
         errorMessage = ''
         for i in range(self.updates+1):
@@ -5762,7 +6084,81 @@ class PDFFile :
             if infoId == None and streamTrailer != None:
                 infoId = streamTrailer.getInfoId()
             return infoId
-            
+
+    def _updateReferenceList(self, object, objectId, version, isolatedList=[]):
+        if objectId in isolatedList:
+            isolatedList.remove(objectId)
+        else:
+            return 0
+        for reference in object.getReferences():
+            referenceId = reference.split()[0]
+            referenceId = int(referenceId)
+            referenceObject = self.getObject(referenceId, version = version)
+            self._updateReferenceList(referenceObject, referenceId, version, isolatedList)
+
+    def getIsolatedObjects(self):
+        if filter(None, self.getCatalogObjectId()) == []:
+            return {}
+        isolatedListDict = {}
+        objectsDict= {}
+        catalogIdLinear = None
+        infoIdLinear = None
+        for version in range(self.updates+1):
+            catalogId = None
+            infoId = None
+            trailer, streamTrailer = self.trailer[version]
+            if trailer != None:
+                catalogId = trailer.getCatalogId()
+                infoId = trailer.getInfoId()
+            if catalogId == None and streamTrailer != None:
+                catalogId = streamTrailer.getCatalogId()
+            if infoId == None and streamTrailer != None:
+                infoId = streamTrailer.getInfoId()
+            if self.linearized:
+                objectsDict.update(self.body[version].getObjects())
+                if catalogId is not None:
+                    catalogIdLinear = catalogId
+                    infoIdLinear = infoId
+                if catalogIdLinear is not None:
+                    catalog = self.getObject(catalogIdLinear, version = version)
+                else:
+                    catalog = self.getObject(catalogId, version = version)
+                if catalog is not None:
+                    catalogLinear = catalog
+            else:
+                objectsDict = self.body[version].getObjects()
+                catalog = self.getCatalogObject(version = version)
+                isolatedList = objectsDict.keys()
+                if infoId in isolatedList:
+                    isolatedList.remove(infoId)
+                self._updateReferenceList(catalog, catalogId, version=version, isolatedList=isolatedList)
+                isolatedListDict[version] = isolatedList
+                for objectId in isolatedList:
+                    indirectObj = self.getObject(objectId, indirect=True)
+                    indirectObj.getObject().missingCatalog = True
+                    self.body[version].deregisterObject(indirectObj)
+                    self.body[version].registerObject(indirectObj)
+        if self.linearized:
+            isolatedList = objectsDict.keys()
+            if infoIdLinear in isolatedList:
+                isolatedList.remove(infoIdLinear)
+            self._updateReferenceList(catalogLinear, catalogIdLinear, version=None, isolatedList=isolatedList)
+            for objectId in isolatedList:
+                for version in range(self.updates+1):
+                    if objectId in self.body[version].getObjects().keys():
+                        if version in isolatedListDict.keys():
+                            isolatedListDict[version].append(objectId)
+                        else:
+                            isolatedListDict[version] = []
+                            isolatedListDict[version].append(objectId)
+                        indirectObj = self.getObject(objectId, indirect=True)
+                        indirectObj.getObject().missingCatalog = True
+                        self.body[version].deregisterObject(indirectObj)
+                        self.body[version].registerObject(indirectObj)
+                        break
+        return isolatedListDict
+
+
     def getJavascriptCode (self, version = None) :
         JSCode = []
         if version == None:
@@ -5893,7 +6289,7 @@ class PDFFile :
                 trailerSize = trailer.getSize()
                 eofOffset = trailer.getEOFOffset()
                 offsets['trailer'] = (trailerOffset,trailerSize)
-                offsets['eof'] = (eofOffset,0)
+                offsets['eof'] = (eofOffset,5)
             else:
                 offsets['trailer'] = None
                 offsets['eof'] = None
@@ -5906,7 +6302,34 @@ class PDFFile :
     
     def getPath(self):
         return self.path
-    
+
+    def getPagesCount(self):
+        catalog = self.getCatalogObject()
+        if catalog == None or len(catalog) < 1:
+            self.addError('Pages Number not found as Catalog is None')
+            return None
+        if catalog[0] is None:
+            self.addError('Pages Number not found as Catalog is None')
+            return None
+        pagesElement = catalog[0].getElement('/Pages')
+        if pagesElement == None:
+            self.addError('/Pages element missing')
+            return None
+        pagesElementId = pagesElement.getId()
+        pages = self.getObject(pagesElementId)
+        if pages is None:
+            self.addError('/Pages element missing')
+            return None
+        count = pages.getElement('/Count')
+        if count == None:
+            self.addError('/Count element missing')
+            return None
+        pagesCount = count.getValue()
+        if not pagesCount.isdigit():
+            self.addError('Invalid /Count value')
+            return None
+        return pagesCount
+
     def getReferencesIn (self, id, version = None) :
         ''' 
             Get the references in an object
@@ -5992,6 +6415,7 @@ class PDFFile :
         stats['Comments'] = str(len(self.comments))
         stats['Errors'] = self.errors
         stats['Versions'] = []
+        stats['Pages Number'] = str(self.pagesCount)
         for version in range(self.updates+1):
             statsVersion = {}
             catalogId = None
@@ -6055,6 +6479,7 @@ class PDFFile :
             vulns = self.body[version].getVulns()
             elements = self.body[version].getSuspiciousElements()
             urls = self.body[version].getURLs()
+            properties = self.body[version].getSuspiciousProperties()
             if len(events) > 0:
                 statsVersion['Events'] = events
             else:
@@ -6075,11 +6500,28 @@ class PDFFile :
                 statsVersion['URLs'] = urls
             else:
                 statsVersion['URLs'] = None
+            if len(properties) > 0:
+                statsVersion['Properties'] = properties
+            else:
+                statsVersion['Properties'] = None
             stats['Versions'].append(statsVersion)
+        self.pagesCount = self.getPagesCount()
+        if self.pagesCount is not None:
+            stats['Pages Number'] = str(self.pagesCount)
+        else:
+            stats['Pages Number'] = None
+        suspiciousProperties = self.getSuspiciousProperties()
+        if suspiciousProperties is not None:
+            stats['suspiciousProperties'] = suspiciousProperties
+        else:
+            stats['suspiciousProperties'] = None
         return stats
 
-    def getSuspiciousComponents (self) :
-        pass
+    def getSuspiciousProperties (self) :
+        if len(self.suspiciousProperties) > 0:
+            return self.suspiciousProperties
+        else:
+            return None
             
     def getTrailer (self, version = None) :
         if version == None:
@@ -6518,6 +6960,9 @@ class PDFFile :
     def setGarbageHeader(self, garbage):
         self.garbageHeader = garbage
 
+    def setGarbageAfterEOF(self, garbage):
+        self.garbageAfterEOF = garbage
+
     def setHeaderOffset(self, offset):
         self.headerOffset = offset
 
@@ -6627,6 +7072,15 @@ class PDFFile :
             if streamTrailer != None:
                 if streamTrailer.getDictEntry('/Encrypt') != None:
                     self.setEncrypted(True)
+        for rawIndicatorVar in monitorizedIndicators['fileBased'].keys():
+            indicatorVar = 'self.' + str(rawIndicatorVar)
+            try:
+                indicatorVar = eval(indicatorVar)
+            except AttributeError:
+                continue
+            if indicatorVar not in (None, False):
+                printedIndicator = monitorizedIndicators['fileBased'][rawIndicatorVar]
+                self.suspiciousProperties[printedIndicator] = []
         return (0,'')
 
     def updateBody (self, version) :
@@ -6641,6 +7095,68 @@ class PDFFile :
         #TODO
         pass
 
+    def verifyXrefOffsets(self):
+        linearezedXrefObjectList = []
+        linearizedfaultyList = {}
+        for version in range(self.updates+1):
+            realObjectOffsetsArray = self.getOffsets(version)[0]
+            if 'objects' in realObjectOffsetsArray:
+                realObjectOffsetsArray = realObjectOffsetsArray['objects']
+            else:
+                return -1
+            realObjectOffsets = {}
+            for offsetIdTuple in realObjectOffsetsArray:
+                realObjectOffsets[offsetIdTuple[0]] = offsetIdTuple[1]
+            xrefSection = self.getXrefSection(version)[1]
+            xrefObjectList = []
+            if filter(None, xrefSection) == []:
+                self.body[version].suspiciousProperties.append('Xref Table missing')
+                continue
+            for section in xrefSection:
+                if section is None:
+                    continue
+                for subsection in section.getSubsectionsArray():
+                    if subsection.getNumObjects() != len(subsection.entries):
+                        self.illegalXref = True
+                    for count, objectEntry in enumerate(subsection.getEntries()):
+                        objectId = subsection.getObjectId(count)
+                        if objectId not in xrefObjectList:
+                            xrefObjectList.append(objectId)
+                        if objectId not in linearezedXrefObjectList:
+                            linearezedXrefObjectList.append(objectId)
+                        if objectEntry.getType() not in ('n', '1'):
+                            continue
+                        objectOffset = objectEntry.getObjectOffset()
+                        if (objectId not in realObjectOffsets.keys() and not self.linearized)  or\
+                                (objectId in realObjectOffsets.keys() and\
+                                     abs(realObjectOffsets[objectId] - objectOffset) > 4):
+                            self.brokenXref = True
+                if not self.linearized:
+                    xrefList = xrefObjectList
+                else:
+                    xrefList = linearezedXrefObjectList
+                if self.illegalXref is True:
+                    continue
+                for objectId in realObjectOffsets.keys():
+                    if objectId not in xrefList:
+                        indirectObj = self.getObject(objectId, indirect=True)
+                        indirectObj.getObject().missingXref = True
+                        self.body[version].deregisterObject(indirectObj)
+                        self.body[version].registerObject(indirectObj)
+                        if self.linearized:
+                            if objectId in linearizedfaultyList.keys():
+                                linearizedfaultyList[objectId].append(version)
+                            else:
+                                linearizedfaultyList[objectId] = [version]
+                    elif self.linearized and objectId in linearizedfaultyList.keys():
+                        idVersions = linearizedfaultyList[objectId]
+                        for version in idVersions:
+                            indirectObj = self.getObject(objectId, indirect=True, version=version)
+                            indirectObj.getObject().missingXref = False
+                            self.body[version].deregisterObject(indirectObj)
+                            self.body[version].registerObject(indirectObj)
+                        del linearizedfaultyList[objectId]
+
 
 class PDFParser :
     def __init__(self) :
@@ -6648,8 +7164,9 @@ class PDFParser :
         self.comments = []
         self.delimiters = [('<<','>>','dictionary'),('(',')','string'),('<','>','hexadecimal'),('[',']','array'),('{','}',''),('/','','name'),('%','','comment')]
         self.fileParts = []
-        self.charCounter = 0    
-    
+        self.charCounter = 0
+        self.tempVarObfuscation = False
+
     def parse (self, fileName, forceMode = False, looseMode = False, manualAnalysis = False) :
         '''
             Main method to parse a PDF document
@@ -6673,7 +7190,7 @@ class PDFParser :
         isManualAnalysis = manualAnalysis
         
         # Reading the file header
-        file = open(fileName,'rb')
+        file = open(fileName,'rbU')
         for line in file:
             if versionLine == '':
                 pdfHeaderIndex = line.find('%PDF-')
@@ -6699,7 +7216,17 @@ class PDFParser :
                 break
             headerOffset += len(line)
         file.close()
-        
+        if binaryLine != '':
+            validBinaryLine = False
+            for i in range(4):
+                if ord(binaryLine[i]) >= 128:
+                    validBinaryLine = True
+            if validBinaryLine is False:
+                binaryLine = ''
+        if len(versionLine) > MAX_HEAD_VER_LEN:
+            pdfFile.largeHeader = True
+        if len(binaryLine) > MAX_HEAD_BIN_LEN:
+            pdfFile.largeBinaryHeader = True
         # Getting the specification version
         versionLine = versionLine.replace('\r','')
         versionLine = versionLine.replace('\n','')
@@ -6713,9 +7240,12 @@ class PDFParser :
                 sys.exit('Error: Bad PDF header!! (' + versionLine + ')')
         else:
             pdfFile.setVersion(matchVersion[0][1])
-        if garbageHeader != '':
+        if garbageHeader != '' and matchVersion != []:
             pdfFile.setGarbageHeader(garbageHeader)
-            
+            if not garbageHeader.isspace() and garbageHeader != '':
+                pdfFile.garbageHeaderPresent = True
+            elif len(garbageHeader) > MAX_PRE_HEAD_GAP:
+                pdfFile.gapBeforeHeaderPresent = True
         # Getting the end of line
         if len(binaryLine) > 3:
             if binaryLine[-2:] == '\r\n':
@@ -6734,7 +7264,6 @@ class PDFParser :
                 pdfFile.binaryChars = binaryLine[1:5]
             else:
                 pdfFile.binary = False
-            
         # Reading the rest of the file
         fileContent = open(fileName,'rb').read()
         pdfFile.setSize(len(fileContent))
@@ -6757,6 +7286,13 @@ class PDFParser :
                     self.fileParts.append(fileContent)
                 else:
                     sys.exit(errorMessage)
+            else:
+                garbageAfterEOF = fileContent
+                pdfFile.setGarbageAfterEOF(garbageAfterEOF)
+                if not garbageAfterEOF.isspace() and garbageAfterEOF != '':
+                    pdfFile.garbageAfterEOFPresent = True
+                elif len(garbageAfterEOF) > MAX_POST_EOF_GAP:
+                    pdfFile.gapAfterEOFPresent = True
         pdfFile.setUpdates(len(self.fileParts) - 1)
         
         # Getting the body, cross reference table and trailer of each part of the file
@@ -6830,6 +7366,7 @@ class PDFParser :
                         else:
                             auxContent = auxContent[index+len(objectHeader):]
                             relativeOffset += len(objectHeader)
+                    self.tempVarObfuscation= False
                     ret = self.createPDFIndirectObject(rawObject, forceMode, looseMode)
                     if ret[0] != -1:
                         pdfIndirectObject = ret[1]
@@ -6854,17 +7391,17 @@ class PDFParser :
                                     xrefObject = pdfIndirectObject
                                     ret = self.createPDFCrossRefSectionFromStream(pdfIndirectObject)
                                     if ret[0] != -1:
-                                        xrefStreamSection = ret[1]    
+                                        xrefStreamSection = ret[1]
                             else:
                                 if not forceMode:
                                     sys.exit('Error: An error has occurred while parsing an indirect object!!')
                                 else:
-                                    pdfFile.addError('Object is None')        
+                                    pdfFile.addError('Object is None')
                         else:
                             if not forceMode:
                                 sys.exit('Error: Bad indirect object!!')
                             else:
-                                pdfFile.addError('Indirect object is None')    
+                                pdfFile.addError('Indirect object is None')
                     else:
                         if not forceMode:
                             sys.exit('Error: An error has occurred while parsing an indirect object!!')
@@ -6949,6 +7486,10 @@ class PDFParser :
             ret = pdfFile.decrypt()
             if ret[0] == -1:
                 pdfFile.addError(ret[1])
+        pdfFile.verifyXrefOffsets()
+        pdfFile.getIsolatedObjects()
+        pdfFile.detectGarbageBetweenObjects()
+        pdfFile.updateStats()
         return (0,pdfFile)
 
     def parsePDFSections(self, content, forceMode = False, looseMode = False):
@@ -6997,7 +7538,7 @@ class PDFParser :
             return [bodyContent,xrefContent,trailerContent]
         
         return [content,xrefContent,trailerContent]
-    
+
     def createPDFIndirectObject (self, rawIndirectObject, forceMode = False, looseMode = False) :
         '''
             Create a PDFIndirectObject instance from the raw content of the PDF file
@@ -7024,6 +7565,13 @@ class PDFParser :
             object = ret[1]
             pdfIndirectObject.setObject(object)
             ret = self.readSymbol(rawIndirectObject, 'endobj', False)
+            if ret[0] == -1:
+                pdfIndirectObject.getObject().garbageInside = True
+                ret = self.readUntilSymbol(rawIndirectObject, 'endobj')
+                if ret[0] == -1:
+                    pdfIndirectObject.getObject().terminatorMissing = True
+                else:
+                    self.charCounter += len('endobj')
             pdfIndirectObject.setSize(self.charCounter)
         except:
             errorMessage = 'Unspecified parsing error'
@@ -7119,6 +7667,8 @@ class PDFParser :
             else:
                 value = ret[1]
                 elements[key] = value
+                if name.nameObfuscated is True:
+                    value.nameObfuscated = True
             ret = self.readObject(rawContent[self.charCounter:], 'name')
             if ret[0] == -1:
                 if ret[1] != 'Empty content reading object':
@@ -7159,6 +7709,7 @@ class PDFParser :
         self.charCounter = 0
         elements = {}
         rawNames = {}
+        nameObfuscated = False
         ret = self.readObject(dict[self.charCounter:], 'name')
         if ret[0] == -1:
             if ret[1] != 'Empty content reading object':
@@ -7174,6 +7725,8 @@ class PDFParser :
         while name != None:
             key = name.getValue()
             rawNames[key] = name
+            if name.nameObfuscated is True:
+                nameObfuscated = True
             ret = self.readObject(dict[self.charCounter:])
             if ret[0] == -1:
                 if ret[1] != 'Empty content reading object':
@@ -7215,6 +7768,8 @@ class PDFParser :
                 if e.message != '':
                     errorMessage += ': '+e.message
                 return (-1, errorMessage)
+        if nameObfuscated is True:
+            pdfStream.nameObfuscated = True
         self.charCounter = realCounter
         return (0,pdfStream)
 
@@ -7646,13 +8201,17 @@ class PDFParser :
                         ret = self.readUntilSymbol(content, 'endstream')
                         if ret[0] == -1:
                             stream = content[self.charCounter:]
+                            isTerminated = False
                         else:
                             stream = ret[1]
                             self.readSymbol(content, 'endstream')
+                            isTerminated = True
                         ret = self.createPDFStream(dictContent, stream)
                         if ret[0] == -1:
                             return ret
                         pdfObject = ret[1]
+                        if isTerminated is False:
+                            pdfObject.streamTerminatorMissing = True
                         break
                     else:
                         if ret[0] != -1:
