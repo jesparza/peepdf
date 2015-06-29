@@ -2744,6 +2744,9 @@ class PDFStream (PDFDictionary) :
         ret = self.update()
         return ret
 
+    def setStreamTerminatorMisssing(self, value):
+        self.streamTerminatorMissing = value
+
     def setRawStream(self, newStream):
         '''
             Sets the raw value of the stream and updates the object if some modification is needed
@@ -8213,7 +8216,7 @@ class PDFParser :
                             return ret
                         pdfObject = ret[1]
                         if isTerminated is False:
-                            pdfObject.streamTerminatorMissing = True
+                            pdfObject.setStreamTerminatorMisssing(True)
                         break
                     else:
                         if ret[0] != -1:
