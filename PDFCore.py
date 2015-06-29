@@ -659,6 +659,14 @@ class PDFString (PDFObject) :
             errorMessage = 'Error in octal conversion'
             self.addError(errorMessage)
             return (-1,errorMessage)
+        rawValue = str(self.rawValue)
+        newValue = str(self.value)
+        if newValue != rawValue:
+            self.stringObfuscated = True
+        else:
+            self.stringObfuscated = False
+        if len(rawValue) > MAX_STR_LEN:
+            self.largeStringPresent = True
         if isJavascript(self.value):
             self.containsJScode = True
             self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.value, jsContexts['global'], isManualAnalysis)
@@ -673,14 +681,6 @@ class PDFString (PDFObject) :
             ret = self.encrypt()
             if ret[0] == -1:
                 return ret
-        rawValue = str(self.rawValue)
-        newValue = str(self.value)
-        if newValue != rawValue:
-            self.stringObfuscated = True
-        else:
-            self.stringObfuscated = False
-        if len(newValue) > MAX_STR_LEN:
-            self.largeStringPresent = True
         return (0,'')
 
     def encodeChars(self):
@@ -2757,9 +2757,8 @@ class PDFStream (PDFDictionary) :
         return ret
 
     def verifySubType(self):
-        stats = self.getStats()
-        if 'Subtype' in stats.keys():
-            subType = stats['Subtype']
+        if self.elements.has_key('/Subtype'):
+            subType = self.elements['/Subtype'].getValue()
             if subType == None:
                 return -1
             if self.getElementByName('/Type') not in (None, []):
