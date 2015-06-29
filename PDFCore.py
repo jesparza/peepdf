@@ -2760,7 +2760,7 @@ class PDFStream (PDFDictionary) :
         if self.elements.has_key('/Subtype'):
             subType = self.elements['/Subtype'].getValue()
             if subType == None:
-                return -1
+                return (-1,'Stream subtype missing')
             if self.getElementByName('/Type') not in (None, []):
                 mainType = self.getElementByName('/Type').getValue()
             else:
@@ -2788,25 +2788,25 @@ class PDFStream (PDFDictionary) :
             else:
                 stream = self.getStream()
             if stream.isspace():
-                return True
+                return (0,'')
             m = magic.Magic(mime=True)
             subTypeMagic = m.from_buffer(stream)
             subTypeMagic = subTypeMagic.lower()
             if SequenceMatcher(None, subType, subTypeMagic).ratio() >= 0.8:
-                return True
+                return (0,'')
             if subTypeMagic in ignoreSubTypeList:
-                return -1
+                return (0,'')
             if subTypeFound is False:
-                return -1
+                return (-1,'Subtype Not found using magic numbers')
             if subTypeDict[subTypeKey] not in subTypeMagic:
                 if 'XObject' in mainType:
-                    return -1
+                    return (-1,'stream part of XObject')
                 self.invalidSubtype = True
-                return False
+                return (-1,'Invalid Subtype')
             else:
-                return True
+                return (0,'')
         else:
-            return -1
+            return (-1,'/Subtype element missing')
 
 
 class PDFObjectStream (PDFStream) :
