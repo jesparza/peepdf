@@ -659,6 +659,14 @@ class PDFString (PDFObject) :
             errorMessage = 'Error in octal conversion'
             self.addError(errorMessage)
             return (-1,errorMessage)
+        rawValue = str(self.rawValue)
+        newValue = str(self.value)
+        if newValue != rawValue:
+            self.stringObfuscated = True
+        else:
+            self.stringObfuscated = False
+        if len(rawValue) > MAX_STR_LEN:
+            self.largeStringPresent = True
         if isJavascript(self.value):
             self.containsJScode = True
             self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.value, jsContexts['global'], isManualAnalysis)
@@ -673,14 +681,6 @@ class PDFString (PDFObject) :
             ret = self.encrypt()
             if ret[0] == -1:
                 return ret
-        rawValue = str(self.rawValue)
-        newValue = str(self.value)
-        if newValue != rawValue:
-            self.stringObfuscated = True
-        else:
-            self.stringObfuscated = False
-        if len(newValue) > MAX_STR_LEN:
-            self.largeStringPresent = True
         return (0,'')
 
     def encodeChars(self):
@@ -5696,7 +5696,7 @@ class PDFFile :
                 self.body[obj[0]].suspiciousElements[text].append(obj[1])
             else:
                 self.body[obj[0]].suspiciousElements[text] = [obj[1]]
-        return False
+        return (0,'')
 
     def encodeChars(self):
         errorMessage = ''
