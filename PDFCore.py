@@ -2757,9 +2757,8 @@ class PDFStream (PDFDictionary) :
         return ret
 
     def verifySubType(self):
-        stats = self.getStats()
-        if 'Subtype' in stats.keys():
-            subType = stats['Subtype']
+        if self.elements.has_key('/Subtype'):
+            subType = self.elements['/Subtype'].getValue()
             if subType == None:
                 return -1
             if self.getElementByName('/Type') not in (None, []):
