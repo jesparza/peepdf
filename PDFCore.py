@@ -6102,6 +6102,7 @@ class PDFFile :
         objectsDict= {}
         catalogIdLinear = None
         infoIdLinear = None
+        catalogLinear = None
         for version in range(self.updates+1):
             catalogId = None
             infoId = None
@@ -6138,6 +6139,8 @@ class PDFFile :
                     self.body[version].deregisterObject(indirectObj)
                     self.body[version].registerObject(indirectObj)
         if self.linearized:
+            if catalogLinear is None:
+                return -1
             isolatedList = objectsDict.keys()
             if infoIdLinear in isolatedList:
                 isolatedList.remove(infoIdLinear)
