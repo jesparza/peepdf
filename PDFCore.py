@@ -5695,7 +5695,7 @@ class PDFFile :
                 self.body[obj[0]].suspiciousElements[text].append(obj[1])
             else:
                 self.body[obj[0]].suspiciousElements[text] = [obj[1]]
-        return False
+        return (0,'')
 
     def encodeChars(self):
         errorMessage = ''
