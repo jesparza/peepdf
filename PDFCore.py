@@ -6138,7 +6138,10 @@ class PDFFile :
                 isolatedListDict[version] = isolatedList
                 for objectId in isolatedList:
                     indirectObj = self.getObject(objectId, indirect=True)
-                    indirectObj.getObject().missingCatalog = True
+                    object = indirectObj.getObject()
+                    if object.hasElement('/Linearized'):
+                        continue
+                    object.missingCatalog = True
                     self.body[version].deregisterObject(indirectObj)
                     self.body[version].registerObject(indirectObj)
         if self.linearized:
@@ -6157,7 +6160,10 @@ class PDFFile :
                             isolatedListDict[version] = []
                             isolatedListDict[version].append(objectId)
                         indirectObj = self.getObject(objectId, indirect=True)
-                        indirectObj.getObject().missingCatalog = True
+                        object = indirectObj.getObject()
+                        if object.hasElement('/Linearized'):
+                            continue
+                        object.missingCatalog = True
                         self.body[version].deregisterObject(indirectObj)
                         self.body[version].registerObject(indirectObj)
                         break
