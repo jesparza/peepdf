@@ -7227,17 +7227,6 @@ class PDFParser :
                 break
             headerOffset += len(line)
         file.close()
-        if binaryLine != '':
-            validBinaryLine = False
-            for i in range(4):
-                if ord(binaryLine[i]) >= 128:
-                    validBinaryLine = True
-            if validBinaryLine is False:
-                binaryLine = ''
-        if len(versionLine) > MAX_HEAD_VER_LEN:
-            pdfFile.largeHeader = True
-        if len(binaryLine) > MAX_HEAD_BIN_LEN:
-            pdfFile.largeBinaryHeader = True
         # Getting the specification version
         versionLine = versionLine.replace('\r','')
         versionLine = versionLine.replace('\n','')
@@ -7275,6 +7264,10 @@ class PDFParser :
                 pdfFile.binaryChars = binaryLine[1:5]
             else:
                 pdfFile.binary = False
+        if len(versionLine) > MAX_HEAD_VER_LEN:
+            pdfFile.largeHeader = True
+        if pdfFile.binary and len(binaryLine) > MAX_HEAD_BIN_LEN:
+            pdfFile.largeBinaryHeader = True
         # Reading the rest of the file
         fileContent = open(fileName,'rb').read()
         pdfFile.setSize(len(fileContent))
