@@ -34,6 +34,8 @@ from PDFCrypto import *
 from JSAnalysis import *
 from PDFFilters import decodeStream,encodeStream
 
+VT_KEY = 'fc90df3f5ac749a94a94cb8bf87e05a681a2eb001aef34b6a0084b8c22c97a64'
+
 MAL_ALL = 1
 MAL_HEAD = 2
 MAL_EOBJ = 3
@@ -4930,6 +4932,8 @@ class PDFFile :
         self.garbageAfterEOFPresent = False
         self.gapAfterEOFPresent = False
         self.garbageBetweenObjects = False
+        self.badHeader = False
+        self.missingEOF = False
 
 
     def addBody(self, newBody):
@@ -6409,6 +6413,122 @@ class PDFFile :
                             matchedObjects.append(indirectObject.id)
         return matchedObjects
 
+    def getScoringFactors(self, checkOnVT=False):
+        '''returns dictionay type containing factors used to score the pdf maliciousness'''
+        versionIndicators = monitorizedIndicators['versionBased']
+        fileIndicators = monitorizedIndicators['fileBased']
+        factorsDict = {}
+        for verIndicator in versionIndicators.values():
+            vIndicator = verIndicator[0]
+            factorsDict[vIndicator.strip()] = []
+        for action in monitorizedActions:
+            factorsDict[action.strip()] = []
+        for event in monitorizedEvents:
+            factorsDict[event.strip()] = []
+        for element in monitorizedElements:
+            factorsDict[element.strip()] = []
+        for vulns in jsVulns:
+            factorsDict[vulns.strip()] = []
+        factorsDict['streamDict'] = {}
+        for version in range(self.updates+1):
+            body = self.body[version]
+            factorsDict['urls'] = []
+            actions = self.body[version].getSuspiciousActions()
+            events = self.body[version].getSuspiciousEvents()
+            vulns = self.body[version].getVulns()
+            elements = self.body[version].getSuspiciousElements()
+            urls = self.body[version].getURLs()
+            for element in elements.keys():
+                element = element.strip()
+                if element in factorsDict.keys():
+                    factorsDict[element] += elements[element]
+                else:
+                    factorsDict[element] = elements[element]
+            for action in actions.keys():
+                action = action.strip()
+                if action in factorsDict.keys():
+                    factorsDict[action] += actions[action]
+                else:
+                    factorsDict[action] = actions[action]
+            for event in events.keys():
+                event = event.strip()
+                if event in factorsDict.keys():
+                    factorsDict[event] += events[event]
+                else:
+                    factorsDict[event] = events[event]
+            for vuln in vulns.keys():
+                vuln = vuln.strip()
+                if event in factorsDict.keys():
+                    factorsDict[event] += vulns[vuln]
+                else:
+                    factorsDict[event] = vulns[vuln]
+            for url in urls:
+                url = url.strip()
+                factorsDict['urls'].append(url)
+            streams = body.getStreams()
+            for stream in streams:
+                streamObj = self.getObject(stream, version)
+                streamDict = {}
+                streamDict['size'] = streamObj.realSize
+                streamFilter = streamObj.filter
+                if streamFilter is not None:
+                    streamFilter = streamFilter.getValue()
+                streamDict['filters'] = streamFilter
+                if type(streamFilter) == list:
+                    streamDict['numFilters'] = len(streamFilter)
+                elif type(streamFilter) == str:
+                    streamDict['numFilters'] = 1
+                else:
+                    streamDict['numFilters'] = 0
+                factorsDict['streamDict'][stream] = streamDict
+        for fIndicator in fileIndicators.keys():
+            indicatorVar = 'self.' + fIndicator
+            indicator = eval(indicatorVar)
+            indicatorVal = fileIndicators[fIndicator]
+            if indicatorVal in factorsDict.keys():
+                factorsDict[indicatorVal].append(indicator)
+            else:
+                factorsDict[indicatorVal] = indicator
+        factorsDict['pagesNumber'] = self.pagesCount
+        xrefSections = self.getXrefSection()
+        if xrefSections is None:
+            missingXref = True
+        else:
+            missingXref = False
+        factorsDict['missingXref'] = missingXref
+        catalogId = self.getCatalogObjectId()
+        catalogId = filter(None, catalogId)
+        if catalogId == []:
+            missingCatalog = True
+        else:
+            missingCatalog = False
+        factorsDict['missingCatalog'] = missingCatalog
+        factorsDict['badHeader'] = self.badHeader
+        factorsDict['missingEOF'] = self.missingEOF
+        if checkOnVT and self.detectionRate == []:
+            # Checks the MD5 on VirusTotal
+            md5Hash = self.getMD5()
+            ret = vtcheck(md5Hash, VT_KEY)
+            if ret[0] == -1:
+                pdf.addError(ret[1])
+            else:
+                vtJsonDict = ret[1]
+                if vtJsonDict.has_key('response_code'):
+                    if vtJsonDict['response_code'] == 1:
+                        if vtJsonDict.has_key('positives') and vtJsonDict.has_key('total'):
+                            self.setDetectionRate([vtJsonDict['positives'], vtJsonDict['total']])
+                        else:
+                            self.addError('Missing elements in the response from VirusTotal!!')
+                        if vtJsonDict.has_key('permalink'):
+                            self.setDetectionReport(vtJsonDict['permalink'])
+                    else:
+                        self.setDetectionRate(None)
+                else:
+                    self.addError('Bad response from VirusTotal!!')
+            factorsDict['detectionRate'] = self.detectionRate
+            factorsDict['detectionReport'] = self.detectionReport
+        return factorsDict
+
     def getSHA1(self):
         return self.sha1
     
@@ -7248,6 +7368,7 @@ class PDFParser :
                 pdfFile.setVersion(versionLine)
                 pdfFile.addError('Bad PDF header')
                 errorMessage = 'Bad PDF header'
+                pdfFile.badHeader = True
             else:
                 sys.exit('Error: Bad PDF header!! (' + versionLine + ')')
         else:
@@ -7296,6 +7417,7 @@ class PDFParser :
             self.charCounter = 0
         else:
             if self.fileParts == []:
+                PDFFile.missingEOF = True
                 errorMessage = '%%EOF not found'
                 if forceMode:
                     pdfFile.addError(errorMessage)

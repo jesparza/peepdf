@@ -368,7 +368,7 @@ try:
             pdfParser = PDFParser()
             #print options.isForceMode, options.isLooseMode, options.isManualAnalysis
             ret,pdf = pdfParser.parse(fileName, options.isForceMode, options.isLooseMode, options.isManualAnalysis)
-            if options.checkOnVT:
+            if options.checkOnVT and pdf.detectionRate == []:
                 # Checks the MD5 on VirusTotal
                 md5Hash = pdf.getMD5()
                 ret = vtcheck(md5Hash, VT_KEY)
