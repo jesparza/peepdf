@@ -1338,6 +1338,10 @@ class PDFDictionary (PDFObject):
         self.largeStringPresent = False
         keys = self.elements.keys()
         values = self.elements.values()
+        for name in self.rawNames.keys():
+            if name != self.rawNames[name].rawValue:
+                self.nameObfuscated = True
+                break
         for i in range(len(keys)):
             if values[i] == None:
                 errorMessage = 'Non-existing value for key "'+str(keys[i])+'"'
@@ -1759,6 +1763,10 @@ class PDFStream (PDFDictionary) :
         self.largeStringPresent = False
         self.invalidLength = False
         self.invalidSubtype = False
+        for name in self.rawNames.keys():
+            if name != self.rawNames[name].rawValue:
+                self.nameObfuscated = True
+                break
         if not onlyElements:
             self.references = []
             self.errors = []
@@ -2892,6 +2900,10 @@ class PDFObjectStream (PDFStream) :
         self.largeStringPresent = False
         self.invalidLength = False
         self.invalidSubtype = False
+        for name in self.rawNames.keys():
+            if name != self.rawNames[name].rawValue:
+                self.nameObfuscated = True
+                break
         if not onlyElements:
             self.errors = []
             self.references = []
@@ -7671,8 +7683,6 @@ class PDFParser :
             else:
                 value = ret[1]
                 elements[key] = value
-                if name.nameObfuscated is True:
-                    value.nameObfuscated = True
             ret = self.readObject(rawContent[self.charCounter:], 'name')
             if ret[0] == -1:
                 if ret[1] != 'Empty content reading object':
@@ -7713,7 +7723,6 @@ class PDFParser :
         self.charCounter = 0
         elements = {}
         rawNames = {}
-        nameObfuscated = False
         ret = self.readObject(dict[self.charCounter:], 'name')
         if ret[0] == -1:
             if ret[1] != 'Empty content reading object':
@@ -7729,8 +7738,6 @@ class PDFParser :
         while name != None:
             key = name.getValue()
             rawNames[key] = name
-            if name.nameObfuscated is True:
-                nameObfuscated = True
             ret = self.readObject(dict[self.charCounter:])
             if ret[0] == -1:
                 if ret[1] != 'Empty content reading object':
@@ -7772,8 +7779,6 @@ class PDFParser :
                 if e.message != '':
                     errorMessage += ': '+e.message
                 return (-1, errorMessage)
-        if nameObfuscated is True:
-            pdfStream.nameObfuscated = True
         self.charCounter = realCounter
         return (0,pdfStream)
 
