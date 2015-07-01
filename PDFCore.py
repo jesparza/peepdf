@@ -6091,7 +6091,7 @@ class PDFFile :
         if objectId in isolatedList:
             isolatedList.remove(objectId)
         else:
-            return 0
+            return (0, '')
         for reference in object.getReferences():
             referenceId = reference.split()[0]
             referenceId = int(referenceId)
@@ -6100,7 +6100,7 @@ class PDFFile :
 
     def getIsolatedObjects(self):
         if filter(None, self.getCatalogObjectId()) == []:
-            return {}
+            return (-1, 'Catalog object id not found')
         isolatedListDict = {}
         objectsDict= {}
         catalogIdLinear = None
@@ -6146,7 +6146,7 @@ class PDFFile :
                     self.body[version].registerObject(indirectObj)
         if self.linearized:
             if catalogLinear is None:
-                return -1
+                return (-1, 'Catalog object not found')
             isolatedList = objectsDict.keys()
             if infoIdLinear in isolatedList:
                 isolatedList.remove(infoIdLinear)
@@ -6167,7 +6167,7 @@ class PDFFile :
                         self.body[version].deregisterObject(indirectObj)
                         self.body[version].registerObject(indirectObj)
                         break
-        return isolatedListDict
+        return (0, isolatedListDict)
 
 
     def getJavascriptCode (self, version = None) :
