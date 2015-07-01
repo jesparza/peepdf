@@ -4934,6 +4934,7 @@ class PDFFile :
         self.garbageBetweenObjects = False
         self.badHeader = False
         self.missingEOF = False
+        self.score = 0
 
 
     def addBody(self, newBody):
@@ -4972,6 +4973,18 @@ class PDFFile :
             return (0,'')
         else:
             return (-1,'Bad PDFTrailer array supplied')
+
+    def calculateScore(self, checkOnVT=False):
+        indicators = self.getScoringFactors(checkOnVT=checkOnVT, nonNull=True)
+        f=open('scores.json', 'r')
+        scores = json.load(f)
+        threshold_score = 100
+        maliciousness = 0
+        for indicator in indicators:
+            maliciousness += scores[indicator]
+        maliciousness = (float(maliciousness)/float(threshold_score))*10.0
+        self.score = maliciousness
+        return (0, maliciousness)
 
     def createObjectStream(self, version = None, id = None, objectIds = []):
         errorMessage = ''
@@ -6413,58 +6426,76 @@ class PDFFile :
                             matchedObjects.append(indirectObject.id)
         return matchedObjects
 
-    def getScoringFactors(self, checkOnVT=False):
+    def getScoringFactors(self, checkOnVT=False, nonNull=False):
         '''returns dictionay type containing factors used to score the pdf maliciousness'''
         versionIndicators = monitorizedIndicators['versionBased']
         fileIndicators = monitorizedIndicators['fileBased']
         factorsDict = {}
-        for verIndicator in versionIndicators.values():
-            vIndicator = verIndicator[0]
-            factorsDict[vIndicator.strip()] = []
-        for action in monitorizedActions:
-            factorsDict[action.strip()] = []
-        for event in monitorizedEvents:
-            factorsDict[event.strip()] = []
-        for element in monitorizedElements:
-            factorsDict[element.strip()] = []
-        for vulns in jsVulns:
-            factorsDict[vulns.strip()] = []
+        if not nonNull:
+            for verIndicator in versionIndicators.values():
+                vIndicator = verIndicator[0]
+                if vIndicator in vulnsDict.keys():
+                    vIndicator = vulnsDict[vIndicator][0]
+                factorsDict[vIndicator.strip()] = []
+            for action in monitorizedActions:
+                if action in vulnsDict.keys():
+                    action = vulnsDict[action][0]
+                factorsDict[action.strip()] = []
+            for event in monitorizedEvents:
+                if event in vulnsDict.keys():
+                    event = vulnsDict[event][0]
+                factorsDict[event.strip()] = []
+            for element in monitorizedElements:
+                if element in vulnsDict.keys():
+                    element = vulnsDict[element][0]
+                factorsDict[element.strip()] = []
+            for vuln in jsVulns:
+                if vuln in vulnsDict.keys():
+                    vuln = vulnsDict[vuln][0]
+                factorsDict[vuln.strip()] = []
+            factorsDict['urls'] = []
         factorsDict['streamDict'] = {}
         for version in range(self.updates+1):
             body = self.body[version]
-            factorsDict['urls'] = []
             actions = self.body[version].getSuspiciousActions()
             events = self.body[version].getSuspiciousEvents()
             vulns = self.body[version].getVulns()
             elements = self.body[version].getSuspiciousElements()
             urls = self.body[version].getURLs()
             for element in elements.keys():
+                value = elements[element]
                 element = element.strip()
                 if element in factorsDict.keys():
-                    factorsDict[element] += elements[element]
+                    factorsDict[element] += value
                 else:
-                    factorsDict[element] = elements[element]
+                    factorsDict[element] = value
             for action in actions.keys():
+                value = actions[action]
                 action = action.strip()
                 if action in factorsDict.keys():
-                    factorsDict[action] += actions[action]
+                    factorsDict[action] += value
                 else:
-                    factorsDict[action] = actions[action]
+                    factorsDict[action] = value
             for event in events.keys():
+                value = events[event]
                 event = event.strip()
                 if event in factorsDict.keys():
-                    factorsDict[event] += events[event]
+                    factorsDict[event] += value
                 else:
-                    factorsDict[event] = events[event]
+                    factorsDict[event] = value
             for vuln in vulns.keys():
+                value = vulns[vuln]
                 vuln = vuln.strip()
-                if event in factorsDict.keys():
-                    factorsDict[event] += vulns[vuln]
+                if vuln in factorsDict.keys():
+                    factorsDict[vuln] += value
                 else:
-                    factorsDict[event] = vulns[vuln]
+                    factorsDict[vuln] = value
             for url in urls:
                 url = url.strip()
-                factorsDict['urls'].append(url)
+                if 'url' in factorsDict.keys():
+                    factorsDict['urls'].append(url)
+                else:
+                    factorsDict['urls'] = [url]
             streams = body.getStreams()
             for stream in streams:
                 streamObj = self.getObject(stream, version)
@@ -6510,7 +6541,7 @@ class PDFFile :
             md5Hash = self.getMD5()
             ret = vtcheck(md5Hash, VT_KEY)
             if ret[0] == -1:
-                pdf.addError(ret[1])
+                self.addError(ret[1])
             else:
                 vtJsonDict = ret[1]
                 if vtJsonDict.has_key('response_code'):
@@ -7628,6 +7659,7 @@ class PDFParser :
         pdfFile.getIsolatedObjects()
         pdfFile.detectGarbageBetweenObjects()
         pdfFile.updateStats()
+        pdfFile.calculateScore()
         return (0,pdfFile)
 
     def parsePDFSections(self, content, forceMode = False, looseMode = False):

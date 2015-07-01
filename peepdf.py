@@ -461,6 +461,14 @@ try:
                                  detectionRate = 'File not found on VirusTotal'
                             stats += beforeStaticLabel + 'Detection: ' + resetColor + detectionRate + newLine
                             stats += detectionReportInfo
+                    scoreColor = ''
+                    if COLORIZED_OUTPUT and not options.avoidColors:
+                        if pdf.score > 6:
+                            scoreColor = alertColor
+                        else:
+                            scoreColor = warningColor
+                    score = '%s%.1f%s/%d' % (scoreColor, pdf.score, resetColor, 10)
+                    stats += beforeStaticLabel + 'Maliciousness Score: ' + scoreColor + str(score) + resetColor + newLine
                     stats += beforeStaticLabel + 'Version: ' + resetColor + statsDict['Version'] + newLine
                     stats += beforeStaticLabel + 'Binary: ' + resetColor + statsDict['Binary'] + newLine
                     stats += beforeStaticLabel + 'Linearized: ' + resetColor + statsDict['Linearized'] + newLine
