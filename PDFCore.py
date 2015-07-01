@@ -6135,6 +6135,7 @@ class PDFFile :
         catalogIdLinear = None
         infoIdLinear = None
         catalogLinear = None
+        objectTypeList = ['dictionary', 'array', 'stream']
         for version in range(self.updates+1):
             catalogId = None
             infoId = None
@@ -6168,7 +6169,7 @@ class PDFFile :
                 for objectId in isolatedList:
                     indirectObj = self.getObject(objectId, indirect=True)
                     object = indirectObj.getObject()
-                    if object.hasElement('/Linearized'):
+                    if object.getType() in objectTypeList and object.hasElement('/Linearized'):
                         continue
                     object.missingCatalog = True
                     self.body[version].deregisterObject(indirectObj)
@@ -6190,7 +6191,7 @@ class PDFFile :
                             isolatedListDict[version].append(objectId)
                         indirectObj = self.getObject(objectId, indirect=True)
                         object = indirectObj.getObject()
-                        if object.hasElement('/Linearized'):
+                        if object.getType() in objectTypeList and object.hasElement('/Linearized'):
                             continue
                         object.missingCatalog = True
                         self.body[version].deregisterObject(indirectObj)
