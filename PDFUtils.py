@@ -327,6 +327,11 @@ def numToHex(num, numBytes):
     except:
 		return (-1,'Error in hexadecimal conversion')
     return (0,hexString)
+
+def removeComments(string):
+    string = re.sub(re.compile("/\*.*?\*/",re.DOTALL ) ,"" ,string) # remove all occurance streamed comments (/*COMMENT */) from string
+    string = re.sub(re.compile("//.*?\n" ) ,"" ,string) # remove all occurance singleline comments (//COMMENT\n ) from string
+    return string
                   		
 def numToString(num, numDigits):
 	'''
