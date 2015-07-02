@@ -77,7 +77,7 @@ monitorizedIndicators = {'versionBased':{
                              'missingXref': ('Missing in xref', '*'),
                              'streamTerminatorMissing': ('Missing stream terminator', 'stream'),
                              'terminatorMissing': ('Missing object terminator', '*'),
-                             'garbageInside': ('Garbage bytes between elements', '*'),
+                             'garbageInside': ('Garbage bytes before terminator', '*'),
                              'missingCatalog': ('Not referenced from Catalog', '*')},
                          'fileBased':{
                              'brokenXref': 'Xref Table broken',
@@ -87,8 +87,7 @@ monitorizedIndicators = {'versionBased':{
                              'garbageHeaderPresent': 'Garbage Header before PDF Header',
                              'gapBeforeHeaderPresent': 'Large Gap before Header',
                              'garbageAfterEOFPresent': 'Garbage Bytes after last %EOF',
-                             'gapAfterEOFPresent': 'Large gap after last %EOF',
-                             'garbageBetweenObjects': 'Garbage bytes between objects'}}
+                             'gapAfterEOFPresent': 'Large gap after last %EOF'}}
 jsVulns = ['mailto',
            'Collab.collectEmailInfo',
            'util.printf',
@@ -4931,10 +4930,10 @@ class PDFFile :
         self.gapBeforeHeaderPresent = False
         self.garbageAfterEOFPresent = False
         self.gapAfterEOFPresent = False
-        self.garbageBetweenObjects = False
         self.badHeader = False
         self.missingEOF = False
         self.score = 0
+        self.defaultEncryption = False
 
 
     def addBody(self, newBody):
@@ -4977,12 +4976,40 @@ class PDFFile :
     def calculateScore(self, checkOnVT=False):
         indicators = self.getScoringFactors(checkOnVT=checkOnVT, nonNull=True)
         f=open('scores.json', 'r')
-        scores = json.load(f)
+        data = f.read()
+        data = removeComments(data)
+        scores = json.loads(data)
         threshold_score = 100
         maliciousness = 0
+        ignoreList = ['urls', 'streamDict', 'detectionReport']
         for indicator in indicators:
-            maliciousness += scores[indicator]
+            indicatorVal = indicators[indicator]
+            if indicator in ignoreList:
+                continue
+            if indicatorVal is False:
+                continue
+            scoreVal = scores[indicator]
+            if isinstance(scoreVal, (tuple, list)) and isinstance(indicatorVal, (list, tuple)):
+                limit = scoreVal[1]
+                scoreVal = scoreVal[0] + len(indicatorVal)
+                if scoreVal > limit:
+                    scoreVal = limit
+            elif not isinstance(scoreVal, (int, long, float, complex)):
+                scoreVal = scoreVal.replace('x', 'indicatorVal')
+                scoreVal = eval(scoreVal)
+            #print indicator, scoreVal, maliciousness
+            maliciousness += scoreVal
+        filterScore = 0
+        for streamId in indicators['streamDict']:
+            if filterScore >= 5:
+                break
+            stream = indicators['streamDict'][streamId]
+            if stream['numFilters'] == 1:
+                filterScore += 2
+        maliciousness += filterScore
         maliciousness = (float(maliciousness)/float(threshold_score))*10.0
+        if maliciousness > 10:
+            maliciousness = 10
         self.score = maliciousness
         return (0, maliciousness)
 
@@ -5693,7 +5720,7 @@ class PDFFile :
         if errorMessage != '':
             return (-1, errorMessage)
         if password == '':
-            pdfFile.suspiciousProperties['File encrypted with default password'] = '#TODO'
+            self.defaultEncryption = True
         return (0,'')
 
     def deleteObject (self, id) :
@@ -5720,7 +5747,6 @@ class PDFFile :
                 break
             if offsetList[index+1][2] - offset[3] > MAX_OBJ_GAP:
                 garbageList.append((offsetList[index+1][0], offsetList[index+1][1]))
-                self.garbageBetweenObjects = True
         text = 'Garbage Bytes before'
         for obj in garbageList:
             if text in self.body[obj[0]].suspiciousElements:
@@ -6435,24 +6461,14 @@ class PDFFile :
         if not nonNull:
             for verIndicator in versionIndicators.values():
                 vIndicator = verIndicator[0]
-                if vIndicator in vulnsDict.keys():
-                    vIndicator = vulnsDict[vIndicator][0]
                 factorsDict[vIndicator.strip()] = []
             for action in monitorizedActions:
-                if action in vulnsDict.keys():
-                    action = vulnsDict[action][0]
                 factorsDict[action.strip()] = []
             for event in monitorizedEvents:
-                if event in vulnsDict.keys():
-                    event = vulnsDict[event][0]
                 factorsDict[event.strip()] = []
             for element in monitorizedElements:
-                if element in vulnsDict.keys():
-                    element = vulnsDict[element][0]
                 factorsDict[element.strip()] = []
             for vuln in jsVulns:
-                if vuln in vulnsDict.keys():
-                    vuln = vulnsDict[vuln][0]
                 factorsDict[vuln.strip()] = []
             factorsDict['urls'] = []
         factorsDict['streamDict'] = {}
@@ -6463,40 +6479,60 @@ class PDFFile :
             vulns = self.body[version].getVulns()
             elements = self.body[version].getSuspiciousElements()
             urls = self.body[version].getURLs()
+            props = self.body[version].getSuspiciousProperties()
             for element in elements.keys():
                 value = elements[element]
                 element = element.strip()
                 if element in factorsDict.keys():
-                    factorsDict[element] += value
+                    if value not in factorsDict[element]:
+                        factorsDict[element] += value
                 else:
                     factorsDict[element] = value
             for action in actions.keys():
                 value = actions[action]
                 action = action.strip()
                 if action in factorsDict.keys():
-                    factorsDict[action] += value
+                    if value not in factorsDict[action]:
+                        factorsDict[action] += value
                 else:
                     factorsDict[action] = value
             for event in events.keys():
                 value = events[event]
                 event = event.strip()
                 if event in factorsDict.keys():
-                    factorsDict[event] += value
+                    if value not in factorsDict[event]:
+                        factorsDict[event] += value
                 else:
                     factorsDict[event] = value
             for vuln in vulns.keys():
                 value = vulns[vuln]
                 vuln = vuln.strip()
                 if vuln in factorsDict.keys():
-                    factorsDict[vuln] += value
+                    if value not in factorsDict[vuln]:
+                        factorsDict[vuln] += value
                 else:
                     factorsDict[vuln] = value
+            for prop in props:
+                value = vprops[prop]
+                prop = prop.strip()
+                if prop in factorsDict.keys():
+                    if value not in factorsDict[prop]:
+                        factorsDict[prop] += value
+                else:
+                    factorsDict[prop] = value
             for url in urls:
                 url = url.strip()
                 if 'url' in factorsDict.keys():
                     factorsDict['urls'].append(url)
                 else:
                     factorsDict['urls'] = [url]
+            containingJS = self.body[version].getContainingJS()
+            for JSId in containingJS:
+                if 'containingJS' in factorsDict.keys():
+                    if JSId not in factorsDict[prop]:
+                        factorsDict['containingJS'] += JSId
+                else:
+                    factorsDict['containingJS'] = [JSId]
             streams = body.getStreams()
             for stream in streams:
                 streamObj = self.getObject(stream, version)
@@ -6517,10 +6553,9 @@ class PDFFile :
             indicatorVar = 'self.' + fIndicator
             indicator = eval(indicatorVar)
             indicatorVal = fileIndicators[fIndicator]
-            if indicatorVal in factorsDict.keys():
-                factorsDict[indicatorVal].append(indicator)
-            else:
-                factorsDict[indicatorVal] = indicator
+            if nonNull and indicator is False:
+                continue
+            factorsDict[indicatorVal] = indicator
         factorsDict['pagesNumber'] = self.pagesCount
         xrefSections = self.getXrefSection()
         if xrefSections is None:
@@ -7342,7 +7377,7 @@ class PDFParser :
         self.charCounter = 0
         self.tempVarObfuscation = False
 
-    def parse (self, fileName, forceMode = False, looseMode = False, manualAnalysis = False) :
+    def parse (self, fileName, forceMode = False, looseMode = False, manualAnalysis = False, checkOnVT = False) :
         '''
             Main method to parse a PDF document
             @param fileName The name of the file to be parsed
@@ -7660,7 +7695,7 @@ class PDFParser :
         pdfFile.getIsolatedObjects()
         pdfFile.detectGarbageBetweenObjects()
         pdfFile.updateStats()
-        pdfFile.calculateScore()
+        pdfFile.calculateScore(checkOnVT)
         return (0,pdfFile)
 
     def parsePDFSections(self, content, forceMode = False, looseMode = False):

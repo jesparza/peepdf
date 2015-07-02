@@ -367,7 +367,7 @@ try:
         if fileName != None:
             pdfParser = PDFParser()
             #print options.isForceMode, options.isLooseMode, options.isManualAnalysis
-            ret,pdf = pdfParser.parse(fileName, options.isForceMode, options.isLooseMode, options.isManualAnalysis)
+            ret,pdf = pdfParser.parse(fileName, options.isForceMode, options.isLooseMode, options.isManualAnalysis, options.checkOnVT)
             if options.checkOnVT and pdf.detectionRate == []:
                 # Checks the MD5 on VirusTotal
                 md5Hash = pdf.getMD5()
