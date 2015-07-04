@@ -49,6 +49,7 @@ MAX_STREAM_SIZE = 50000
 MAX_OBJ_GAP = 4 + 4  # compensation for ignored whitespaces
 MAX_PRE_HEAD_GAP = 4
 MAX_POST_EOF_GAP = 4
+MAX_THRESHOLD_SCORE = 100
 pdfFile = None
 newLine = os.linesep
 isForceMode = False
@@ -4965,7 +4966,10 @@ class PDFFile :
         data = f.read()
         data = removeComments(data)
         scores = json.loads(data)
-        threshold_score = 100
+        if self.numObjects < 20:
+            threshold_score = (1.0 - (25.0 - self.numObjects)/100.0) * MAX_THRESHOLD_SCORE
+        else:
+            threshold_score = MAX_THRESHOLD_SCORE
         maliciousness = 0
         ignoreList = ['urls', 'streamDict', 'detectionReport']
         for indicator in indicators:
@@ -6505,8 +6509,8 @@ class PDFFile :
             containingJS = self.body[version].getContainingJS()
             for JSId in containingJS:
                 if 'containingJS' in factorsDict.keys():
-                    if JSId not in factorsDict[prop]:
-                        factorsDict['containingJS'] += JSId
+                    if JSId not in factorsDict['containingJS']:
+                        factorsDict['containingJS'].append(JSId)
                 else:
                     factorsDict['containingJS'] = [JSId]
             streams = body.getStreams()
