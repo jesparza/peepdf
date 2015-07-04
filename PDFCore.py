@@ -6594,6 +6594,7 @@ class PDFFile :
         stats['Size'] = str(self.size)
         stats['Detection'] = self.detectionRate
         stats['Detection report'] = self.detectionReport
+        stats['Score'] = self.score
         stats['Version'] = self.version
         stats['Binary'] = str(self.binary)
         stats['Linearized'] = str(self.linearized)
