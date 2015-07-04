@@ -105,6 +105,9 @@ def getPeepXML(statsDict, version, revision):
         detectionRate.text = '%d/%d' % (statsDict['Detection'][0], statsDict['Detection'][1])
         detectionReport = etree.SubElement(detection, 'report_link')
         detectionReport.text = statsDict['Detection report']
+    score = '%0.1f' %statsDict['Score']
+    maliciousnessScore = etree.SubElement(basicInfo, 'Score')
+    maliciousnessScore.text = str(score)
     version = etree.SubElement(basicInfo, 'pdf_version')
     version.text = statsDict['Version']
     binary = etree.SubElement(basicInfo, 'binary', status = statsDict['Binary'].lower())
