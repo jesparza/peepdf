@@ -3093,6 +3093,33 @@ class PDFConsole(cmd.Cmd):
         print newLine + 'Usage: save_version $version $file_name'
         print newLine + 'Saves the selected file version to disk' + newLine
 
+    def do_score(self, argv):
+        if self.pdfFile == None:
+            message = '*** Error: You must open a file!!'
+            self.log_output('score ' + argv, message)
+            return False
+        args = self.parseArgs(argv)
+        numArgs = len(args)
+        if numArgs != 0:
+            self.help_score()
+            return False
+        print '%s%0.1f/10%s' %(self.warningColor,self.pdfFile.score,self.resetColor) + newLine
+        scoringCard = self.pdfFile.scoringCard
+        max_length = 0
+        print '%s%-35s\t%s%s' %(self.warningColor, 'Indicator(#)', 'Score', self.resetColor)
+        for score in scoringCard:
+            text = '%-35s\t%0.1f' %(score[0], score[1])
+            if len(text) > max_length:
+                max_length = len(text)
+            print text
+        print '_'*max_length
+        print '%-35s\t%0.1f' %('Threshold Score', self.pdfFile.thresholdScore)
+        print '%-35s\t%0.1f/10' %('Average Calculated', self.pdfFile.score)
+
+    def help_score(self):
+        print newLine + 'Usage: score'
+        print newLine + 'Shows the maliciousness score of the file' + newLine
+
     def do_sctest(self, argv):
         if not EMU_MODULE:
             message = '*** Error: pylibemu is not installed!!'

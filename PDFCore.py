@@ -4966,6 +4966,7 @@ class PDFFile :
         data = f.read()
         data = removeComments(data)
         scores = json.loads(data)
+        scoringCard = []
         if self.numObjects < 20:
             threshold_score = (1.0 - (25.0 - self.numObjects)/100.0) * MAX_THRESHOLD_SCORE
         else:
@@ -4979,28 +4980,37 @@ class PDFFile :
             if indicatorVal is False:
                 continue
             scoreVal = scores[indicator]
+            scoringText = indicator
             if isinstance(scoreVal, (tuple, list)) and isinstance(indicatorVal, (list, tuple)):
                 limit = scoreVal[1]
                 scoreVal = scoreVal[0] + len(indicatorVal)
                 if scoreVal > limit:
                     scoreVal = limit
+                scoringText = indicator + ' (' + str(len(indicatorVal)) + ')'
             elif not isinstance(scoreVal, (int, long, float, complex)):
                 scoreVal = scoreVal.replace('x', 'indicatorVal')
                 scoreVal = eval(scoreVal)
             #print indicator, scoreVal, maliciousness
+            scoringCard.append((scoringText, scoreVal))
             maliciousness += scoreVal
         filterScore = 0
+        singleFilter = 0
         for streamId in indicators['streamDict']:
             if filterScore >= 5:
                 break
             stream = indicators['streamDict'][streamId]
             if stream['numFilters'] == 1:
                 filterScore += 2
-        maliciousness += filterScore
+                singleFilter += 1
+        if filterScore > 0:
+            scoringCard.append(('streams present with 1 filter (%d)' %singleFilter, filterScore))
+            maliciousness += filterScore
         maliciousness = (float(maliciousness)/float(threshold_score))*10.0
         if maliciousness > 10:
             maliciousness = 10
         self.score = maliciousness
+        self.thresholdScore = MAX_THRESHOLD_SCORE
+        self.scoringCard = scoringCard
         return (0, maliciousness)
 
     def createObjectStream(self, version = None, id = None, objectIds = []):
