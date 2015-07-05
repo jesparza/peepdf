@@ -3096,6 +3096,7 @@ class PDFConsole(cmd.Cmd):
         if numArgs != 0:
             self.help_score()
             return False
+        self.pdfFile.calculateScore()
         print '%s%0.1f/10%s' %(self.warningColor,self.pdfFile.score,self.resetColor) + newLine
         scoringCard = self.pdfFile.scoringCard
         max_length = 0
