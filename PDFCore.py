@@ -841,12 +841,7 @@ class PDFHexString (PDFObject) :
             ret = self.encrypt()
             if ret[0] == -1:
                 return ret
-        rawValue = str(self.rawValue)
         newValue = str(self.value)
-        if newValue != rawValue:
-            self.stringObfuscated = True
-        else:
-            self.stringObfuscated = False
         if len(newValue) > MAX_STR_LEN:
             self.largeStringPresent = True
         return (0,'')
