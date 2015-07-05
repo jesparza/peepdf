@@ -30,6 +30,7 @@ from PDFUtils import *
 from PDFCrypto import *
 from JSAnalysis import *
 from PDFCore import *
+from PDFGlobals import *
 from base64 import b64encode,b64decode
 from PDFFilters import decodeStream,encodeStream
 from jjdecode import JJDecoder
@@ -57,15 +58,7 @@ try:
     RL_PROMPT_END_IGNORE = '\002'
 except:
     RL_PROMPT_START_IGNORE = RL_PROMPT_END_IGNORE = ''
-    
-# File and variable redirections 
-FILE_WRITE = 1
-FILE_ADD = 2
-VAR_WRITE = 3
-VAR_ADD = 4
-newLine = os.linesep
-errorsFile = 'errors.txt'
-filter2RealFilterDict = {'b64':'base64','base64':'base64','asciihex':'/ASCIIHexDecode','ahx':'/ASCIIHexDecode','ascii85':'/ASCII85Decode','a85':'/ASCII85Decode','lzw':'/LZWDecode','flatedecode':'/FlateDecode','fl':'/FlateDecode','runlength':'/RunLengthDecode','rl':'/RunLengthDecode','ccittfax':'/CCITTFaxDecode','ccf':'/CCITTFaxDecode','jbig2':'/JBIG2Decode','dct':'/DCTDecode','jpx':'/JPXDecode'}
+
 
 class PDFConsole(cmd.Cmd):
     '''

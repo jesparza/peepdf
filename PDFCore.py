@@ -33,90 +33,8 @@ from PDFUtils import *
 from PDFCrypto import *
 from JSAnalysis import *
 from PDFFilters import decodeStream,encodeStream
+from PDFGlobals import *
 
-VT_KEY = 'fc90df3f5ac749a94a94cb8bf87e05a681a2eb001aef34b6a0084b8c22c97a64'
-
-MAL_ALL = 1
-MAL_HEAD = 2
-MAL_EOBJ = 3
-MAL_ESTREAM = 4
-MAL_XREF = 5
-MAL_BAD_HEAD = 6
-MAX_HEAD_VER_LEN = 10
-MAX_HEAD_BIN_LEN = 10
-MAX_STR_LEN = 2000
-MAX_STREAM_SIZE = 50000
-MAX_OBJ_GAP = 4 + 4  # compensation for ignored whitespaces
-MAX_PRE_HEAD_GAP = 4
-MAX_POST_EOF_GAP = 4
-MAX_THRESHOLD_SCORE = 100
-pdfFile = None
-newLine = os.linesep
-isForceMode = False
-isManualAnalysis = False
-spacesChars = ['\x00','\x09','\x0a','\x0c','\x0d','\x20']
-delimiterChars = ['<<','(','<','[','{','/','%']
-monitorizedEvents = ['/OpenAction ','/AA ','/Names ','/AcroForm ', '/XFA ']
-monitorizedActions = ['/JS ','/JavaScript','/Launch','/SubmitForm','/ImportData']
-monitorizedElements = ['/EmbeddedFiles ',
-                       '/EmbeddedFile',
-                       '/JBIG2Decode',
-                       'getPageNthWord',
-                       'arguments.callee',
-                       '/U3D',
-                       '/PRC',
-                       '/RichMedia',
-                       '.rawValue',
-                       'keep.previous']
-monitorizedIndicators = {'versionBased':{
-                             'invalidSubtype': ('Invalid stream /Subtype', 'stream'),
-                             'invalidLength': ('Invalid stream /Length', 'stream'),
-                             'largeSize': ('Large streams', 'stream'),
-                             'nameObfuscated': ('Obfuscated names', '*'),
-                             'stringObfuscated': ('Obfuscated strings', '*'),
-                             'largeStringPresent': ('Large strings', '*'),
-                             'missingXref': ('Missing in xref', '*'),
-                             'streamTerminatorMissing': ('Missing stream terminator', 'stream'),
-                             'terminatorMissing': ('Missing object terminator', '*'),
-                             'garbageInside': ('Garbage bytes before terminator', '*'),
-                             'missingCatalog': ('Not referenced from Catalog', '*')},
-                         'fileBased':{
-                             'brokenXref': 'Xref Table broken',
-                             'illegalXref': 'Illegal entries in Xref',
-                             'largeHeader': 'Header too large',
-                             'largeBinaryHeader': 'Binary Header too large',
-                             'garbageHeaderPresent': 'Garbage Header before PDF Header',
-                             'gapBeforeHeaderPresent': 'Large Gap before Header',
-                             'garbageAfterEOFPresent': 'Garbage Bytes after last %EOF',
-                             'gapAfterEOFPresent': 'Large gap after last %EOF'}}
-jsVulns = ['mailto',
-           'Collab.collectEmailInfo',
-           'util.printf',
-           'getAnnots',
-           'getIcon',
-           'spell.customDictionaryOpen',
-           'media.newPlayer',
-           'doc.printSeps',
-           'app.removeToolButton']
-singUniqueName = 'CoolType.SING.uniqueName'
-bmpVuln = 'BMP/RLE heap corruption'
-vulnsDict = {'mailto':('mailto',['CVE-2007-5020']),
-             'Collab.collectEmailInfo':('Collab.collectEmailInfo',['CVE-2007-5659']),
-             'util.printf':('util.printf',['CVE-2008-2992']),
-             '/JBIG2Decode':('Adobe JBIG2Decode Heap Corruption',['CVE-2009-0658']),
-             'getIcon':('getIcon',['CVE-2009-0927']),
-             'getAnnots':('getAnnots',['CVE-2009-1492']),
-             'spell.customDictionaryOpen':('spell.customDictionaryOpen',['CVE-2009-1493']),
-             'media.newPlayer':('media.newPlayer',['CVE-2009-4324']),
-             '.rawValue':('Adobe Acrobat Bundled LibTIFF Integer Overflow',['CVE-2010-0188']),
-             singUniqueName:(singUniqueName,['CVE-2010-2883']),
-             'doc.printSeps':('doc.printSeps',['CVE-2010-4091']),
-             '/U3D':('/U3D',['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462']),
-             '/PRC':('/PRC',['CVE-2011-4369']),
-             'keep.previous':('Adobe Reader XFA oneOfChild Un-initialized memory vulnerability',['CVE-2013-0640']), # https://labs.portcullis.co.uk/blog/cve-2013-0640-adobe-reader-xfa-oneofchild-un-initialized-memory-vulnerability-part-1/
-             bmpVuln:(bmpVuln,['CVE-2013-2729']),
-             'app.removeToolButton':('app.removeToolButton',['CVE-2013-3346'])}
-jsContexts = {'global':None}
 
 class PDFObject :
     '''
@@ -4976,10 +4894,7 @@ class PDFFile :
 
     def calculateScore(self, checkOnVT=False):
         indicators = self.getScoringFactors(checkOnVT=checkOnVT, nonNull=True)
-        f=open('scores.json', 'r')
-        data = f.read()
-        data = removeComments(data)
-        scores = json.loads(data)
+        scores = indicatorScores
         scoringCard = []
         if self.numObjects < 20:
             threshold_score = (1.0 - (25.0 - self.numObjects)/100.0) * MAX_THRESHOLD_SCORE
