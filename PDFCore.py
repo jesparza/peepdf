@@ -6094,7 +6094,8 @@ class PDFFile :
             referenceId = reference.split()[0]
             referenceId = int(referenceId)
             referenceObject = self.getObject(referenceId, version = version)
-            self._updateReferenceList(referenceObject, referenceId, version, isolatedList)
+            if referenceObject is not None:
+                self._updateReferenceList(referenceObject, referenceId, version, isolatedList)
 
     def getIsolatedObjects(self):
         if filter(None, self.getCatalogObjectId()) == []:
@@ -6105,8 +6106,10 @@ class PDFFile :
         infoIdLinear = None
         catalogLinear = None
         objectTypeList = ['dictionary', 'array', 'stream']
+        catalogLinear = []
         for version in range(self.updates+1):
             catalogId = None
+            catalogIdLinear = None
             infoId = None
             trailer, streamTrailer = self.trailer[version]
             if trailer != None:
@@ -6126,7 +6129,7 @@ class PDFFile :
                 else:
                     catalog = self.getObject(catalogId, version = version)
                 if catalog is not None:
-                    catalogLinear = catalog
+                    catalogLinear.append((catalogIdLinear, catalog))
             else:
                 objectsDict = self.body[version].getObjects()
                 catalog = self.getCatalogObject(version = version)
@@ -6149,7 +6152,10 @@ class PDFFile :
             isolatedList = objectsDict.keys()
             if infoIdLinear in isolatedList:
                 isolatedList.remove(infoIdLinear)
-            self._updateReferenceList(catalogLinear, catalogIdLinear, version=None, isolatedList=isolatedList)
+            for catalogL in catalogLinear:
+                if catalogL[0] not in isolatedList:
+                    isolatedList.append(catalogL[0])
+                self._updateReferenceList(catalogL[1], catalogL[0], version=None, isolatedList=isolatedList)
             for objectId in isolatedList:
                 for version in range(self.updates+1):
                     if objectId in self.body[version].getObjects().keys():
