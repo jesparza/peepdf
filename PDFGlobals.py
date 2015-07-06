@@ -172,6 +172,7 @@ indicatorScores = {
     "missingXref": 3,
     "missingCatalog": 3,
     "missingInfo": 3,
+    "missingPages": 3,
     "File encrypted with default password": 5,
 
     # List return
