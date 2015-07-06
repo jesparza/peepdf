@@ -5683,7 +5683,8 @@ class PDFFile :
         text = 'Garbage Bytes before'
         for obj in garbageList:
             if text in self.body[obj[0]].suspiciousElements:
-                self.body[obj[0]].suspiciousElements[text].append(obj[1])
+                if obj[1] not in self.body[obj[0]].suspiciousElements[text]:
+                    self.body[obj[0]].suspiciousElements[text].append(obj[1])
             else:
                 self.body[obj[0]].suspiciousElements[text] = [obj[1]]
         return False
@@ -6414,7 +6415,7 @@ class PDFFile :
                     if value not in factorsDict[element]:
                         factorsDict[element] += value
                 else:
-                    factorsDict[element] = value
+                    factorsDict[element] = list(value)
             for action in actions.keys():
                 value = actions[action]
                 action = action.strip()
@@ -6422,7 +6423,7 @@ class PDFFile :
                     if value not in factorsDict[action]:
                         factorsDict[action] += value
                 else:
-                    factorsDict[action] = value
+                    factorsDict[action] = list(value)
             for event in events.keys():
                 value = events[event]
                 event = event.strip()
@@ -6430,7 +6431,7 @@ class PDFFile :
                     if value not in factorsDict[event]:
                         factorsDict[event] += value
                 else:
-                    factorsDict[event] = value
+                    factorsDict[event] = list(value)
             for vuln in vulns.keys():
                 value = vulns[vuln]
                 vuln = vuln.strip()
@@ -6438,7 +6439,7 @@ class PDFFile :
                     if value not in factorsDict[vuln]:
                         factorsDict[vuln] += value
                 else:
-                    factorsDict[vuln] = value
+                    factorsDict[vuln] = list(value)
             for prop in props:
                 prop = prop.strip()
                 if prop in factorsDict.keys():
