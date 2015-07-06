@@ -6524,6 +6524,9 @@ class PDFFile :
                     self.addError('Bad response from VirusTotal!!')
             factorsDict['detectionRate'] = self.detectionRate
             factorsDict['detectionReport'] = self.detectionReport
+        elif self.detectionRate != []:
+            factorsDict['detectionRate'] = self.detectionRate
+            factorsDict['detectionReport'] = self.detectionReport
         return factorsDict
 
     def getSHA1(self):
