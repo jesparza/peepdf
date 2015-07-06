@@ -1649,6 +1649,13 @@ class PDFStream (PDFDictionary) :
             self.largeSize = True
         else:
             self.largeSize = False
+        schars = ''
+        for x in spacesChars:
+            schars = schars + x
+        if len(self.rawStream.translate(None, schars)) < MIN_STREAM_SIZE:
+            self.smallSize = True
+        else:
+            self.smallSize = False
         if elements == {}:
             errorMessage = 'No dictionary in stream object'
             if isForceMode:
@@ -2764,7 +2771,7 @@ class PDFObjectStream (PDFStream) :
         self.numCompressedObjects = 0
         self.extends = None
         self.size = None
-        self.realSize = None
+        self.realSize = len(self.rawStream)
         self.filter = None
         self.filterParams = None
         self.file = None
@@ -2782,6 +2789,13 @@ class PDFObjectStream (PDFStream) :
             self.largeSize = True
         else:
             self.largeSize = False
+        schars = ''
+        for x in spacesChars:
+            schars = schars + x
+        if len(self.rawStream.translate(None, schars)) < MIN_STREAM_SIZE:
+            self.smallSize = True
+        else:
+            self.smallSize = False
         if elements != {}:
             ret = self.update()
             if ret[0] == -1:
