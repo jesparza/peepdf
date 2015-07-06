@@ -6437,13 +6437,12 @@ class PDFFile :
                 else:
                     factorsDict[vuln] = value
             for prop in props:
-                value = vprops[prop]
                 prop = prop.strip()
                 if prop in factorsDict.keys():
-                    if value not in factorsDict[prop]:
-                        factorsDict[prop] += value
+                    if version not in factorsDict[prop]:
+                        factorsDict[prop].append(version)
                 else:
-                    factorsDict[prop] = value
+                    factorsDict[prop] = [version]
             for url in urls:
                 url = url.strip()
                 if 'url' in factorsDict.keys():

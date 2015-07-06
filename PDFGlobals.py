@@ -201,7 +201,7 @@ indicatorScores = {
     "Obfuscated strings": [3, 6],
     "getPageNthWord": [5, 7],
     "arguments.callee": [5, 7],
-    "Xref Table missing": [5, 7],
+    "Xref Table missing": [6, 8],
     "containingJS": [5, 7],
     "Garbage bytes before terminator": [6, 8],
 
