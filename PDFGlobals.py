@@ -42,6 +42,7 @@ MAX_HEAD_VER_LEN = 10
 MAX_HEAD_BIN_LEN = 10
 MAX_STR_LEN = 2000
 MAX_STREAM_SIZE = 50000
+MIN_STREAM_SIZE = 20
 MAX_OBJ_GAP = 4 + 4  # compensation for ignored whitespaces
 MAX_PRE_HEAD_GAP = 4
 MAX_POST_EOF_GAP = 4
@@ -68,6 +69,7 @@ monitorizedIndicators = {'versionBased':{
                              'invalidSubtype': ('Invalid stream /Subtype', 'stream'),
                              'invalidLength': ('Invalid stream /Length', 'stream'),
                              'largeSize': ('Large streams', 'stream'),
+                             'smallSize': ('Small streams', 'stream'),
                              'nameObfuscated': ('Obfuscated names', '*'),
                              'stringObfuscated': ('Obfuscated strings', '*'),
                              'largeStringPresent': ('Large strings', '*'),
@@ -192,6 +194,7 @@ indicatorScores = {
     "Invalid stream /Length": [4, 7],
     "Invalid stream /Subtype": [4, 7],
     "Large streams": [5, 7],
+    "Small streams": [5, 7],
     "Large strings": [5, 7],
     "Missing in xref": [5, 7],
     "Missing object terminator": [3, 6],
