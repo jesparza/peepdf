@@ -7416,7 +7416,7 @@ class PDFParser :
             self.charCounter = 0
         else:
             if self.fileParts == []:
-                PDFFile.missingEOF = True
+                pdfFile.missingEOF = True
                 errorMessage = '%%EOF not found'
                 if forceMode:
                     pdfFile.addError(errorMessage)
