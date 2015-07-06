@@ -4853,6 +4853,7 @@ class PDFFile :
         self.missingEOF = False
         self.score = 0
         self.defaultEncryption = False
+        self.missingPages = False
 
 
     def addBody(self, newBody):
@@ -5665,6 +5666,9 @@ class PDFFile :
                 if type(offset) == tuple:
                     offsetList.append((version, element, offset[0], offset[0] + offset[1]))
                 elif type(offset) == list:
+                    if len(offset) < 2:
+                        # TODO ERROR: compressed objects giving only 1 offset
+                        continue
                     for object in offset:
                         offsetList.append((version, int(object[0]), object[1], object[1] + object[2]))
         offsetList = sorted(offsetList, key=itemgetter(2))
@@ -6299,19 +6303,23 @@ class PDFFile :
             return None
         pagesElement = catalog[0].getElement('/Pages')
         if pagesElement == None:
+            self.missingPages = True
             self.addError('/Pages element missing')
             return None
         pagesElementId = pagesElement.getId()
         pages = self.getObject(pagesElementId)
         if pages is None:
+            self.missingPages = True
             self.addError('/Pages element missing')
             return None
         count = pages.getElement('/Count')
         if count == None:
+            self.missingPages = True
             self.addError('/Count element missing')
             return None
         pagesCount = count.getValue()
         if not pagesCount.isdigit():
+            self.missingPages = True
             self.addError('Invalid /Count value')
             return None
         return pagesCount
@@ -6497,6 +6505,7 @@ class PDFFile :
         factorsDict['missingInfo'] = missingInfo
         factorsDict['badHeader'] = self.badHeader
         factorsDict['missingEOF'] = self.missingEOF
+        factorsDict['missingPages'] = self.missingPages
         if checkOnVT and self.detectionRate == []:
             # Checks the MD5 on VirusTotal
             md5Hash = self.getMD5()
