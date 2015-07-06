@@ -4891,8 +4891,8 @@ class PDFFile :
         indicators = self.getScoringFactors(checkOnVT=checkOnVT, nonNull=True)
         scores = indicatorScores
         scoringCard = []
-        if self.numObjects < 20:
-            threshold_score = (1.0 - (25.0 - self.numObjects)/100.0) * MAX_THRESHOLD_SCORE
+        if self.numObjects < 30:
+            threshold_score = (1.0 - (30.0 - self.numObjects)/100.0) * MAX_THRESHOLD_SCORE
         else:
             threshold_score = MAX_THRESHOLD_SCORE
         maliciousness = 0
@@ -6494,6 +6494,13 @@ class PDFFile :
         else:
             missingCatalog = False
         factorsDict['missingCatalog'] = missingCatalog
+        infoId = self.getInfoObjectId()
+        infoId = filter(None, infoId)
+        if infoId == []:
+            missingInfo = True
+        else:
+            missingInfo = False
+        factorsDict['missingInfo'] = missingInfo
         factorsDict['badHeader'] = self.badHeader
         factorsDict['missingEOF'] = self.missingEOF
         if checkOnVT and self.detectionRate == []:
