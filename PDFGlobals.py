@@ -207,6 +207,6 @@ indicatorScores = {
 
     # Int/Tuple return
     "pagesNumber": "3 if x==None or x<=2 else 2",
-    "detectionRate": "0 if x==None else (float(x[0])/float(x[1]))*10"
+    "detectionRate": "0 if x==None else (float(x[0])/float(x[1]))*20"
 
 }
