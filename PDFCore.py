@@ -1351,7 +1351,7 @@ class PDFDictionary (PDFObject):
                 self.nameObfuscated = True
             if valueObject.stringObfuscated is True:
                 self.stringObfuscated = True
-            if valueObject.largeStringPresent is True and keys[i] != '/JS':
+            if valueObject.largeStringPresent is True:
                 self.largeStringPresent = True
             v = valueObject.getValue()
             type = valueObject.getType()
