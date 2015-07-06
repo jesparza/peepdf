@@ -4933,7 +4933,7 @@ class PDFFile :
         if maliciousness > 10:
             maliciousness = 10
         self.score = maliciousness
-        self.thresholdScore = MAX_THRESHOLD_SCORE
+        self.thresholdScore = threshold_score
         self.scoringCard = scoringCard
         return (0, maliciousness)
 
