@@ -192,6 +192,7 @@ indicatorScores = {
     "/SubmitForm": [5, 7],
     "/XFA": [5, 7],
     "Garbage Bytes before": [3, 6],     # increase after offsets error fix
+    "Whitespace gap before": [3, 6],     # increase after offsets error fix
     "Invalid stream /Length": [4, 7],
     "Invalid stream /Subtype": [4, 7],
     "Large streams": [5, 7],

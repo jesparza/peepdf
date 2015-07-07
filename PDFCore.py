@@ -5682,20 +5682,38 @@ class PDFFile :
                         offsetList.append((version, int(object[0]), object[1], object[1] + object[2]))
         offsetList = sorted(offsetList, key=itemgetter(2))
         garbageList = []
+        spaceGapList = []
+        f = open(self.path, 'r')
+        data = f.read()
         for index, offset in enumerate(offsetList):
             if index == 0:
                 continue
             if index == len(offsetList) - 1:
                 break
-            if offsetList[index+1][2] - offset[3] > MAX_OBJ_GAP:
-                garbageList.append((offsetList[index+1][0], offsetList[index+1][1]))
-        text = 'Garbage Bytes before'
+            schars = ''
+            for x in spacesChars:
+                schars = schars + x
+            if abs(offsetList[index+1][2] - offset[3]) > MAX_OBJ_GAP:
+                data = data[offsetList[index+1][2]:offset[3]]
+                data = data.translate(None, schars)
+                if data.isspace() or data == '':
+                    spaceGapList.append((offsetList[index+1][0], offsetList[index+1][1]))
+                else:
+                    garbageList.append((offsetList[index+1][0], offsetList[index+1][1]))
+        bytesText = 'Garbage Bytes before'
+        gapText = 'Whitespace gap before'
         for obj in garbageList:
-            if text in self.body[obj[0]].suspiciousElements:
-                if obj[1] not in self.body[obj[0]].suspiciousElements[text]:
-                    self.body[obj[0]].suspiciousElements[text].append(obj[1])
+            if bytesText in self.body[obj[0]].suspiciousElements:
+                if obj[1] not in self.body[obj[0]].suspiciousElements[bytesText]:
+                    self.body[obj[0]].suspiciousElements[bytesText].append(obj[1])
             else:
-                self.body[obj[0]].suspiciousElements[text] = [obj[1]]
+                self.body[obj[0]].suspiciousElements[bytesText] = [obj[1]]
+        for obj in spaceGapList:
+            if gapText in self.body[obj[0]].suspiciousElements:
+                if obj[1] not in self.body[obj[0]].suspiciousElements[gapText]:
+                    self.body[obj[0]].suspiciousElements[gapText].append(obj[1])
+            else:
+                self.body[obj[0]].suspiciousElements[gapText] = [obj[1]]
         return (0,'')
 
     def encodeChars(self):
