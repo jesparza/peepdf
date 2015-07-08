@@ -6142,10 +6142,7 @@ class PDFFile :
                 if catalogId is not None:
                     catalogIdLinear = catalogId
                     infoIdLinear = infoId
-                if catalogIdLinear is not None:
-                    catalog = self.getObject(catalogIdLinear, version = version)
-                else:
-                    catalog = self.getObject(catalogId, version = version)
+                catalog = self.getObject(catalogIdLinear)
                 if catalog is not None:
                     catalogLinear.append((catalogIdLinear, catalog))
             else:
@@ -6154,6 +6151,10 @@ class PDFFile :
                 isolatedList = objectsDict.keys()
                 if infoId in isolatedList:
                     isolatedList.remove(infoId)
+                if self.encrypted:
+                    encryptId = self.getEncryptDict()[0]
+                    if encryptId in isolatedList:
+                        isolatedList.remove(encryptId)
                 self._updateReferenceList(catalog, catalogId, version=version, isolatedList=isolatedList)
                 isolatedListDict[version] = isolatedList
                 for objectId in isolatedList:
@@ -6170,6 +6171,10 @@ class PDFFile :
             isolatedList = objectsDict.keys()
             if infoIdLinear in isolatedList:
                 isolatedList.remove(infoIdLinear)
+            if self.encrypted:
+                encryptId = self.getEncryptDict()[0]
+                if encryptId in isolatedList:
+                    isolatedList.remove(encryptId)
             for catalogL in catalogLinear:
                 if catalogL[0] not in isolatedList:
                     isolatedList.append(catalogL[0])
