@@ -5675,8 +5675,8 @@ class PDFFile :
                 if type(offset) == tuple:
                     offsetList.append((version, element, offset[0], offset[0] + offset[1]))
                 elif type(offset) == list:
-                    if len(offset) < 2:
-                        # TODO ERROR: compressed objects giving only 1 offset
+                    if element == 'compressed':
+                        # TODO ERROR: compressed objects
                         continue
                     for object in offset:
                         offsetList.append((version, int(object[0]), object[1], object[1] + object[2]))
