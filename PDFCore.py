@@ -28,7 +28,7 @@
 import sys,os,re,hashlib,struct,aes as AES
 from operator import itemgetter
 import magic
-from difflib import SequenceMatcher
+from difflib import SequenceMatcher, get_close_matches
 from PDFUtils import *
 from PDFCrypto import *
 from JSAnalysis import *
@@ -4916,7 +4916,30 @@ class PDFFile :
             indicatorVal = indicators[indicator]
             if indicator in ignoreList:
                 continue
-            if indicatorVal is False:
+            if indicatorVal in (False, None, []):
+                continue
+            if indicator in ('CreatorList', 'ProducerList'):
+                builderScore = 0
+                for builder in indicatorVal:
+                    if builder is None:
+                        continue
+                    builderKey = get_close_matches(builder, PDFBuildersScore.keys(), n=1, cutoff=0.6)
+                    if builderKey != []:
+                        builderKey = builderKey[0]
+                        builderScore += PDFBuildersScore[builderKey]
+                    else:
+                        # unknown builder
+                        builderScore += UNKNOWN_BUILDER_SCORE
+                if builderScore > MAX_BUILDER_SCORE:
+                    builderScore = MAX_BUILDER_SCORE
+                if builderScore == 0:
+                    continue
+                if indicator == 'CreatorList':
+                    text = 'PDF Creator Application'
+                else:
+                    text = 'PDF Producer Application'
+                scoringCard.append((text, builderScore))
+                maliciousness += builderScore
                 continue
             scoreVal = scores[indicator]
             scoringText = indicator
@@ -6555,6 +6578,24 @@ class PDFFile :
         factorsDict['badHeader'] = self.badHeader
         factorsDict['missingEOF'] = self.missingEOF
         factorsDict['missingPages'] = self.missingPages
+        if missingInfo is False:
+            infoObjs = self.getInfoObject()
+            creatorList = []
+            producerList = []
+            for info in infoObjs:
+                if info is None:
+                    continue
+                creator = info.getElementByName('/Creator')
+                producer = info.getElementByName('/Producer')
+                if creator not in ([], None):
+                    creatorList.append(creator.getValue())
+                if producer not in ([], None):
+                    producerList.append(producer.getValue())
+            factorsDict['CreatorList'] = creatorList
+            factorsDict['ProducerList'] = producerList
+        else:
+            factorsDict['CreatorList'] = None
+            factorsDict['ProducerList'] = None
         if checkOnVT and self.detectionRate == []:
             # Checks the MD5 on VirusTotal
             md5Hash = self.getMD5()
