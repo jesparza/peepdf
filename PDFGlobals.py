@@ -133,6 +133,16 @@ filter2RealFilterDict = {'b64':'base64','base64':'base64','asciihex':'/ASCIIHexD
 
 
 '''
+++++++++++++++++++++++++JSAnalysis.py++++++++++++++++++++++++
+'''
+errorsFile = 'errors.txt'
+newLine = os.linesep
+reJSscript = '<script[^>]*?contentType\s*?=\s*?[\'"]application/x-javascript[\'"][^>]*?>(.*?)</script>'
+preDefinedCode = 'var app = this;'
+
+
+
+'''
 ++++++++++++++++++++++++Individual Indicator Scores (x/10)++++++++++++++++++++++++
 '''
 

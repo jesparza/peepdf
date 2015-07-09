@@ -26,7 +26,11 @@
 '''
 
 import sys, re , os, jsbeautifier, traceback
+from collections import Counter
 from PDFUtils import unescapeHTMLEntities, escapeString
+from PDFGlobals import *
+import statistics
+from math import log
 try:
     import PyV8
     
@@ -43,10 +47,6 @@ except:
     JS_MODULE = False
 
 
-errorsFile = 'errors.txt'
-newLine = os.linesep         
-reJSscript = '<script[^>]*?contentType\s*?=\s*?[\'"]application/x-javascript[\'"][^>]*?>(.*?)</script>'
-preDefinedCode = 'var app = this;'
 
 def analyseJS(code, context = None, manualAnalysis = False):
     '''
@@ -135,7 +135,59 @@ def analyseJS(code, context = None, manualAnalysis = False):
             if js == None or js == '':
                  JSCode.remove(js)
     return [JSCode,unescapedBytes,urlsFound,errors,context]
- 
+
+def getObfuscationScore(jsCode):
+    '''
+        Given the Javascript code this method tries to detect JS Obfuscation using frequency analysis, Entropy and Work size.
+
+        @param jsCode: The Javascript code (string)
+        @return: A boolean, True if Javascript seems to be Obfuscated or False in the other case
+    '''
+    # Frequency Analysis ++++++++++++++++++++++++
+    jsCode = jsCode.strip()
+    obfuscationScore = 0
+    totalChars = len(jsCode)
+    charFreq = Counter(jsCode)
+    maxDeviation = 0.20 * statistics.mean(charFreq.values()[:20])
+    deviation = statistics.stdev(charFreq.values()[:20]) - statistics.mean(charFreq.values()[:20])
+    if deviation > maxDeviation:
+        # Increase Score
+        obfuscationScore += 3
+    suspiciousChars = ['%', '\\', 'x', '+']
+    morePopular = [' ', '\n', '(', ')', '.', 'e', 't', 'a', 'o', 'i', 'n', '\r', '-']
+    for ch in suspiciousChars:
+        if ch in charFreq.keys()[:10]:
+            # Increase Score
+            obfuscationScore += 3
+    popularfreq = 0
+    charsNum = 10
+    for ch in charFreq.keys()[:charsNum]:
+        if ch not in morePopular:
+            popularfreq += 1
+    if float(popularfreq)/float(charsNum) > 0.5:
+        # Increase Score
+        obfuscationScore += 2
+    # Entropy Analysis ++++++++++++++++++++++++++++++++++++++++
+    entropy = 0
+    for ch in charFreq:
+        entropy += (float(charFreq[ch])/float(totalChars)) * log(float(charFreq[ch])/float(totalChars))
+    entropy *= -1
+    if entropy <= 3.4:
+        #Increase Score
+        obfuscationScore += 2
+    elif entropy > 0.6*log(totalChars):
+        # Increase score
+        obfuscationScore += 2
+    # Word Size Analysis ++++++++++++++++++++++++++++++++++++++++
+    words = jsCode.split()
+    for word in words:
+        if len(word) > 350:
+            # Increase Score
+            obfuscationScore += 3
+    if obfuscationScore > 10:
+        obfuscationScore = 10
+    return obfuscationScore
+
 def getVarContent(jsCode, varContent):
     '''
         Given the Javascript code and the content of a variable this method tries to obtain the real value of the variable, cleaning expressions like "a = eval; a(js_code);"
