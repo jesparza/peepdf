@@ -141,7 +141,7 @@ def getObfuscationScore(jsCode):
         Given the Javascript code this method tries to detect JS Obfuscation using frequency analysis, Entropy and Work size.
 
         @param jsCode: The Javascript code (string)
-        @return: A boolean, True if Javascript seems to be Obfuscated or False in the other case
+        @return: Score(maximum: 10) of obfuscation in Javascript
     '''
     # Frequency Analysis ++++++++++++++++++++++++
     jsCode = jsCode.strip()
