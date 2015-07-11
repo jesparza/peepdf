@@ -4968,13 +4968,19 @@ class PDFFile :
             scoringCard.append(('streams present with 1 filter (%d)' %singleFilter, filterScore))
             maliciousness += filterScore
         obfuscationScore = 0
+        obfuscatedStreamCount = 0
         for version in range(self.updates+1):
             objs = self.body[version].getContainingJS()
             for obj in objs:
                 obj = self.getObject(obj, version=version)
-                obfuscationScore += getObfuscationScore(obj.getValue())
+                streamObfuscation = getObfuscationScore(obj.getValue())
+                obfuscationScore += streamObfuscation
+                if streamObfuscation > 0:
+                    obfuscatedStreamCount += 1
+        if obfuscationScore > 10:
+            obfuscationScore = 10
         if obfuscationScore > 0:
-            scoringCard.append(('Obfuscated Javascript', obfuscationScore))
+            scoringCard.append(('Obfuscated Javascript (%d)'%obfuscatedStreamCount, obfuscationScore))
         maliciousness += obfuscationScore
         maliciousness = (float(maliciousness)/float(threshold_score))*10.0
         if maliciousness > 10:
