@@ -126,7 +126,6 @@ FILE_WRITE = 1
 FILE_ADD = 2
 VAR_WRITE = 3
 VAR_ADD = 4
-newLine = os.linesep
 errorsFile = 'errors.txt'
 filter2RealFilterDict = {'b64':'base64','base64':'base64','asciihex':'/ASCIIHexDecode','ahx':'/ASCIIHexDecode','ascii85':'/ASCII85Decode','a85':'/ASCII85Decode','lzw':'/LZWDecode','flatedecode':'/FlateDecode','fl':'/FlateDecode','runlength':'/RunLengthDecode','rl':'/RunLengthDecode','ccittfax':'/CCITTFaxDecode','ccf':'/CCITTFaxDecode','jbig2':'/JBIG2Decode','dct':'/DCTDecode','jpx':'/JPXDecode'}
 
@@ -135,8 +134,6 @@ filter2RealFilterDict = {'b64':'base64','base64':'base64','asciihex':'/ASCIIHexD
 '''
 ++++++++++++++++++++++++JSAnalysis.py++++++++++++++++++++++++
 '''
-errorsFile = 'errors.txt'
-newLine = os.linesep
 reJSscript = '<script[^>]*?contentType\s*?=\s*?[\'"]application/x-javascript[\'"][^>]*?>(.*?)</script>'
 preDefinedCode = 'var app = this;'
 
@@ -156,7 +153,6 @@ indicatorScores = {
     "Collab.collectEmailInfo": 10,
     "CoolType.SING.uniqueName": 10,
     "spell.customDictionaryOpen": 10,
-    "keep.previous": 10,
     "mailto": 10,
     "app.removeToolButton": 10,
     "doc.printSeps": 10,
