@@ -25,7 +25,7 @@
     This module contains some functions to analyse Javascript code inside the PDF file
 '''
 
-import sys, re , os, jsbeautifier, traceback
+import sys, re , os, jsbeautifier, traceback, operator
 from collections import Counter
 from PDFUtils import unescapeHTMLEntities, escapeString
 from PDFGlobals import *
@@ -146,43 +146,39 @@ def getObfuscationScore(jsCode):
     # Frequency Analysis ++++++++++++++++++++++++
     jsCode = jsCode.strip()
     obfuscationScore = 0
-    totalChars = len(jsCode)
     charFreq = Counter(jsCode)
-    maxDeviation = 0.20 * statistics.mean(charFreq.values()[:20])
-    deviation = statistics.stdev(charFreq.values()[:20]) - statistics.mean(charFreq.values()[:20])
+    totalChars = len(charFreq.keys())
+    sortedCharFreq = sorted(charFreq.items(), key=operator.itemgetter(1), reverse=True)
+    sortedCharFreq = [ item[0] for item in sortedCharFreq ]
+    sortedFreq = sorted(charFreq.values(), reverse=True)
+    maxDeviation = 0.20 * statistics.mean(sortedFreq[:20])
+    deviation = statistics.stdev(sortedFreq[:20]) - statistics.mean(sortedFreq[:20])
     if deviation > maxDeviation:
-        # Increase Score
         obfuscationScore += 3
     suspiciousChars = ['%', '\\', 'x', '+']
-    morePopular = [' ', '\n', '(', ')', '.', 'e', 't', 'a', 'o', 'i', 'n', '\r', '-']
+    morePopular = [' ', '\n', '\t', '(', ')', '.', 'e', 't', 'a', 'o', 'i', 'n', '\r', '-', ';']
+    suspiciousCharsPopular = False
     for ch in suspiciousChars:
-        if ch in charFreq.keys()[:10]:
-            # Increase Score
-            obfuscationScore += 3
-    popularfreq = 0
-    charsNum = 10
-    for ch in charFreq.keys()[:charsNum]:
+        if ch in sortedCharFreq[:10]:
+            suspiciousCharsPopular = True
+            break
+    if suspiciousCharsPopular:
+        obfuscationScore += 3
+    for ch in sortedCharFreq[:5]:
         if ch not in morePopular:
-            popularfreq += 1
-    if float(popularfreq)/float(charsNum) > 0.5:
-        # Increase Score
-        obfuscationScore += 2
+            obfuscationScore += 2
+            break
     # Entropy Analysis ++++++++++++++++++++++++++++++++++++++++
     entropy = 0
     for ch in charFreq:
-        entropy += (float(charFreq[ch])/float(totalChars)) * log(float(charFreq[ch])/float(totalChars))
+        entropy += (float(charFreq[ch])/len(jsCode)) * log(float(charFreq[ch])/len(jsCode))
     entropy *= -1
     if entropy <= 3.4:
-        #Increase Score
-        obfuscationScore += 2
-    elif entropy > 0.6*log(totalChars):
-        # Increase score
         obfuscationScore += 2
     # Word Size Analysis ++++++++++++++++++++++++++++++++++++++++
     words = jsCode.split()
     for word in words:
         if len(word) > 350:
-            # Increase Score
             obfuscationScore += 3
     if obfuscationScore > 10:
         obfuscationScore = 10
