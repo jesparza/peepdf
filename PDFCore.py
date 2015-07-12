@@ -5162,6 +5162,9 @@ class PDFFile:
         self.gapAfterEOFPresent = False
         self.badHeader = False
         self.missingEOF = False
+        self.missingXref = False
+        self.missingCatalog = False
+        self.missingInfo = False
         self.score = 0
         self.defaultEncryption = False
         self.missingPages = False
@@ -7114,30 +7117,7 @@ class PDFFile:
                 continue
             factorsDict[indicatorVal] = indicator
         factorsDict['pagesNumber'] = self.pagesCount
-        xrefSections = self.getXrefSection()
-        if xrefSections is None:
-            missingXref = True
-        else:
-            missingXref = False
-        factorsDict['missingXref'] = missingXref
-        catalogId = self.getCatalogObjectId()
-        catalogId = filter(None, catalogId)
-        if catalogId == []:
-            missingCatalog = True
-        else:
-            missingCatalog = False
-        factorsDict['missingCatalog'] = missingCatalog
-        infoId = self.getInfoObjectId()
-        infoId = filter(None, infoId)
-        if infoId == []:
-            missingInfo = True
-        else:
-            missingInfo = False
-        factorsDict['missingInfo'] = missingInfo
-        factorsDict['badHeader'] = self.badHeader
-        factorsDict['missingEOF'] = self.missingEOF
-        factorsDict['missingPages'] = self.missingPages
-        if missingInfo is False:
+        if self.missingInfo is False:
             infoObjs = self.getInfoObject()
             creatorList = []
             producerList = []
@@ -7949,6 +7929,23 @@ class PDFFile:
             if streamTrailer is not None:
                 if streamTrailer.getDictEntry('/Encrypt') != None:
                     self.setEncrypted(True)
+        xrefSections = self.getXrefSection()
+        if xrefSections is None:
+            self.missingXref = True
+        else:
+            self.missingXref = False
+        catalogId = self.getCatalogObjectId()
+        catalogId = filter(None, catalogId)
+        if catalogId == []:
+            self.missingCatalog = True
+        else:
+            self.missingCatalog = False
+        infoId = self.getInfoObjectId()
+        infoId = filter(None, infoId)
+        if infoId == []:
+            self.missingInfo = True
+        else:
+            self.missingInfo = False
         for rawIndicatorVar in monitorizedIndicators['fileBased'].keys():
             indicatorVar = 'self.' + str(rawIndicatorVar)
             try:

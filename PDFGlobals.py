@@ -82,6 +82,12 @@ monitorizedIndicators = {'versionBased':{
                              'largeHeader': 'Header too large',
                              'largeBinaryHeader': 'Binary Header too large',
                              'garbageHeaderPresent': 'Garbage Header before PDF Header',
+                             'badHeader': 'Bad PDF Header',
+                             'missingEOF': 'EOF missing',
+                             'missingPages': '/Pages Missing',
+                             'missingXref': 'Xref Missing',
+                             'missingCatalog': 'Catalog Missing',
+                             'missingInfo': 'Info Missing',
                              'gapBeforeHeaderPresent': 'Large Gap before Header',
                              'garbageAfterEOFPresent': 'Garbage Bytes after last %EOF',
                              'gapAfterEOFPresent': 'Large gap after last %EOF'}}
@@ -171,12 +177,12 @@ indicatorScores = {
     "Garbage Bytes after last %EOF": 7,
     "Xref Table broken": 5,         # increase after offsets error fix
     "Binary Header too large": 5,
-    "badHeader": 3,
-    "missingEOF": 3,
-    "missingXref": 6,
-    "missingCatalog": 6,
-    "missingInfo": 6,
-    "missingPages": 6,
+    "Bad PDF Header": 3,
+    "EOF missing": 3,
+    "Xref Missing": 6,
+    "Catalog Missing": 6,
+    "Info Missing": 6,
+    "/Pages Missing": 6,
     "File encrypted with default password": 5,
 
     # List return
