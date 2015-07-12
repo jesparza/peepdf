@@ -173,10 +173,10 @@ indicatorScores = {
     "Binary Header too large": 5,
     "badHeader": 3,
     "missingEOF": 3,
-    "missingXref": 3,
-    "missingCatalog": 3,
-    "missingInfo": 3,
-    "missingPages": 3,
+    "missingXref": 6,
+    "missingCatalog": 6,
+    "missingInfo": 6,
+    "missingPages": 6,
     "File encrypted with default password": 5,
 
     # List return
