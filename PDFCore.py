@@ -8991,7 +8991,13 @@ class PDFParser:
                     return (-1,
                             'EOL not found while looking for the last cross reference section')
             else:
-                lastXrefSection = ret[1]
+                if not ret[1].isdigit():
+                    if not isForceMode:
+                        return (-1, 'Invalid last cross reference section')
+                    else:
+                        lastXrefSection = -1
+                else:
+                    lastXrefSection = ret[1]
             try:
                 trailer = PDFTrailer(
                     dict,
@@ -9064,7 +9070,13 @@ class PDFParser:
                             return ret
                         lastXrefSection = -1
                     else:
-                        lastXrefSection = ret[1]
+                        if not ret[1].isdigit():
+                            if not isForceMode:
+                                return (-1, 'Invalid last cross reference section')
+                            else:
+                                lastXrefSection = -1
+                        else:
+                            lastXrefSection = ret[1]
                 try:
                     trailer = PDFTrailer(dict, lastXrefSection)
                 except Exception as e:
