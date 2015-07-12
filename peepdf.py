@@ -631,9 +631,9 @@ try:
                             stats += detectionReportInfo
                     scoreColor = ''
                     if COLORIZED_OUTPUT and not options.avoidColors:
-                        if pdf.score > 6:
+                        if pdf.score >= 7:
                             scoreColor = alertColor
-                        else:
+                        elif pdf.score > 4 and pdf.score < 7:
                             scoreColor = warningColor
                     score = '%s%.1f%s/%d' % (scoreColor,
                                              pdf.score,
