@@ -87,7 +87,6 @@ monitorizedIndicators = {'versionBased':{
                              'missingPages': '/Pages Missing',
                              'missingXref': 'Xref Missing',
                              'missingCatalog': 'Catalog Missing',
-                             'missingInfo': 'Info Missing',
                              'gapBeforeHeaderPresent': 'Large Gap before Header',
                              'garbageAfterEOFPresent': 'Garbage Bytes after last %EOF',
                              'gapAfterEOFPresent': 'Large gap after last %EOF'}}
@@ -181,7 +180,7 @@ indicatorScores = {
     "EOF missing": 3,
     "Xref Missing": 6,
     "Catalog Missing": 6,
-    "Info Missing": 6,
+    "missingInfo": 6,
     "/Pages Missing": 6,
     "File encrypted with default password": 5,
 

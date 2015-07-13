@@ -6559,6 +6559,7 @@ class PDFFile :
                 continue
             factorsDict[indicatorVal] = indicator
         factorsDict['pagesNumber'] = self.pagesCount
+        factorsDict['missingInfo'] = self.missingInfo
         if self.missingInfo is False:
             infoObjs = self.getInfoObject()
             creatorList = []
