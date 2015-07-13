@@ -6164,7 +6164,7 @@ class PDFFile:
         f = open(self.path, 'r')
         data = f.read()
         for index, offset in enumerate(offsetList):
-            if index == 0:
+            if index == 0 or offset[1] == 'header' or offsetList[index-1][1] == 'header':
                 continue
             if index == len(offsetList) - 1:
                 break
