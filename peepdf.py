@@ -188,6 +188,7 @@ def getPeepXML(statsDict, version, revision):
         vulns = statsVersion['Vulns']
         properties = statsVersion['Properties']
         elements = statsVersion['Elements']
+        indicators = statsVersion['Indicators']
         suspicious = etree.SubElement(versionInfo, 'suspicious_elements')
         if events != None or actions != None or vulns != None or elements != None:
             if events != None:
@@ -226,6 +227,11 @@ def getPeepXML(statsDict, version, revision):
                             cve.text = vulnCVE
                     for id in vulns[vuln]:
                         etree.SubElement(vulnInfo, 'container_object', id = str(id))
+        suspiciousIndicators = etree.SubElement(versionInfo, 'suspicious_indicators')
+        if indicators is not None:
+            suspiciousIndicators = etree.SubElement(suspiciousIndicators, 'suspicious_indicators')
+            for indicator in indicators:
+                etree.SubElement(suspiciousIndicators, 'indicator', name=indicator)
         suspiciousProperties = etree.SubElement(versionInfo, 'suspicious_properties')
         if properties is not None:
             propertiesInfo = etree.SubElement(suspiciousProperties, 'suspicious_properties')
@@ -522,6 +528,7 @@ try:
                         vulns = statsVersion['Vulns']
                         properties = statsVersion['Properties']
                         elements = statsVersion['Elements']
+                        indicators = statsVersion['Indicators']
                         if events != None or actions != None or vulns != None or elements != None:
                             stats += newLine + beforeStaticLabel + '\tSuspicious elements:' + resetColor + newLine
                             if events != None:
@@ -552,6 +559,10 @@ try:
                                         stats = stats[:-1] + '): ' + resetColor + str(elements[element]) + newLine
                                     else:
                                         stats += '\t\t' + beforeStaticLabel + element + ': ' + resetColor + str(elements[element]) + newLine
+                        if indicators is not None:
+                            stats += newLine + beforeStaticLabel + '\tSuspicious Indicators:' + resetColor + newLine
+                            for indicator in indicators:
+                                stats += '\t\t' + beforeStaticLabel + indicator + ': ' + resetColor + str(indicators[indicator]) + newLine
                         if properties != None:
                             stats += newLine + beforeStaticLabel + '\tSuspicious Properties:' + resetColor + newLine
                             for prop in properties:

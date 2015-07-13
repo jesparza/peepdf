@@ -3969,6 +3969,7 @@ class PDFBody :
         self.suspiciousEvents = {}
         self.suspiciousActions = {}
         self.suspiciousElements = {}
+        self.suspiciousIndicators = {}
         self.suspiciousProperties = []
         self.vulns = {}
         self.JSCode = []
@@ -4200,6 +4201,9 @@ class PDFBody :
     
     def getSuspiciousElements(self):
         return self.suspiciousElements
+
+    def getSuspiciousIndicators(self):
+        return self.suspiciousIndicators
     
     def getSuspiciousEvents(self):
         return self.suspiciousEvents
@@ -4452,14 +4456,14 @@ class PDFBody :
                 continue
             if indicatorVar not in (None, False) or delete:
                 printedIndicator = monitorizedIndicators['versionBased'][rawIndicatorVar][0]
-                if self.suspiciousElements.has_key(printedIndicator):
+                if self.suspiciousIndicators.has_key(printedIndicator):
                     if delete:
-                        if id in self.suspiciousElements[printedIndicator]:
-                            self.suspiciousElements[printedIndicator].remove(id)
-                    elif id not in self.suspiciousElements[printedIndicator]:
-                        self.suspiciousElements[printedIndicator].append(id)
+                        if id in self.suspiciousIndicators[printedIndicator]:
+                            self.suspiciousIndicators[printedIndicator].remove(id)
+                    elif id not in self.suspiciousIndicators[printedIndicator]:
+                        self.suspiciousIndicators[printedIndicator].append(id)
                 elif not delete:
-                    self.suspiciousElements[printedIndicator] = [id]
+                    self.suspiciousIndicators[printedIndicator] = [id]
         if pdfObject.containsJS():
             if delete:
                 jsCodeArray = pdfObject.getJSCode()
@@ -5730,17 +5734,17 @@ class PDFFile :
         bytesText = 'Garbage Bytes before'
         gapText = 'Whitespace gap before'
         for obj in garbageList:
-            if bytesText in self.body[obj[0]].suspiciousElements:
-                if obj[1] not in self.body[obj[0]].suspiciousElements[bytesText]:
-                    self.body[obj[0]].suspiciousElements[bytesText].append(obj[1])
+            if bytesText in self.body[obj[0]].suspiciousIndicators:
+                if obj[1] not in self.body[obj[0]].suspiciousIndicators[bytesText]:
+                    self.body[obj[0]].suspiciousIndicators[bytesText].append(obj[1])
             else:
-                self.body[obj[0]].suspiciousElements[bytesText] = [obj[1]]
+                self.body[obj[0]].suspiciousIndicators[bytesText] = [obj[1]]
         for obj in spaceGapList:
-            if gapText in self.body[obj[0]].suspiciousElements:
-                if obj[1] not in self.body[obj[0]].suspiciousElements[gapText]:
-                    self.body[obj[0]].suspiciousElements[gapText].append(obj[1])
+            if gapText in self.body[obj[0]].suspiciousIndicators:
+                if obj[1] not in self.body[obj[0]].suspiciousIndicators[gapText]:
+                    self.body[obj[0]].suspiciousIndicators[gapText].append(obj[1])
             else:
-                self.body[obj[0]].suspiciousElements[gapText] = [obj[1]]
+                self.body[obj[0]].suspiciousIndicators[gapText] = [obj[1]]
         return (0,'')
 
     def encodeChars(self):
@@ -6481,6 +6485,7 @@ class PDFFile :
             events = self.body[version].getSuspiciousEvents()
             vulns = self.body[version].getVulns()
             elements = self.body[version].getSuspiciousElements()
+            indicators = self.body[version].getSuspiciousIndicators()
             urls = self.body[version].getURLs()
             props = self.body[version].getSuspiciousProperties()
             for element in elements.keys():
@@ -6491,6 +6496,14 @@ class PDFFile :
                         factorsDict[element] += value
                 else:
                     factorsDict[element] = list(value)
+            for indicator in indicators.keys():
+                value = indicators[indicator]
+                indicator = indicator.strip()
+                if indicator in factorsDict.keys():
+                    if value not in factorsDict[indicator]:
+                        factorsDict[indicator] += value
+                else:
+                    factorsDict[indicator] = list(value)
             for action in actions.keys():
                 value = actions[action]
                 action = action.strip()
@@ -6698,12 +6711,17 @@ class PDFFile :
             events = self.body[version].getSuspiciousEvents()
             vulns = self.body[version].getVulns()
             elements = self.body[version].getSuspiciousElements()
+            indicators = self.body[version].getSuspiciousIndicators()
             urls = self.body[version].getURLs()
             properties = self.body[version].getSuspiciousProperties()
             if len(events) > 0:
                 statsVersion['Events'] = events
             else:
                 statsVersion['Events'] = None
+            if len(indicators) > 0:
+                statsVersion['Indicators'] = indicators
+            else:
+                statsVersion['Indicators'] = None
             if len(actions) > 0:
                 statsVersion['Actions'] = actions
             else:
