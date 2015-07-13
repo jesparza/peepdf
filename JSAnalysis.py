@@ -27,9 +27,8 @@
 
 import sys, re , os, jsbeautifier, traceback, operator
 from collections import Counter
-from PDFUtils import unescapeHTMLEntities, escapeString
+from PDFUtils import unescapeHTMLEntities, escapeString, average, stddev
 from PDFGlobals import *
-import statistics
 from math import log
 try:
     import PyV8
@@ -151,8 +150,9 @@ def getObfuscationScore(jsCode):
     sortedCharFreq = sorted(charFreq.items(), key=operator.itemgetter(1), reverse=True)
     sortedCharFreq = [ item[0] for item in sortedCharFreq ]
     sortedFreq = sorted(charFreq.values(), reverse=True)
-    maxDeviation = 0.20 * statistics.mean(sortedFreq[:20])
-    deviation = statistics.stdev(sortedFreq[:20]) - statistics.mean(sortedFreq[:20])
+    mean = average(sortedFreq[:20])
+    maxDeviation = 0.20 * mean
+    deviation = stddev(sortedFreq[:20]) - mean
     if deviation > maxDeviation:
         obfuscationScore += 3
     suspiciousChars = ['%', '\\', 'x', '+']

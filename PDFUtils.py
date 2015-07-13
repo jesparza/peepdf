@@ -26,6 +26,9 @@
 '''
 
 import os, re, htmlentitydefs, json, urllib, urllib2
+from math import sqrt
+
+def average(s): return sum(s) * 1.0 / len(s)
 
 def clearScreen():
 	'''
@@ -332,7 +335,17 @@ def removeComments(string):
     string = re.sub(re.compile("/\*.*?\*/",re.DOTALL ) ,"" ,string) # remove all occurance streamed comments (/*COMMENT */) from string
     string = re.sub(re.compile("//.*?\n" ) ,"" ,string) # remove all occurance singleline comments (//COMMENT\n ) from string
     return string
-                  		
+
+def stddev(lst):
+    """returns the standard deviation of lst"""
+    avg = average(lst)
+    variance = map(lambda x: (x - avg)**2, lst)
+    var = average(variance)
+    try:
+        return var.sqrt()
+    except AttributeError:
+        return sqrt(var)
+
 def numToString(num, numDigits):
 	'''
         Given a number returns its string format with the specified length, adding '0' if necessary
