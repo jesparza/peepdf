@@ -1331,6 +1331,8 @@ class PDFConsole(cmd.Cmd):
             stats += beforeStaticLabel + 'SHA1: ' + self.resetColor + statsDict['SHA1'] + newLine
             #stats += beforeStaticLabel + 'SHA256: ' + self.resetColor + statsDict['SHA256'] + newLine
             stats += beforeStaticLabel + 'Size: ' + self.resetColor + statsDict['Size'] + ' bytes' + newLine
+            pagesCount = statsDict['Pages Number']
+            stats += beforeStaticLabel + 'Pages Number: ' + self.resetColor + str(pagesCount) + newLine
             if statsDict['Detection'] != []:
                 detectionReportInfo = ''
                 if statsDict['Detection'] != None:
@@ -1358,6 +1360,16 @@ class PDFConsole(cmd.Cmd):
                     stats += algorithmInfo[0] + ' ' + str(algorithmInfo[1]) + ' bits, '
                 stats = stats[:-2] + ')'
             stats += newLine
+            scoreColor = ''
+            if not self.avoidOutputColors:
+                if self.pdfFile.score >= 7:
+                    scoreColor = self.alertColor
+                elif self.pdfFile.score > 4 and self.pdfFile.score < 7:
+                    scoreColor = self.warningColor
+                else:
+                    scoreColor = self.resetColor
+            score = '%s%.1f%s/%d' % (scoreColor, self.pdfFile.score, self.resetColor, 10)
+            stats += beforeStaticLabel + 'Maliciousness Score: ' + scoreColor + str(score) + self.resetColor + newLine
             stats += beforeStaticLabel + 'Updates: ' + self.resetColor + statsDict['Updates'] + newLine
             stats += beforeStaticLabel + 'Objects: ' + self.resetColor + statsDict['Objects'] + newLine
             stats += beforeStaticLabel + 'Streams: ' + self.resetColor + statsDict['Streams'] + newLine
@@ -1396,6 +1408,8 @@ class PDFConsole(cmd.Cmd):
                 events = statsVersion['Events']
                 vulns = statsVersion['Vulns']
                 elements = statsVersion['Elements']
+                properties = statsVersion['Properties']
+                indicators = statsVersion['Indicators']
                 if events != None or actions != None or vulns != None or elements != None:
                     stats += newLine + beforeStaticLabel + '\tSuspicious elements:' + self.resetColor + newLine
                     if events != None:
@@ -1426,6 +1440,14 @@ class PDFConsole(cmd.Cmd):
                                 stats = stats[:-1] + '): ' + self.resetColor + str(elements[element]) + newLine
                             else:
                                 stats += '\t\t' + beforeStaticLabel + element + ': ' + self.resetColor + str(elements[element]) + newLine
+                if indicators is not None:
+                    stats += newLine + beforeStaticLabel + '\tSuspicious Indicators:' + self.resetColor + newLine
+                    for indicator in indicators:
+                        stats += '\t\t' + beforeStaticLabel + indicator + ': ' + self.resetColor + str(indicators[indicator]) + newLine
+                if properties != None:
+                    stats += newLine + beforeStaticLabel + '\tSuspicious Properties:' + self.resetColor + newLine
+                    for prop in properties:
+                        stats += '\t\t' + beforeStaticLabel + prop + newLine
                 if not self.avoidOutputColors:
                     beforeStaticLabel = self.staticColor
                 urls = statsVersion['URLs']
