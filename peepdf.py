@@ -635,6 +635,8 @@ try:
                             scoreColor = alertColor
                         elif pdf.score > 4 and pdf.score < 7:
                             scoreColor = warningColor
+                        else:
+                            scoreColor = resetColor
                     score = '%s%.1f%s/%d' % (scoreColor,
                                              pdf.score,
                                              resetColor,
