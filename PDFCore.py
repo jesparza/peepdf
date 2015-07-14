@@ -7546,8 +7546,8 @@ class PDFParser :
         pdfFile.setUpdates(len(self.fileParts) - 1)
         
         # Getting the body, cross reference table and trailer of each part of the file
+        bodyOffset = 0
         for i in range(len(self.fileParts)):
-            bodyOffset = 0
             xrefOffset = 0
             trailerOffset = 0
             eofOffset = 0
@@ -7569,8 +7569,7 @@ class PDFParser :
             if i == 0:
                 bodyOffset = 0
             else:
-                bodyOffset = len(self.fileParts[i-1])
-                
+                bodyOffset += len(self.fileParts[i-1])
             # Getting the content for each section
             bodyContent,xrefContent,trailerContent = self.parsePDFSections(content,forceMode,looseMode)
             if xrefContent != None:    
