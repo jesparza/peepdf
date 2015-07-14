@@ -7424,7 +7424,6 @@ class PDFParser :
         self.delimiters = [('<<','>>','dictionary'),('(',')','string'),('<','>','hexadecimal'),('[',']','array'),('{','}',''),('/','','name'),('%','','comment')]
         self.fileParts = []
         self.charCounter = 0
-        self.tempVarObfuscation = False
 
     def parse (self, fileName, forceMode = False, looseMode = False, manualAnalysis = False, checkOnVT = False) :
         '''
@@ -7619,7 +7618,6 @@ class PDFParser :
                         else:
                             auxContent = auxContent[index+len(objectHeader):]
                             relativeOffset += len(objectHeader)
-                    self.tempVarObfuscation= False
                     ret = self.createPDFIndirectObject(rawObject, forceMode, looseMode)
                     if ret[0] != -1:
                         pdfIndirectObject = ret[1]
