@@ -6173,8 +6173,15 @@ class PDFFile :
                 catalogId = streamTrailer.getCatalogId()
             if infoId == None and streamTrailer != None:
                 infoId = streamTrailer.getInfoId()
+            objectsList = self.body[version].getObjects()
+            objectStreamList = self.body[version].objectStreams
+            xrefStreamList = self.body[version].xrefStreams
+            objList = {}
+            for obj in objectsList:
+                if obj not in objectStreamList+xrefStreamList:
+                    objList[obj] = objectsList[obj]
             if self.linearized:
-                objectsDict.update(self.body[version].getObjects())
+                objectsDict.update(objList)
                 if catalogId is not None:
                     catalogIdLinear = catalogId
                     infoIdLinear = infoId
@@ -6182,7 +6189,7 @@ class PDFFile :
                 if catalog is not None:
                     catalogLinear.append((catalogIdLinear, catalog))
             else:
-                objectsDict = self.body[version].getObjects()
+                objectsDict = objList
                 catalog = self.getCatalogObject(version = version)
                 isolatedList = objectsDict.keys()
                 if infoId in isolatedList:
