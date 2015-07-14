@@ -2690,7 +2690,7 @@ class PDFStream (PDFDictionary) :
             if self.getElementByName('/Type') not in (None, []):
                 mainType = self.getElementByName('/Type').getValue()
             else:
-                mainType = None
+                mainType = ''
             subType = subType.lower()
             if subType[0] == '/':
                 subType = subType[1:]
