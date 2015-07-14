@@ -6748,7 +6748,6 @@ class PDFFile :
             else:
                 statsVersion['Properties'] = None
             stats['Versions'].append(statsVersion)
-        self.pagesCount = self.getPagesCount()
         if self.pagesCount is not None:
             stats['Pages Number'] = str(self.pagesCount)
         else:
@@ -7295,7 +7294,7 @@ class PDFFile :
         self.numEncodedStreams = 0
         self.numDecodingErrors = 0
         self.encrypted = False
-        
+        self.pagesCount = self.getPagesCount()
         for v in range(self.updates+1):
             if recursiveUpdate:
                 #TODO
