@@ -42,7 +42,7 @@ MAX_HEAD_VER_LEN = 10
 MAX_HEAD_BIN_LEN = 10
 MAX_STR_LEN = 2000
 MAX_STREAM_SIZE = 50000
-MAX_OBJ_GAP = 4 + 4  # compensation for ignored whitespaces
+MAX_OBJ_GAP = 4 + 2  # compensation for small offset bug
 MAX_PRE_HEAD_GAP = 4
 MAX_POST_EOF_GAP = 4
 MAX_THRESHOLD_SCORE = 100
@@ -200,8 +200,8 @@ indicatorScores = {
     "/RichMedia": [5, 7],
     "/SubmitForm": [5, 7],
     "/XFA": [5, 7],
-    "Garbage Bytes before": [3, 6],     # increase after offsets error fix
-    "Whitespace gap before": [3, 6],     # increase after offsets error fix
+    "Garbage Bytes before": [4, 7],
+    "Whitespace gap before": [4, 7],
     "Invalid stream /Length": [4, 7],
     "Invalid stream /Subtype": [4, 7],
     "Large streams": [5, 7],

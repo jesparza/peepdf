@@ -5701,6 +5701,9 @@ class PDFFile :
         offsetDict = self.getOffsets()
         offsetList = []
         for version, content in enumerate(offsetDict):
+            compressedIgnoreList = []
+            if 'compressed' in content.keys():
+                compressedIgnoreList = content['compressed']
             for element in content.keys():
                 offset = content[element]
                 if type(offset) == tuple:
@@ -5710,12 +5713,14 @@ class PDFFile :
                         # TODO ERROR: compressed objects
                         continue
                     for object in offset:
+                        if int(object[0]) in compressedIgnoreList:
+                            continue
                         offsetList.append((version, int(object[0]), object[1], object[1] + object[2]))
         offsetList = sorted(offsetList, key=itemgetter(2))
         garbageList = []
         spaceGapList = []
-        f = open(self.path, 'r')
-        data = f.read()
+        f = open(self.path, 'rb')
+        rawFile = f.read()
         for index, offset in enumerate(offsetList):
             if index == 0 or offset[1] == 'header' or offsetList[index-1][1] == 'header':
                 continue
@@ -5724,8 +5729,8 @@ class PDFFile :
             schars = ''
             for x in spacesChars:
                 schars = schars + x
-            if abs(offsetList[index+1][2] - offset[3]) > MAX_OBJ_GAP:
-                data = data[offsetList[index+1][2]:offset[3]]
+            if abs(offset[3] - offsetList[index+1][2]) > MAX_OBJ_GAP:
+                data = rawFile[offset[3]+2:offsetList[index+1][2]]  # compensation(+2) for small offset bug
                 data = data.translate(None, schars)
                 if data.isspace() or data == '':
                     spaceGapList.append((offsetList[index+1][0], offsetList[index+1][1]))
