@@ -6218,7 +6218,7 @@ class PDFFile :
                         else:
                             isolatedListDict[version] = []
                             isolatedListDict[version].append(objectId)
-                        indirectObj = self.getObject(objectId, indirect=True)
+                        indirectObj = self.getObject(objectId, version=version, indirect=True)
                         object = indirectObj.getObject()
                         if object.getType() in objectTypeList and object.hasElement('/Linearized'):
                             continue
