@@ -218,7 +218,7 @@ def isJavascript(content):
         @return: A boolean, True if it seems to contain Javascript code or False in the other case
     '''
     JSStrings = ['var ', ';', ')', '(', 'function ', '=', '{', '}', 'if ', 'else', 'return', 'while ', 'for ', ',', 'eval']
-    keyStrings = [';', '(', ')']
+    keyStrings = [';', '(', ')', '=']
     stringsFound = []
     limit = 15
     minDistinctStringsFound = 5
