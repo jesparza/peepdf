@@ -155,11 +155,11 @@ def getObfuscationScore(jsCode):
     deviation = stddev(sortedFreq[:20]) - mean
     if deviation > maxDeviation:
         obfuscationScore += 3
-    suspiciousChars = ['%', '\\', 'x', '+']
+    suspiciousChars = [('%', 10), ('\\', 10), ('x', 10), ('+', 10), ('"', 5)]
     morePopular = [' ', '\n', '\t', '(', ')', '.', 'e', 't', 'a', 'o', 'i', 'n', '\r', '-', ';']
     suspiciousCharsPopular = False
     for ch in suspiciousChars:
-        if ch in sortedCharFreq[:10]:
+        if ch[0] in sortedCharFreq[:ch[1]]:
             suspiciousCharsPopular = True
             break
     if suspiciousCharsPopular:
