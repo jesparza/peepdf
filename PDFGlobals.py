@@ -83,7 +83,7 @@ monitorizedIndicators = {'versionBased':{
                              'largeBinaryHeader': 'Binary Header too large',
                              'garbageHeaderPresent': 'Garbage Header before PDF Header',
                              'badHeader': 'Bad PDF Header',
-                             'missingEOF': 'EOF missing',
+                             'missingEOF': '%%EOF missing',
                              'missingPages': '/Pages Missing',
                              'missingXref': 'Xref Missing',
                              'missingCatalog': 'Catalog Missing',
@@ -177,7 +177,7 @@ indicatorScores = {
     "Xref Table broken": 5,         # increase after offsets error fix
     "Binary Header too large": 5,
     "Bad PDF Header": 4,
-    "EOF missing": 5,
+    "%%EOF missing": 5,
     "Xref Missing": 6,
     "Catalog Missing": 6,
     "missingInfo": 6,
