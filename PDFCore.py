@@ -366,6 +366,7 @@ class PDFBool (PDFObject):
         self.missingCatalog = False
         self.terminatorMissing = False
         self.garbageInside = False
+        self.duplicateObject = False
 
 
 class PDFNull (PDFObject):
@@ -392,6 +393,7 @@ class PDFNull (PDFObject):
         self.missingCatalog = False
         self.terminatorMissing = False
         self.garbageInside = False
+        self.duplicateObject = False
 
 
 class PDFNum (PDFObject):
@@ -418,6 +420,7 @@ class PDFNum (PDFObject):
         self.missingCatalog = False
         self.terminatorMissing = False
         self.garbageInside = False
+        self.duplicateObject = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -554,6 +557,7 @@ class PDFString (PDFObject):
         self.missingCatalog = False
         self.terminatorMissing = False
         self.garbageInside = False
+        self.duplicateObject = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -725,6 +729,7 @@ class PDFHexString (PDFObject):
         self.missingCatalog = False
         self.terminatorMissing = False
         self.garbageInside = False
+        self.duplicateObject = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -879,6 +884,7 @@ class PDFReference (PDFObject):
         self.missingCatalog = False
         self.terminatorMissing = False
         self.garbageInside = False
+        self.duplicateObject = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -959,6 +965,7 @@ class PDFArray (PDFObject):
         self.missingCatalog = False
         self.terminatorMissing = False
         self.garbageInside = False
+        self.duplicateObject = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -1243,6 +1250,7 @@ class PDFDictionary (PDFObject):
         self.missingCatalog = False
         self.terminatorMissing = False
         self.garbageInside = False
+        self.duplicateObject = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -1665,6 +1673,7 @@ class PDFStream (PDFDictionary):
         self.terminatorMissing = False
         self.garbageInside = False
         self.streamTerminatorMissing = False
+        self.duplicateObject = False
         if self.realSize > MAX_STREAM_SIZE:
             self.largeSize = True
         else:
@@ -2805,6 +2814,7 @@ class PDFObjectStream (PDFStream):
         self.streamTerminatorMissing = False
         self.invalidLength = False
         self.invalidSubtype = False
+        self.duplicateObject = False
         if self.realSize > MAX_STREAM_SIZE:
             self.largeSize = True
         else:
@@ -3407,6 +3417,7 @@ class PDFIndirectObject:
         self.terminatorMissing = False
         self.garbageInside = False
         self.streamTerminatorMissing = False
+        self.duplicateObject = False
 
     def contains(self, string):
         return self.object.contains(string)
@@ -7636,7 +7647,7 @@ class PDFParser:
                     rawObject = rawIndirectObjects[j][0]
                     objectHeader = rawIndirectObjects[j][1]
                     while True:
-                        index = auxContent.find(objectHeader)
+                        index = auxContent.find(rawObject)
                         if index == -1:
                             relativeOffset = index
                             break
@@ -7655,6 +7666,8 @@ class PDFParser:
                                 pdfIndirectObject.setOffset(relativeOffset)
                             else:
                                 pdfIndirectObject.setOffset(bodyOffset + relativeOffset)
+                            if pdfIndirectObject.getId() in body.getObjects():
+                                pdfIndirectObject.getObject().duplicateObject = True
                             ret = body.registerObject(pdfIndirectObject)
                             if ret[0] == -1:
                                 pdfFile.addError(ret[1])

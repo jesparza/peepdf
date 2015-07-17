@@ -75,6 +75,7 @@ monitorizedIndicators = {'versionBased':{
                              'streamTerminatorMissing': ('Missing stream terminator', 'stream'),
                              'terminatorMissing': ('Missing object terminator', '*'),
                              'garbageInside': ('Garbage bytes before terminator', '*'),
+                             'duplicateObject': ('Duplicate Objects', '*'),
                              'missingCatalog': ('Not referenced from Catalog', '*')},
                          'fileBased':{
                              'brokenXref': 'Xref Table broken',
@@ -217,6 +218,7 @@ indicatorScores = {
     "Xref Table missing": [6, 8],
     "containingJS": [5, 7],
     "Garbage bytes before terminator": [6, 8],
+    "Duplicate Objects": [5,7],
 
     # Int/Tuple return
     "pagesNumber": "3 if x==None or x<=2 else 2",
