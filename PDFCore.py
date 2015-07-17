@@ -366,6 +366,7 @@ class PDFBool (PDFObject):
         self.missingCatalog = False
         self.terminatorMissing = False
         self.garbageInside = False
+        self.duplicateObject = False
 
 
 class PDFNull (PDFObject):
@@ -392,6 +393,7 @@ class PDFNull (PDFObject):
         self.missingCatalog = False
         self.terminatorMissing = False
         self.garbageInside = False
+        self.duplicateObject = False
 
 
 class PDFNum (PDFObject):
@@ -418,6 +420,7 @@ class PDFNum (PDFObject):
         self.missingCatalog = False
         self.terminatorMissing = False
         self.garbageInside = False
+        self.duplicateObject = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -554,6 +557,7 @@ class PDFString (PDFObject):
         self.missingCatalog = False
         self.terminatorMissing = False
         self.garbageInside = False
+        self.duplicateObject = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -725,6 +729,7 @@ class PDFHexString (PDFObject):
         self.missingCatalog = False
         self.terminatorMissing = False
         self.garbageInside = False
+        self.duplicateObject = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -879,6 +884,7 @@ class PDFReference (PDFObject):
         self.missingCatalog = False
         self.terminatorMissing = False
         self.garbageInside = False
+        self.duplicateObject = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -959,6 +965,7 @@ class PDFArray (PDFObject):
         self.missingCatalog = False
         self.terminatorMissing = False
         self.garbageInside = False
+        self.duplicateObject = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -1243,6 +1250,7 @@ class PDFDictionary (PDFObject):
         self.missingCatalog = False
         self.terminatorMissing = False
         self.garbageInside = False
+        self.duplicateObject = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -1665,6 +1673,7 @@ class PDFStream (PDFDictionary):
         self.terminatorMissing = False
         self.garbageInside = False
         self.streamTerminatorMissing = False
+        self.duplicateObject = False
         if self.realSize > MAX_STREAM_SIZE:
             self.largeSize = True
         else:
@@ -2805,6 +2814,7 @@ class PDFObjectStream (PDFStream):
         self.streamTerminatorMissing = False
         self.invalidLength = False
         self.invalidSubtype = False
+        self.duplicateObject = False
         if self.realSize > MAX_STREAM_SIZE:
             self.largeSize = True
         else:
@@ -3407,6 +3417,7 @@ class PDFIndirectObject:
         self.terminatorMissing = False
         self.garbageInside = False
         self.streamTerminatorMissing = False
+        self.duplicateObject = False
 
     def contains(self, string):
         return self.object.contains(string)
@@ -4003,6 +4014,7 @@ class PDFBody:
         self.objectStreams = []
         self.compressedObjects = []
         self.errors = []
+        self.duplicateObjects = {}
 
     def addCompressedObject(self, id):
         if id not in self.compressedObjects:
@@ -4148,6 +4160,9 @@ class PDFBody:
     def getContainingJS(self):
         return self.containingJS
 
+    def getDuplicateObjects(self):
+        return self.duplicateObjects
+
     def getEncodedStreams(self):
         return self.encodedStreams
 
@@ -4244,7 +4259,7 @@ class PDFBody:
     def getXrefStreams(self):
         return self.xrefStreams
 
-    def registerObject(self, pdfIndirectObject):
+    def registerObject(self, pdfIndirectObject, duplicate=False):
         type = ''
         errorMessage = ''
         if pdfIndirectObject == None:
@@ -4299,6 +4314,11 @@ class PDFBody:
                                 self.setObject(compressedId, compressedObject, offset)
                             del(compressedObjectsDict)
         pdfIndirectObject.setObject(pdfObject)
+        if duplicate and self.objects[id] is not None:
+            if id in self.duplicateObjects.keys():
+                self.duplicateObjects[id].append(self.objects[id])
+            else:
+                self.duplicateObjects[id] = [self.objects[id]]
         self.objects[id] = pdfIndirectObject
         self.errors += pdfObject.getErrors()
         if type == '':
@@ -6354,6 +6374,7 @@ class PDFFile:
             sortedObjectsIds = self.body[version].getObjectsIds()
             compressedObjects = self.body[version].getCompressedObjects()
             objectStreams = self.body[version].getObjectStreams()
+            duplicateObjects = self.body[version].getDuplicateObjects()
             ret = self.getXrefSection(version)
             if ret != None:
                 xref, streamXref = ret[1]
@@ -6382,6 +6403,12 @@ class PDFFile:
                         offsets['objects'].append((id, objectOffset, size))
                     else:
                         offsets['objects'] = [(id, objectOffset, size)]
+            for id in duplicateObjects:
+                objList = duplicateObjects[id]
+                for obj in objList:
+                    objectOffset = obj.getOffset()
+                    size = obj.getSize()
+                    offsets['objects'].append((id, objectOffset, size))
             if xref != None:
                 xrefOffset = xref.getOffset()
                 xrefSize = xref.getSize()
@@ -7636,7 +7663,7 @@ class PDFParser:
                     rawObject = rawIndirectObjects[j][0]
                     objectHeader = rawIndirectObjects[j][1]
                     while True:
-                        index = auxContent.find(objectHeader)
+                        index = auxContent.find(rawObject)
                         if index == -1:
                             relativeOffset = index
                             break
@@ -7655,7 +7682,11 @@ class PDFParser:
                                 pdfIndirectObject.setOffset(relativeOffset)
                             else:
                                 pdfIndirectObject.setOffset(bodyOffset + relativeOffset)
-                            ret = body.registerObject(pdfIndirectObject)
+                            if pdfIndirectObject.getId() in body.getObjects():
+                                pdfIndirectObject.getObject().duplicateObject = True
+                                ret = body.registerObject(pdfIndirectObject, duplicate=True)
+                            else:
+                                ret = body.registerObject(pdfIndirectObject)
                             if ret[0] == -1:
                                 pdfFile.addError(ret[1])
                             type = ret[1]
