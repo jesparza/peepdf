@@ -4997,11 +4997,11 @@ class PDFFile:
             if filterScore >= 5:
                 break
             stream = indicators['streamDict'][streamId]
-            if stream['numFilters'] == 1:
+            if stream['numFilters'] > 1:
                 filterScore += 2
                 singleFilter += 1
         if filterScore > 0:
-            scoringCard.append(('streams present with 1 filter (%d)' % singleFilter, filterScore))
+            scoringCard.append(('streams with many filters (%d)' % singleFilter, filterScore))
             maliciousness += filterScore
         obfuscationScore = 0
         obfuscatedStreamCount = 0
