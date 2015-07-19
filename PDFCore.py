@@ -6183,17 +6183,24 @@ class PDFFile:
                 infoId = streamTrailer.getInfoId()
             return infoId
 
-    def _updateReferenceList(self, object, objectId, version, isolatedList=[]):
+    def _updateReferenceList(self, object, objectId, version, isolatedList=[], linearized=False, doneList= []):
         if objectId in isolatedList:
             isolatedList.remove(objectId)
-        else:
+            doneList.append(object)
+        elif object in doneList:
             return None
         for reference in object.getReferences():
             referenceId = reference.split()[0]
             referenceId = int(referenceId)
-            referenceObject = self.getObject(referenceId, version=version)
-            if referenceObject is not None:
-                self._updateReferenceList(referenceObject, referenceId, version, isolatedList)
+            if linearized:
+                for ver in range(self.updates+1):
+                    referenceObject = self.getObject(referenceId, version=ver)
+                    if referenceObject is not None:
+                        self._updateReferenceList(referenceObject, referenceId, ver, isolatedList, linearized = linearized)
+            else:
+                referenceObject = self.getObject(referenceId, version=version)
+                if referenceObject is not None:
+                    self._updateReferenceList(referenceObject, referenceId, version, isolatedList)
 
     def getIsolatedObjects(self):
         if filter(None, self.getCatalogObjectId()) == []:
@@ -6205,10 +6212,8 @@ class PDFFile:
         catalogLinear = None
         objectTypeList = ['dictionary', 'array', 'stream']
         catalogLinear = []
-        max_object_id = 0
         for version in range(self.updates + 1):
             catalogId = None
-            catalogIdLinear = None
             infoId = None
             trailer, streamTrailer = self.trailer[version]
             if trailer != None:
@@ -6223,31 +6228,33 @@ class PDFFile:
             xrefStreamList = self.body[version].xrefStreams
             objList = {}
             for obj in objectsList:
-                if int(obj) > max_object_id:
-                    max_object_id = int(obj)
                 if obj not in objectStreamList + xrefStreamList:
                     objList[obj] = objectsList[obj]
             if self.linearized:
                 objectsDict.update(objList)
                 if catalogId is not None:
                     catalogIdLinear = catalogId
+                if infoId is not None:
                     infoIdLinear = infoId
-                catalog = self.getObject(catalogIdLinear)
+                    infoLinear = self.getObject(infoIdLinear)
+                catalog = self.getObject(catalogIdLinear, version=version)
                 if catalog is not None:
                     catalogLinear.append((catalogIdLinear, catalog))
             else:
                 objectsDict = objList
                 catalog = self.getCatalogObject(version=version)
                 isolatedList = objectsDict.keys()
+                info = self.getInfoObject(version=version)
                 if infoId in isolatedList:
-                    isolatedList.remove(infoId)
+                    self._updateReferenceList(info, infoId, version=version, isolatedList=isolatedList)
                 if self.encrypted:
                     encryptId = self.getEncryptDict()[0]
+                    encryptObject = self.getObject(encryptId)
                     if encryptId in isolatedList:
-                        isolatedList.remove(encryptId)
+                        self._updateReferenceList(encryptObject, encryptId, version=None, isolatedList=isolatedList)
                 self._updateReferenceList(catalog, catalogId, version=version, isolatedList=isolatedList)
                 isolatedListDict[version] = isolatedList
-                for objectId in isolatedList:
+                for objectId in isolatedList[:]:
                     indirectObj = self.getObject(objectId, indirect=True)
                     object = indirectObj.getObject()
                     if object.getType() in objectTypeList and object.hasElement('/Linearized'):
@@ -6260,17 +6267,25 @@ class PDFFile:
                 return None
             isolatedList = objectsDict.keys()
             if infoIdLinear in isolatedList:
-                isolatedList.remove(infoIdLinear)
+                self._updateReferenceList(infoLinear, infoIdLinear, version=None, isolatedList=isolatedList)
             if self.encrypted:
                 encryptId = self.getEncryptDict()[0]
+                encryptObject = self.getObject(encryptId)
                 if encryptId in isolatedList:
-                    isolatedList.remove(encryptId)
+                    self._updateReferenceList(encryptObject, encryptId, version=None, isolatedList=isolatedList)
             for catalogL in catalogLinear:
                 if catalogL[0] not in isolatedList:
                     isolatedList.append(catalogL[0])
-                self._updateReferenceList(catalogL[1], catalogL[0], version=None, isolatedList=isolatedList)
-            for objectId in isolatedList:
-                for version in range(self.updates + 1):
+                self._updateReferenceList(catalogL[1], catalogL[0], version=None, isolatedList=isolatedList, linearized=True)
+            for objectId in isolatedList[:]:
+                for version in range(self.updates, -1, -1):
+                    if objectId in self.body[version].getObjects().keys():
+                        indirectObj = self.getObject(objectId, version=version, indirect=True)
+                        object = indirectObj.getObject()
+                        if object.getType() in objectTypeList and (object.hasElement('/Linearized') or (object.hasElement('/S'))):
+                            self._updateReferenceList(object, objectId, version=None, isolatedList=isolatedList)
+            for objectId in isolatedList[:]:
+                for version in range(self.updates, -1, -1):
                     if objectId in self.body[version].getObjects().keys():
                         if version in isolatedListDict.keys():
                             isolatedListDict[version].append(objectId)
@@ -6279,8 +6294,6 @@ class PDFFile:
                             isolatedListDict[version].append(objectId)
                         indirectObj = self.getObject(objectId, version=version, indirect=True)
                         object = indirectObj.getObject()
-                        if (object.getType() in objectTypeList and object.hasElement('/Linearized')) or (objectId == max_object_id and object.hasElement('/S')):
-                            continue
                         object.missingCatalog = True
                         self.body[version].deregisterObject(indirectObj)
                         self.body[version].registerObject(indirectObj)
