@@ -5780,7 +5780,7 @@ class PDFFile:
                 data = rawData.translate(None, schars)
                 if data.isspace() or data == '':
                     # Ignore for small whitespace(<10) after eof.(made by some pdf producers)
-                    if rawData.isspace() and len(rawData) > 4 and len(rawData) < 10 and offset[1] == 'eof':
+                    if rawData.isspace() and len(rawData) > 4 and len(rawData) <= 10 and offset[1] == 'eof':
                         continue
                     spaceGapList.append((offsetList[index + 1][0], offsetList[index + 1][1]))
                 else:
@@ -6217,6 +6217,7 @@ class PDFFile:
         catalogLinear = None
         objectTypeList = ['dictionary', 'array', 'stream']
         catalogLinear = []
+        infoLinear = []
         for version in range(self.updates + 1):
             catalogId = None
             infoId = None
@@ -6241,7 +6242,9 @@ class PDFFile:
                     catalogIdLinear = catalogId
                 if infoId is not None:
                     infoIdLinear = infoId
-                    infoLinear = self.getObject(infoIdLinear)
+                info = self.getObject(infoIdLinear)
+                if info is not None:
+                    infoLinear.append((infoIdLinear, info))
                 catalog = self.getObject(catalogIdLinear, version=version)
                 if catalog is not None:
                     catalogLinear.append((catalogIdLinear, catalog))
@@ -6273,8 +6276,8 @@ class PDFFile:
             if catalogLinear is None:
                 return None
             isolatedList = objectsDict.keys()
-            if infoIdLinear in isolatedList:
-                self._updateReferenceList(infoLinear, infoIdLinear, version=None, isolatedList=isolatedList)
+            for infoL in infoLinear:
+                self._updateReferenceList(infoL[1], infoL[0], version=None, isolatedList=isolatedList)
             if self.encrypted:
                 encryptId = self.getEncryptDict()[0]
                 encryptObject = self.getObject(encryptId)
