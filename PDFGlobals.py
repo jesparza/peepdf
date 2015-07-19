@@ -285,5 +285,6 @@ PDFBuildersScore = {
     "Xpdf": 0,
     "Xournal": 0,
     "Antiword": 0,
-    "dvipdfm": 0
+    "dvipdfm": 0,
+    "PScript5.dll": 0
 }
