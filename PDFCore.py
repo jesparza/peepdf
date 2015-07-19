@@ -5776,9 +5776,12 @@ class PDFFile:
             for x in spacesChars:
                 schars = schars + x
             if abs(offset[3] - offsetList[index + 1][2]) > MAX_OBJ_GAP:
-                data = rawFile[offset[3] + 2:offsetList[index + 1][2]]  # compensation(+2) for small offset bug
-                data = data.translate(None, schars)
+                rawData = rawFile[offset[3] + 2:offsetList[index + 1][2]]  # compensation(+2) for small offset bug
+                data = rawData.translate(None, schars)
                 if data.isspace() or data == '':
+                    # Ignore for small whitespace(<10) after eof.(made by some pdf producers)
+                    if rawData.isspace() and len(rawData) > 4 and len(rawData) < 10 and offset[1] == 'eof':
+                        continue
                     spaceGapList.append((offsetList[index + 1][0], offsetList[index + 1][1]))
                 else:
                     garbageList.append((offsetList[index + 1][0], offsetList[index + 1][1]))
