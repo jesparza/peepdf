@@ -234,6 +234,7 @@ PDFBuildersScore = {
     "Acrobat PDFMaker": 0,
     "Acrobat PDFWriter": 0,
     "Adobe Acrobat": 0,
+    "AdobePS5.dll": 0,
     "PDF Printer": 0,
     "Microsoft PowerPoint": 0,
     "FrameMaker": 0,
