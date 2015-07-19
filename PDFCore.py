@@ -4989,7 +4989,8 @@ class PDFFile:
                 scoreVal = scoreVal.replace('x', 'indicatorVal')
                 scoreVal = eval(scoreVal)
             # print indicator, scoreVal, maliciousness
-            scoringCard.append((scoringText, scoreVal))
+            if scoreVal > 0:
+                scoringCard.append((scoringText, scoreVal))
             maliciousness += scoreVal
         filterScore = 0
         singleFilter = 0

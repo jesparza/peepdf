@@ -221,7 +221,7 @@ indicatorScores = {
     "Duplicate Objects": [5,7],
 
     # Int/Tuple return
-    "pagesNumber": "3 if x==None or x<=2 else 2",
+    "pagesNumber": "3 if x is not None and int(x)<=1 else 0",
     "detectionRate": "0 if x==None else (float(x[0])/float(x[1]))*20"
 
 }
