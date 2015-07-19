@@ -4959,6 +4959,8 @@ class PDFFile:
                 for builder in indicatorVal:
                     if builder is None:
                         continue
+                    if 'windows' in builder.lower():
+                        builder = builder[:builder.lower().index('windows')]
                     builderKey = get_close_matches(builder, PDFBuildersScore.keys(), n=1, cutoff=0.6)
                     if builderKey != []:
                         builderKey = builderKey[0]
@@ -6259,6 +6261,8 @@ class PDFFile:
                     object = indirectObj.getObject()
                     if object.getType() in objectTypeList and object.hasElement('/Linearized'):
                         continue
+                    if object.getType() == 'null':
+                        continue
                     object.missingCatalog = True
                     self.body[version].deregisterObject(indirectObj)
                     self.body[version].registerObject(indirectObj)
@@ -6294,6 +6298,8 @@ class PDFFile:
                             isolatedListDict[version].append(objectId)
                         indirectObj = self.getObject(objectId, version=version, indirect=True)
                         object = indirectObj.getObject()
+                        if object.getType() == 'null':
+                            continue
                         object.missingCatalog = True
                         self.body[version].deregisterObject(indirectObj)
                         self.body[version].registerObject(indirectObj)

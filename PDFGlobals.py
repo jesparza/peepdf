@@ -287,5 +287,7 @@ PDFBuildersScore = {
     "Xournal": 0,
     "Antiword": 0,
     "dvipdfm": 0,
-    "PScript5.dll": 0
+    "PScript5.dll": 0,
+    "APJavaScript": 0,
+    "OneForm Designer": 0
 }
