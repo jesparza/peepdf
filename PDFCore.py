@@ -6188,9 +6188,9 @@ class PDFFile:
     def _updateReferenceList(self, object, objectId, version, isolatedList=[], linearized=False, doneList= []):
         if objectId in isolatedList:
             isolatedList.remove(objectId)
-            doneList.append(object)
         elif object in doneList:
             return None
+        doneList.append(object)
         for reference in object.getReferences():
             referenceId = reference.split()[0]
             referenceId = int(referenceId)
