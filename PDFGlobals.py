@@ -232,6 +232,7 @@ PDFBuildersScore = {
     # Todo: add more creators
     "Acrobat Distiller": 0,
     "Acrobat PDFMaker": 0,
+    "Acrobat PDFWriter": 0,
     "Adobe Acrobat": 0,
     "PDF Printer": 0,
     "Microsoft PowerPoint": 0,
