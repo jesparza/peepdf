@@ -2740,7 +2740,7 @@ class PDFStream (PDFDictionary):
                     subTypeFound = True
                     break
             if self.decodingError is True:
-                stream = self.getRawStream()
+                return (-1, 'Ignoring subtypeCheck due to decoding Error')
             else:
                 stream = self.getStream()
             if stream.isspace():
