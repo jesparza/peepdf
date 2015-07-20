@@ -293,5 +293,7 @@ PDFBuildersScore = {
     "dvipdfm": 0,
     "PScript5.dll": 0,
     "APJavaScript": 0,
-    "OneForm Designer": 0
+    "OneForm Designer": 0,
+    "purepdf": 0,
+
 }
