@@ -295,6 +295,8 @@ PDFBuildersScore = {
     "APJavaScript": 0,
     "OneForm Designer": 0,
     "purepdf": 0,
-    "Scribus": 0
+    "Scribus": 0,
+    "OpenOffice": 0,
+    "Writer": 0,
 
 }

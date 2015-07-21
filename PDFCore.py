@@ -4961,10 +4961,10 @@ class PDFFile:
                         continue
                     if 'windows' in builder.lower():
                         builder = builder[:builder.lower().index('windows')]
-                    builderRE = re.search('^(.*?)[\d\. ]*$',builder)
+                    builderRE = re.search('^(.*?)[\d\.\s\0]*$',builder)
                     if builderRE:
                         builder = builderRE.group(1)
-                    builderKey = get_close_matches(builder, PDFBuildersScore.keys(), n=1, cutoff=0.6)
+                    builderKey = get_close_matches(builder, PDFBuildersScore.keys(), n=1, cutoff=0.5)
                     if builderKey != []:
                         builderKey = builderKey[0]
                         builderScore += PDFBuildersScore[builderKey]
