@@ -113,6 +113,12 @@ class PDFConsole(cmd.Cmd):
         self.outputVarName = None
         self.outputFileName = None
 
+    def cmdloop(self):
+        try:
+            cmd.Cmd.cmdloop(self)
+        except KeyboardInterrupt as e:
+            self.postloop()
+
     def emptyline(self):
         return
 
