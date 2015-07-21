@@ -8466,7 +8466,7 @@ class PDFParser:
                     matchingObjectsAux = regExp.findall(content)
                 else:
                     matchingObjectsAux = []
-            lastObject = re.findall('(\d{1,5}\s\d{1,5}\sobj)', content, re.DOTALL)
+            lastObject = re.findall('(\d{1,10}\s\d{1,10}\sobj)', content, re.DOTALL)
             if lastObject != []:
                 content = content[content.find(lastObject[0]):]
                 matchingObjects.append((content, lastObject[0]))
