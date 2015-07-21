@@ -4961,6 +4961,9 @@ class PDFFile:
                         continue
                     if 'windows' in builder.lower():
                         builder = builder[:builder.lower().index('windows')]
+                    builderRE = re.search('^(.*?)[\d\. ]*$',builder)
+                    if builderRE:
+                        builder = builderRE.group(1)
                     builderKey = get_close_matches(builder, PDFBuildersScore.keys(), n=1, cutoff=0.6)
                     if builderKey != []:
                         builderKey = builderKey[0]

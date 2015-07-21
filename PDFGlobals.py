@@ -197,7 +197,7 @@ indicatorScores = {
     "/JavaScript": [5, 7],
     "/Launch": [5, 7],
     "/Names": [3, 5],
-    "/OpenAction": [5, 7],
+    "/OpenAction": [6, 8],
     "/RichMedia": [5, 7],
     "/SubmitForm": [5, 7],
     "/XFA": [5, 7],
@@ -295,5 +295,6 @@ PDFBuildersScore = {
     "APJavaScript": 0,
     "OneForm Designer": 0,
     "purepdf": 0,
+    "Scribus": 0
 
 }
