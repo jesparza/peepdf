@@ -7907,12 +7907,12 @@ class PDFParser:
             pdfIndirectObject.setObject(object)
             ret = self.readSymbol(rawIndirectObject, 'endobj', False)
             if ret[0] == -1:
-                pdfIndirectObject.getObject().garbageInside = True
                 ret = self.readUntilSymbol(rawIndirectObject, 'endobj')
                 if ret[0] == -1:
                     pdfIndirectObject.getObject().terminatorMissing = True
                 else:
                     self.charCounter += len('endobj')
+                    pdfIndirectObject.getObject().garbageInside = True
             pdfIndirectObject.setSize(self.charCounter)
         except:
             errorMessage = 'Unspecified parsing error'
