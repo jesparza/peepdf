@@ -4439,6 +4439,7 @@ class PDFBody:
                                 compressedObject = compressedObjectsDict[compressedId][1]
                                 self.setObject(compressedId, compressedObject, offset)
                             del(compressedObjectsDict)
+            self.updateStats(id, object)
         if errorMessage != '':
             return (-1, errorMessage)
         return (0, '')
