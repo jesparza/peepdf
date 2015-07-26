@@ -575,7 +575,7 @@ class PDFConsole(cmd.Cmd):
                         if namesDictType == 'reference':
                             namesDictId = namesDict.getId()
                             namesDict = self.pdfFile.getObject(namesDictId,version)
-                        elif namesObjectType != 'dictionary':
+                        elif namesDictType != 'dictionary':
                             message = '*** Error: Bad type for /Names in Catalog!!'
                             self.log_output('embed ' + argv, message)
                             return False
