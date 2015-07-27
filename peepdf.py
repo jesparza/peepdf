@@ -44,19 +44,16 @@ VT_KEY = 'fc90df3f5ac749a94a94cb8bf87e05a681a2eb001aef34b6a0084b8c22c97a64'
 
 try:
     import PyV8
-
     JS_MODULE = True
 except:
     JS_MODULE = False
 try:
     import pylibemu
-
     EMU_MODULE = True
 except:
     EMU_MODULE = False
 try:
     from colorama import init, Fore, Back, Style
-
     COLORIZED_OUTPUT = True
 except:
     COLORIZED_OUTPUT = False
@@ -359,7 +356,7 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.3'
-revision = '252'
+revision = '253'
 stats = ''
 pdf = None
 fileName = None
