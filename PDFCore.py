@@ -6220,6 +6220,7 @@ class PDFFile:
         infoIdLinear = None
         catalogLinear = None
         objectTypeList = ['dictionary', 'array', 'stream']
+        ignoreTypeList = ['/sig']
         catalogLinear = []
         infoLinear = []
         for version in range(self.updates + 1):
@@ -6273,6 +6274,11 @@ class PDFFile:
                         continue
                     if object.getType() == 'null':
                         continue
+                    objectRealType = object.getElementByName('/Type')
+                    if objectRealType not in (None, []):
+                        objectRealTypeValue = objectRealType.getValue()
+                        if objectRealTypeValue.lower() in ignoreTypeList:
+                            continue
                     object.missingCatalog = True
                     self.body[version].deregisterObject(indirectObj)
                     self.body[version].registerObject(indirectObj)
@@ -6310,6 +6316,11 @@ class PDFFile:
                         object = indirectObj.getObject()
                         if object.getType() == 'null':
                             continue
+                        objectRealType = object.getElementByName('/Type')
+                        if objectRealType not in (None, []):
+                            objectRealTypeValue = objectRealType.getValue()
+                            if objectRealTypeValue.lower() in ignoreTypeList:
+                                continue
                         object.missingCatalog = True
                         self.body[version].deregisterObject(indirectObj)
                         self.body[version].registerObject(indirectObj)
