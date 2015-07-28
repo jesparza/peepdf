@@ -45,7 +45,7 @@ MAX_STREAM_SIZE = 50000
 MAX_OBJ_GAP = 4 + 2  # compensation for small offset bug
 MAX_PRE_HEAD_GAP = 4
 MAX_POST_EOF_GAP = 4
-MAX_THRESHOLD_SCORE = 100
+MAX_THRESHOLD_SCORE = 90
 pdfFile = None
 newLine = os.linesep
 isForceMode = False
@@ -175,7 +175,7 @@ indicatorScores = {
     "Large gap after last %EOF": 5,
     "Garbage Header before PDF Header": 8,
     "Garbage Bytes after last %EOF": 7,
-    "Xref Table broken": 5,         # increase after offsets error fix
+    "Xref Table broken": 7,
     "Binary Header too large": 5,
     "Bad PDF Header": 4,
     "%%EOF missing": 5,
@@ -197,7 +197,7 @@ indicatorScores = {
     "/JavaScript": [5, 7],
     "/Launch": [5, 7],
     "/Names": [3, 5],
-    "/OpenAction": [5, 7],
+    "/OpenAction": [6, 8],
     "/RichMedia": [5, 7],
     "/SubmitForm": [5, 7],
     "/XFA": [5, 7],
@@ -207,9 +207,9 @@ indicatorScores = {
     "Invalid stream /Subtype": [4, 7],
     "Large streams": [5, 7],
     "Large strings": [5, 7],
-    "Missing in xref": [6, 8],
-    "Missing object terminator": [4, 7],
-    "Missing stream terminator": [4, 7],
+    "Missing in xref": [7, 9],
+    "Missing object terminator": [5, 8],
+    "Missing stream terminator": [5, 8],
     "Not referenced from Catalog": [5, 7],
     "Obfuscated names": [4, 7],
     "Obfuscated strings": [3, 6],
@@ -218,10 +218,10 @@ indicatorScores = {
     "Xref Table missing": [6, 8],
     "containingJS": [5, 7],
     "Garbage bytes before terminator": [6, 8],
-    "Duplicate Objects": [5,7],
+    "Duplicate Objects": [6,8],
 
     # Int/Tuple return
-    "pagesNumber": "3 if x==None or x<=2 else 2",
+    "pagesNumber": "3 if x is not None and int(x)<=1 else 0",
     "detectionRate": "0 if x==None else (float(x[0])/float(x[1]))*20"
 
 }
@@ -232,9 +232,14 @@ PDFBuildersScore = {
     # Todo: add more creators
     "Acrobat Distiller": 0,
     "Acrobat PDFMaker": 0,
+    "Acrobat PDFWriter": 0,
     "Adobe Acrobat": 0,
+    "AdobePS5.dll": 0,
     "PDF Printer": 0,
     "Microsoft PowerPoint": 0,
+    "Word": 0,
+    "Mac OS X PDFContext": 0,
+    "Ghostscript": 0,
     "FrameMaker": 0,
     "Hewlett-Packard Intelligent Scanning Technology": 0,
     "Arbortext Advanced Print Publisher": 0,
@@ -285,5 +290,13 @@ PDFBuildersScore = {
     "Xpdf": 0,
     "Xournal": 0,
     "Antiword": 0,
-    "dvipdfm": 0
+    "dvipdfm": 0,
+    "PScript5.dll": 0,
+    "APJavaScript": 0,
+    "OneForm Designer": 0,
+    "purepdf": 0,
+    "Scribus": 0,
+    "OpenOffice": 0,
+    "Writer": 0,
+
 }
