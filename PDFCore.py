@@ -3,7 +3,7 @@
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2011-2014 Jose Miguel Esparza
+#    Copyright (C) 2011-2015 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
@@ -53,6 +53,7 @@ monitorizedElements = ['/EmbeddedFiles ',
                        '/U3D',
                        '/PRC',
                        '/RichMedia',
+                       '/Flash',
                        '.rawValue',
                        'keep.previous']
 jsVulns = ['mailto',
