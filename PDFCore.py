@@ -8131,7 +8131,7 @@ class PDFParser:
         '''
         global isForceMode, pdfFile
         if not isinstance(rawContent, str):
-            return (-1, 'Empty xref content')
+            return (-1,'Empty xref content')
         entries = []
         auxOffset = 0
         subSectionSize = 0
@@ -8187,6 +8187,13 @@ class PDFParser:
                             return (-1, 'Bad format for cross reference entry')
                 auxOffset += len(line)
                 subSectionSize += len(line)
+            else:
+                if not pdfCrossRefSubSection:
+                    if isForceMode:
+                        pdfCrossRefSubSection = PDFCrossRefSubSection(0, len(entries), offset=auxOffset)
+                        pdfFile.addError('Missing xref section header')
+                    else:
+                        return (-1, 'Missing xref section header')
         pdfCrossRefSubSection.setSize(subSectionSize)
         pdfCrossRefSection.addSubsection(pdfCrossRefSubSection)
         pdfCrossRefSubSection.setEntries(entries)
