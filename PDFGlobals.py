@@ -175,7 +175,7 @@ indicatorScores = {
     "Large gap after last %EOF": 5,
     "Garbage Header before PDF Header": 8,
     "Garbage Bytes after last %EOF": 7,
-    "Xref Table broken": 5,         # increase after offsets error fix
+    "Xref Table broken": 7,
     "Binary Header too large": 5,
     "Bad PDF Header": 4,
     "%%EOF missing": 5,
