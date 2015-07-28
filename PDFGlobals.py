@@ -207,9 +207,9 @@ indicatorScores = {
     "Invalid stream /Subtype": [4, 7],
     "Large streams": [5, 7],
     "Large strings": [5, 7],
-    "Missing in xref": [6, 8],
-    "Missing object terminator": [4, 7],
-    "Missing stream terminator": [4, 7],
+    "Missing in xref": [7, 9],
+    "Missing object terminator": [5, 8],
+    "Missing stream terminator": [5, 8],
     "Not referenced from Catalog": [5, 7],
     "Obfuscated names": [4, 7],
     "Obfuscated strings": [3, 6],
@@ -218,7 +218,7 @@ indicatorScores = {
     "Xref Table missing": [6, 8],
     "containingJS": [5, 7],
     "Garbage bytes before terminator": [6, 8],
-    "Duplicate Objects": [5,7],
+    "Duplicate Objects": [6,8],
 
     # Int/Tuple return
     "pagesNumber": "3 if x is not None and int(x)<=1 else 0",
