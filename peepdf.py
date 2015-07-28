@@ -277,6 +277,7 @@ def getPeepJSON(statsDict, version, revision):
     if statsDict['Detection'] != [] and statsDict['Detection'] is not None:
         basicDict['detection']['rate'] = '%d/%d' % (statsDict['Detection'][0], statsDict['Detection'][1])
         basicDict['detection']['report_link'] = statsDict['Detection report']
+    basicDict['maliciousness_score'] = statsDict['Score']
     basicDict['pdf_version'] = statsDict['Version']
     basicDict['binary'] = bool(statsDict['Binary'])
     basicDict['linearized'] = bool(statsDict['Linearized'])
@@ -362,6 +363,21 @@ def getPeepJSON(statsDict, version, revision):
                                               'elements': elementArray,
                                               'js_vulns': vulnArray,
                                               'urls': statsVersion['URLs']}
+        properties = statsVersion['Properties']
+        propertiesArray = []
+        if properties:
+            for prop in properties:
+                propInfo = {'name': prop}
+                propertiesArray.append(propInfo)
+        indicators = statsVersion['Indicators']
+        indicatorArray = []
+        if indicators:
+            for indicator in indicators:
+                indicatorInfo = {'name': indicator}
+                indicatorInfo['objects'] = indicators[indicator]
+                indicatorArray.append(indicatorInfo)
+        versionInfo['suspicious_properties'] = {'properties': propertiesArray}
+        versionInfo['suspicious_indicators'] = {'indicators': indicatorArray}
         versionReport = {'version_info': versionInfo}
         advancedInfo.append(versionReport)
     jsonDict = {'peepdf_analysis':
