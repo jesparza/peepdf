@@ -3,7 +3,7 @@
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2011-2014 Jose Miguel Esparza
+#    Copyright (C) 2011-2015 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
@@ -53,6 +53,7 @@ monitorizedElements = ['/EmbeddedFiles ',
                        '/U3D',
                        '/PRC',
                        '/RichMedia',
+                       '/Flash',
                        '.rawValue',
                        'keep.previous']
 jsVulns = ['mailto',
@@ -7225,8 +7226,8 @@ class PDFParser :
             @param offset Offset of the cross reference section in the PDF file (int)
             @return A tuple (status,statusContent), where statusContent is the PDFCrossRefSection in case status = 0 or an error in case status = -1
         '''
-        global isForceMode,pdfFile
-        if not isinstance(rawContent,str):
+        global isForceMode, pdfFile
+        if not isinstance(rawContent, str):
             return (-1,'Empty xref content')
         entries = []
         auxOffset = 0
@@ -7251,7 +7252,7 @@ class PDFParser :
                 return (-1,'Error: No entries in xref section!!')
         else:
             for line in lines:
-                match = re.findall(beginSubSectionRE,line)
+                match = re.findall(beginSubSectionRE, line)
                 if match != []:
                     if pdfCrossRefSubSection != None:        
                         pdfCrossRefSubSection.setSize(subSectionSize)
@@ -7260,14 +7261,14 @@ class PDFParser :
                         subSectionSize = 0
                         entries = []
                     try:
-                        pdfCrossRefSubSection = PDFCrossRefSubSection(match[0][0],match[0][1],offset = auxOffset)
+                        pdfCrossRefSubSection = PDFCrossRefSubSection(match[0][0], match[0][1], offset=auxOffset)
                     except:
                         return (-1,'Error creating PDFCrossRefSubSection')
                 else:
                     match = re.findall(entryRE,line)
                     if match != []:
                         try:
-                            pdfCrossRefEntry = PDFCrossRefEntry(match[0][0],match[0][1],match[0][2], offset = auxOffset)
+                            pdfCrossRefEntry = PDFCrossRefEntry(match[0][0], match[0][1], match[0][2], offset=auxOffset)
                         except:
                             return (-1,'Error creating PDFCrossRefEntry')
                         entries.append(pdfCrossRefEntry)
@@ -7277,12 +7278,19 @@ class PDFParser :
                             if pdfCrossRefSubSection != None:
                                 pdfCrossRefSubSection.addError('Bad format for cross reference entry: '+line)
                             else:
-                                pdfCrossRefSubSection = PDFCrossRefSubSection(0, offset = -1)
+                                pdfCrossRefSubSection = PDFCrossRefSubSection(0, offset=-1)
                                 pdfFile.addError('Bad xref section')
                         else:
                             return (-1,'Bad format for cross reference entry')
                 auxOffset += len(line)
                 subSectionSize += len(line)
+            else:
+                if not pdfCrossRefSubSection:
+                    if isForceMode:
+                        pdfCrossRefSubSection = PDFCrossRefSubSection(0, len(entries), offset=auxOffset)
+                        pdfFile.addError('Missing xref section header')
+                    else:
+                        return (-1, 'Missing xref section header')
         pdfCrossRefSubSection.setSize(subSectionSize)
         pdfCrossRefSection.addSubsection(pdfCrossRefSubSection)
         pdfCrossRefSubSection.setEntries(entries)
