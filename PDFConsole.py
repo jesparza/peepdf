@@ -3179,18 +3179,31 @@ class PDFConsole(cmd.Cmd):
             self.help_score()
             return False
         self.pdfFile.calculateScore()
-        print '%s%0.1f/10%s' % (self.warningColor, self.pdfFile.score, self.resetColor) + newLine
+        if not self.avoidOutputColors:
+            highlightColor = self.warningColor
+        else:
+            highlightColor = ''
         scoringCard = self.pdfFile.scoringCard
         max_length = 0
-        print '%s%-35s\t%s%s' % (self.warningColor, 'Indicator(#)', 'Score', self.resetColor)
+        print '='*48
+        print highlightColor + '[+] Indicator Scores' + self.resetColor
+        print '-'*48
         for score in scoringCard:
-            text = '%-35s\t%0.1f' % (score[0], score[1])
+            text = '[-] %s: %0.1f' % (score[0].ljust(35, '.'), score[1])
             if len(text) > max_length:
                 max_length = len(text)
             print text
-        print '_' * max_length
-        print '%-35s\t%0.1f' % ('Threshold Score', self.pdfFile.thresholdScore)
-        print '%-35s\t%0.1f/10' % ('Average Calculated', self.pdfFile.score)
+        print '-' * 48
+        print '[-] %s: %0.1f' % ('Total calculated'.ljust(35, '.'), self.pdfFile.rawScore)
+        print '[-] %s: %0.1f' % ('Threshold calculated'.ljust(35, '.'), self.pdfFile.thresholdScore)
+        print '[-] %s: %s%0.1f/10%s' % ('Overall Maliciousness Score'.ljust(35, '.'), highlightColor,self.pdfFile.score, self.resetColor)
+        print '=' * 48
+        if self.pdfFile.score >= 7:
+            warningMessageColor = self.errorColor if not self.avoidOutputColors else ''
+            print warningMessageColor + "[!] HIGH probability of being malicious" + self.resetColor
+        elif self.pdfFile.score >= 4:
+            warningMessageColor = self.warningColor if not self.avoidOutputColors else ''
+            print warningMessageColor + "[!] MEDIUM probability of being malicious" + self.resetColor
 
     def help_score(self):
         print newLine + 'Usage: score'

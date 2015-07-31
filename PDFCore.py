@@ -5025,6 +5025,7 @@ class PDFFile:
         if obfuscationScore > 0:
             scoringCard.append(('Obfuscated Javascript (%d)' % obfuscatedStreamCount, obfuscationScore))
         maliciousness += obfuscationScore
+        self.rawScore = maliciousness
         maliciousness = (float(maliciousness) / float(threshold_score)) * 10.0
         if maliciousness > 10:
             maliciousness = 10
