@@ -62,6 +62,7 @@ monitorizedElements = ['/EmbeddedFiles ',
                        '/U3D',
                        '/PRC',
                        '/RichMedia',
+                       '/Flash',
                        '.rawValue',
                        'keep.previous']
 monitorizedIndicators = {'versionBased':{
@@ -199,6 +200,7 @@ indicatorScores = {
     "/Names": [3, 5],
     "/OpenAction": [6, 8],
     "/RichMedia": [5, 7],
+    "/Flash": [5, 7],
     "/SubmitForm": [5, 7],
     "/XFA": [5, 7],
     "Garbage Bytes before": [6, 8],
