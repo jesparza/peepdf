@@ -3,7 +3,7 @@
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2011-2014 Jose Miguel Esparza
+#    Copyright (C) 2011-2015 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
@@ -5025,6 +5025,7 @@ class PDFFile:
         if obfuscationScore > 0:
             scoringCard.append(('Obfuscated Javascript (%d)' % obfuscatedStreamCount, obfuscationScore))
         maliciousness += obfuscationScore
+        self.rawScore = maliciousness
         maliciousness = (float(maliciousness) / float(threshold_score)) * 10.0
         if maliciousness > 10:
             maliciousness = 10
