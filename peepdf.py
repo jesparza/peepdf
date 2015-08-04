@@ -312,7 +312,7 @@ def getPeepJSON(statsDict, version, revision):
             versionInfo['encoded_streams'] = statsVersion['Encoded'][1]
         else:
             versionInfo['encoded_streams'] = []
-        if statsVersion['Decoding Errors'] is not None:
+        if versionInfo['encoded_streams'] and statsVersion['Decoding Errors'] is not None:
             versionInfo['decoding_error_streams'] = statsVersion['Decoding Errors'][1]
         else:
             versionInfo['decoding_error_streams'] = []
