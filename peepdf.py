@@ -56,6 +56,12 @@ try:
 except:
     COLORIZED_OUTPUT = False
 
+try:
+    from PIL import Image
+    PIL_MODULE = True
+except:
+    PIL_MODULE = False
+
 
 def getRepPaths(url, path=''):
     paths = []
@@ -395,7 +401,7 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.3'
-revision = '253'
+revision = '254'
 stats = ''
 pdf = None
 fileName = None
@@ -460,7 +466,7 @@ try:
         localVersion = 'v' + version + ' r' + revision
         reVersion = 'version = \'(\d\.\d)\'\s*?revision = \'(\d+)\''
         repURL = 'https://api.github.com/repos/jesparza/peepdf/contents/'
-        rawRepURL = 'https://raw.githubusercontent.com/jesparza/peepdf/master/'
+        rawRepURL = 'https://raw.githubusercontent.com/jesparza/peepdf/gsoc/'
         print '[-] Checking if there are new updates...'
         try:
             remotePeepContent = urllib2.urlopen(rawRepURL + 'peepdf.py').read()
@@ -596,6 +602,9 @@ try:
                         stats += warningColor + warningMessage + resetColor + newLine
                     if not EMU_MODULE:
                         warningMessage = 'Warning: pylibemu is not installed!!'
+                        stats += warningColor + warningMessage + resetColor + newLine
+                    if not PIL_MODULE:
+                        warningMessage = 'Warning: Python Imaging Library (PIL) is not installed!!'
                         stats += warningColor + warningMessage + resetColor + newLine
                     errors = statsDict['Errors']
                     for error in errors:
