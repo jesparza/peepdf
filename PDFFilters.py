@@ -1,9 +1,9 @@
 #
-#    peepdf is a tool to analyse and modify PDF files
+# peepdf is a tool to analyse and modify PDF files
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2011-2014 Jose Miguel Esparza
+#    Copyright (C) 2011-2015 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
@@ -127,6 +127,7 @@ def encodeStream(stream, filter, parameters={}):
     else:
         ret = (-1, 'Unknown filter "%s"' % filter)
     return ret
+
 
 '''
 The ascii85Decode code is part of pdfminer (http://pypi.python.org/pypi/pdfminer/)
@@ -470,8 +471,7 @@ def pre_prediction(stream, predictor, columns, colors, bits):
     '''
 
     output = ''
-    # TODO: TIFF and more PNG predictions
-
+    #TODO: TIFF and more PNG predictions
     # PNG prediction
     if predictor >= 10 and predictor <= 15:
         # PNG prediction can vary from row to row
@@ -644,7 +644,7 @@ def runLengthEncode(stream):
 
 def ccittFaxDecode(stream, parameters):
     '''
-        Method to decode streams using the CCITT facsimile standard (NOT IMPLEMENTED YET)
+        Method to decode streams using the CCITT facsimile standard
 
         @param stream: A PDF stream
         @return: A tuple (status,statusContent), where statusContent is the decoded PDF stream in case status = 0 or an error in case status = -1
@@ -725,7 +725,8 @@ def ccittFaxDecode(stream, parameters):
         else:
             damagedRowsBeforeError = 0
         try:
-            decodedStream = CCITTFax().decode(stream, k, eol, byteAlign, columns, rows, eob, blackIs1, damagedRowsBeforeError)
+            decodedStream = CCITTFax().decode(stream, k, eol, byteAlign, columns, rows, eob, blackIs1,
+                                              damagedRowsBeforeError)
             return (0, decodedStream)
         except:
             return (-1, 'Error decompressing string')
@@ -760,7 +761,7 @@ def crypt(stream, parameters):
             if cryptFilterName == 'Identity':
                 return (0, stream)
             else:
-                # TODO: algorithm is cryptFilterName, specified in the /CF dictionary
+                #TODO: algorithm is cryptFilterName, specified in the /CF dictionary
                 return (-1, 'Crypt not supported yet')
 
 
@@ -782,7 +783,7 @@ def decrypt(stream, parameters):
             if cryptFilterName == 'Identity':
                 return (0, stream)
             else:
-                # TODO: algorithm is cryptFilterName, specified in the /CF dictionary
+                #TODO: algorithm is cryptFilterName, specified in the /CF dictionary
                 return (-1, 'Decrypt not supported yet')
 
 
@@ -794,8 +795,18 @@ def dctDecode(stream, parameters):
         @return: A tuple (status,statusContent), where statusContent is the decoded PDF stream in case status = 0 or an error in case status = -1
     '''
     decodedStream = ''
-    return (-1, 'DctDecode not supported yet')
-
+    try:
+        from PIL import Image
+        import StringIO
+    except:
+        return (-1, 'Python Imaging Library (PIL) not installed')
+    # Quick implementation, assuming the library can detect the parameters
+    try:
+        im = Image.open(StringIO.StringIO(stream))
+        decodedStream = im.tostring()
+        return (0, decodedStream)
+    except:
+        return (-1, 'Error decompresing image data')
 
 def dctEncode(stream, parameters):
     '''
