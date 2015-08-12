@@ -28,6 +28,20 @@
 import os
 
 
+
+
+'''
+++++++++++++++++++++++++peepdf.py+++++++++++++++++++++++++
+'''
+author = 'Jose Miguel Esparza'
+email = 'peepdf AT eternal-todo.com'
+url = 'http://peepdf.eternal-todo.com'
+twitter = 'http://twitter.com/EternalTodo'
+peepTwitter = 'http://twitter.com/peepdf'
+version = '0.3'
+revision = '255'
+
+
 '''
 ++++++++++++++++++++++++PDFCore.py++++++++++++++++++++++++
 '''

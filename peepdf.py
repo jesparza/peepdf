@@ -395,13 +395,6 @@ def getPeepJSON(statsDict, version, revision):
     return json.dumps(jsonDict, indent=4, sort_keys=True)
 
 
-author = 'Jose Miguel Esparza'
-email = 'peepdf AT eternal-todo.com'
-url = 'http://peepdf.eternal-todo.com'
-twitter = 'http://twitter.com/EternalTodo'
-peepTwitter = 'http://twitter.com/peepdf'
-version = '0.3'
-revision = '255'
 stats = ''
 pdf = None
 fileName = None
