@@ -176,6 +176,8 @@ def main():
         f = open(args.output, 'w')
         f.write(jsonDict)
         f.close()
+        if not args.silent:
+            print "Detailed stats saved at %s" %args.output
     if not args.silent:
         print format(stats, tab=4)
 
