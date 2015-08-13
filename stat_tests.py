@@ -31,11 +31,23 @@ import PDFGlobals
 import argparse
 import sys
 import os
+import signal
+
+
+interruptCaught = False
+
+
+def sigint_handler(signal, frame):
+    # Pack Up stats with whatever files analyzed
+    global interruptCaught
+    interruptCaught = True
+
+signal.signal(signal.SIGINT, sigint_handler)
 
 
 def restart_line():
     sys.stdout.flush()
-    sys.stdout.write('\r' + ' '*200 + '\r')
+    sys.stdout.write('\r' + ' '*150 + '\r')
     sys.stdout.flush()
 
 
@@ -52,7 +64,33 @@ def format(d, tab=0, level=0):
     return ''.join(s)
 
 
+def packUp(stats, individualStats, args):
+    if not args.silent:
+        restart_line()
+    # Calculate Percentages
+    stats['numRawScoreGreaterThanThreshold'][1] = round((float(stats['numRawScoreGreaterThanThreshold'][0])/float(stats['numAnalyzedFiles']))  * 100.0, 2)
+    for scoreStatsKey in stats['scoreStats']:
+        stats['scoreStats'][scoreStatsKey][1] = round((float(stats['scoreStats'][scoreStatsKey][0])/float(stats['numAnalyzedFiles'])) * 100.0, 2)
+    stats['numExceptionFiles'][1] = round((float(stats['numExceptionFiles'][0])/float(stats['numAnalyzedFiles'])) * 100.0, 2)
+    for indicatorStatsKey in stats['indicatorStats']:
+        stats['indicatorStats'][indicatorStatsKey][1] = round((float(stats['indicatorStats'][indicatorStatsKey][0])/float(stats['numAnalyzedFiles'])) * 100.0, 2)
+    statistics = {
+        'stats': stats,
+        'individualStats': individualStats
+    }
+    jsonDict = format(statistics, tab=2)
+    if args.output is not None:
+        f = open(args.output, 'w')
+        f.write(jsonDict)
+        f.close()
+        if not args.silent:
+            print "Detailed stats saved at %s" %args.output
+    if not args.silent:
+        print format(stats, tab=4)
+
+
 def main():
+    global interruptCaught
     parser =  argparse.ArgumentParser(description='Run peepdf on PDF files in a directory and get stats.')
     parser.add_argument('-d', '--directory', action='store', type=str,
                       help='Test pdf files from this directory')
@@ -89,8 +127,11 @@ def main():
     if not os.path.isabs(directory):
         directory = os.path.join(os.getcwd(), directory)
     files = os.listdir(directory)
+    numAnalyzedFiles = 0
     stats = {
+        # Array indicates [numberOfOccurrences, Percentage]
         'numFiles': len(files),
+        'numAnalyzedFiles': numAnalyzedFiles,
         'userDefinedStatus': userDefinedStatus,
         'numRawScoreGreaterThanThreshold': [0, 0.0],
         'directory': directory,
@@ -122,6 +163,11 @@ def main():
     numFiles = len(files)
     numExceptions = 0
     for index, filename in enumerate(files):
+        if interruptCaught:
+            if not args.silent:
+                restart_line()
+                print "\rInterrupt Caught. Packing Up with %s/%s Analyzed Files." %(index, numFiles)
+            break
         if not args.silent:
             restart_line()
             sys.stdout.write('\rExceptions(errors): %s| %s/%s: Analyzing %s' %(numExceptions, index+1, numFiles, filename))
@@ -157,29 +203,9 @@ def main():
             individualStats['files'][filePath]['thresholdScore'] = pdf.thresholdScore
             individualStats['files'][filePath]['md5'] = pdf.md5
             individualStats['numFiles'] += 1
-    if not args.silent:
-        restart_line()
-    # Calculate Percentages
-    stats['numRawScoreGreaterThanThreshold'][1] = round(float(stats['numRawScoreGreaterThanThreshold'][0])/float(numFiles), 4)
-    for scoreStatsKey in stats['scoreStats']:
-        stats['scoreStats'][scoreStatsKey][1] = round(float(stats['scoreStats'][scoreStatsKey][0])/float(numFiles), 4)
-    stats['numExceptionFiles'][1] = round(float(stats['numExceptionFiles'][0])/float(numFiles), 4)
-    for indicatorStatsKey in stats['indicatorStats']:
-        stats['indicatorStats'][indicatorStatsKey][1] = round(float(stats['indicatorStats'][indicatorStatsKey][0])/float(numFiles), 4)
-
-    statistics = {
-        'stats': stats,
-        'individualStats': individualStats
-    }
-    jsonDict = format(statistics, tab=2)
-    if args.output is not None:
-        f = open(args.output, 'w')
-        f.write(jsonDict)
-        f.close()
-        if not args.silent:
-            print "Detailed stats saved at %s" %args.output
-    if not args.silent:
-        print format(stats, tab=4)
+        numAnalyzedFiles += 1
+        stats['numAnalyzedFiles'] = numAnalyzedFiles
+    packUp(stats, individualStats, args)
 
 
 if __name__ == '__main__':
