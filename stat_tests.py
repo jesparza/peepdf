@@ -223,7 +223,7 @@ def main():
         individualStatsFile.flush()
         numAnalyzedFiles += 1
         stats['numAnalyzedFiles'] = numAnalyzedFiles
-        freeMemory(pdfParser, pdf, ret, fileData, exception, exceptionData)
+        freeMemory(pdfParser, pdf, ret, fileData, exception, exceptionData, fileDataFormatted)
     packUp(stats, args)
 
 
