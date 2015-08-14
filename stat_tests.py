@@ -146,14 +146,19 @@ def main():
             '10': [0, 0.0]
         },
         'numExceptionFiles': [0, 0.0],
-        'exceptionFiles': {},
         'indicatorStats': {}
     }
     numFiles = len(files)
     numExceptions = 0
     if args.output:
         individualStatsFileName = args.output + '_files'
+        individualStatsFile = open(individualStatsFileName, 'w')
+        individualStatsFile.close()
         individualStatsFile = open(individualStatsFileName, 'a')
+        exceptionsFileName = args.output + '_exceptions'
+        exceptionsFile = open(exceptionsFileName, 'w')
+        exceptionsFile.close()
+        exceptionsFile = open(exceptionsFileName, 'a')
     for index, filename in enumerate(files):
         if interruptCaught:
             if not args.silent:
@@ -176,7 +181,12 @@ def main():
             scoringFactors = pdf.getScoringFactors(nonNull=True)
         except Exception, e:
             stats['numExceptionFiles'][0] += 1
-            stats['exceptionFiles'][filePath] = e
+            exception = {}
+            exception['filePath'] = filePath
+            exception['exception'] = e
+            exceptionData = format(exception, tab=4)
+            exceptionsFile.write(exceptionData)
+            exceptionsFile.flush()
             numExceptions += 1
             continue
         score = pdf.score
@@ -198,6 +208,7 @@ def main():
         fileData['rawScore'] = pdf.rawScore
         fileData['thresholdScore'] = pdf.thresholdScore
         fileData['md5'] = pdf.md5
+        fileData['index'] = index+1
         fileDataFormatted = format(fileData, tab=4)
         individualStatsFile.write(fileDataFormatted)
         individualStatsFile.flush()
