@@ -173,6 +173,10 @@ def main():
             sys.stdout.write('\rExceptions(errors): %s| %s/%s: Analyzing %s' %(numExceptions, index+1, numFiles, filename))
             sys.stdout.flush()
         filePath = os.path.join(directory, filename)
+        fileSize = os.path.getsize(filePath)
+        if fileSize > 999999:
+            # Skipping very large files
+            continue
         pdfParser = PDFCore.PDFParser()
         try:
             ret, pdf = pdfParser.parse(filePath, isForceMode, isLooseMode, isManualAnalysis, checkonVT)
