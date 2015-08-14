@@ -33,6 +33,7 @@ import argparse
 import sys
 import os
 import signal
+import gc
 
 
 interruptCaught = False
@@ -84,6 +85,12 @@ def packUp(stats, args):
             print "Detailed stats saved at %s" %args.output
     if not args.silent:
         print format(stats, tab=4)
+
+
+def freeMemory(*args):
+    for obj in args:
+        del obj
+    gc.collect()
 
 
 def main():
@@ -171,6 +178,8 @@ def main():
             sys.stdout.flush()
         filePath = os.path.join(directory, filename)
         fileSize = os.path.getsize(filePath)
+        exception = None
+        exceptionData = None
         if fileSize > 999999:
             # Skipping very large files
             continue
@@ -214,6 +223,7 @@ def main():
         individualStatsFile.flush()
         numAnalyzedFiles += 1
         stats['numAnalyzedFiles'] = numAnalyzedFiles
+        freeMemory(pdfParser, pdf, ret, fileData, exception, exceptionData)
     packUp(stats, args)
 
 
