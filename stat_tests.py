@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #
 #    peepdf is a tool to analyse and modify PDF files
 #    http://peepdf.eternal-todo.com
