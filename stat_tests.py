@@ -64,7 +64,7 @@ def format(d, tab=0, level=0):
     return ''.join(s)
 
 
-def packUp(stats, individualStats, args):
+def packUp(stats, args):
     if not args.silent:
         restart_line()
     # Calculate Percentages
@@ -74,11 +74,7 @@ def packUp(stats, individualStats, args):
     stats['numExceptionFiles'][1] = round((float(stats['numExceptionFiles'][0])/float(stats['numAnalyzedFiles'])) * 100.0, 2)
     for indicatorStatsKey in stats['indicatorStats']:
         stats['indicatorStats'][indicatorStatsKey][1] = round((float(stats['indicatorStats'][indicatorStatsKey][0])/float(stats['numAnalyzedFiles'])) * 100.0, 2)
-    statistics = {
-        'stats': stats,
-        'individualStats': individualStats
-    }
-    jsonDict = format(statistics, tab=2)
+    jsonDict = format(stats, tab=4)
     if args.output is not None:
         f = open(args.output, 'w')
         f.write(jsonDict)
@@ -152,16 +148,11 @@ def main():
         'exceptionFiles': {},
         'indicatorStats': {}
     }
-    individualStats = {
-        'numFiles': 0,
-        'userDefinedStatus': userDefinedStatus,
-        'directory': directory,
-        'files': {
-                #'filename': { 'score': 0, 'rawScore': 0, 'thresholdScore': 0, md5: 00 }
-        }
-    }
     numFiles = len(files)
     numExceptions = 0
+    if args.output:
+        individualStatsFileName = args.output + '_files'
+        individualStatsFile = open(individualStatsFileName, 'a')
     for index, filename in enumerate(files):
         if interruptCaught:
             if not args.silent:
@@ -200,16 +191,18 @@ def main():
                 stats['indicatorStats'][factor] = [1, 0]
             else:
                 stats['indicatorStats'][factor][0] += 1
-        if filePath not in individualStats['files'].keys():
-            individualStats['files'][filePath] = {}
-            individualStats['files'][filePath]['score'] = round(pdf.score, 3)
-            individualStats['files'][filePath]['rawScore'] = pdf.rawScore
-            individualStats['files'][filePath]['thresholdScore'] = pdf.thresholdScore
-            individualStats['files'][filePath]['md5'] = pdf.md5
-            individualStats['numFiles'] += 1
+        fileData = {}
+        fileData['filePath'] = filePath
+        fileData['score'] = round(pdf.score, 3)
+        fileData['rawScore'] = pdf.rawScore
+        fileData['thresholdScore'] = pdf.thresholdScore
+        fileData['md5'] = pdf.md5
+        fileDataFormatted = format(fileData, tab=4)
+        individualStatsFile.write(fileDataFormatted)
+        individualStatsFile.flush()
         numAnalyzedFiles += 1
         stats['numAnalyzedFiles'] = numAnalyzedFiles
-    packUp(stats, individualStats, args)
+    packUp(stats, args)
 
 
 if __name__ == '__main__':
