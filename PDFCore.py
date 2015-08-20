@@ -4887,6 +4887,7 @@ class PDFFile:
         self.pagesCount = 0
         self.brokenXref = False
         self.illegalXref = False
+        self.emptyXref = False
         self.largeHeader = False
         self.largeBinaryHeader = False
         self.garbageHeaderPresent = False
@@ -6198,6 +6199,8 @@ class PDFFile:
             isolatedList.remove(objectId)
         elif object in doneList:
             return None
+        if object is None:
+            return None
         doneList.append(object)
         for reference in object.getReferences():
             referenceId = reference.split()[0]
@@ -7423,9 +7426,9 @@ class PDFFile:
             self.missingXref = True
         else:
             self.missingXref = False
-        catalogId = self.getCatalogObjectId()
-        catalogId = filter(None, catalogId)
-        if catalogId == []:
+        catalogObj = self.getCatalogObject()
+        catalogObj = filter(None, catalogObj)
+        if catalogObj == []:
             self.missingCatalog = True
         else:
             self.missingCatalog = False
@@ -8155,6 +8158,7 @@ class PDFParser:
             if isForceMode:
                 pdfCrossRefSubSection = PDFCrossRefSubSection(0, offset=-1)
                 pdfFile.addError('No entries in xref section')
+                pdfFile.emptyXref = True
             else:
                 return (-1, 'Error: No entries in xref section!!')
         else:

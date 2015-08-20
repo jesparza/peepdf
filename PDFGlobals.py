@@ -95,6 +95,7 @@ monitorizedIndicators = {'versionBased':{
                          'fileBased':{
                              'brokenXref': 'Xref Table broken',
                              'illegalXref': 'Illegal entries in Xref',
+                             'emptyXref': 'No entries in Xref Section',
                              'largeHeader': 'Header too large',
                              'largeBinaryHeader': 'Binary Header too large',
                              'garbageHeaderPresent': 'Garbage Header before PDF Header',
@@ -191,6 +192,7 @@ indicatorScores = {
     "Garbage Header before PDF Header": 8,
     "Garbage Bytes after last %EOF": 7,
     "Xref Table broken": 7,
+    "No entries in Xref Section": 9,
     "Binary Header too large": 5,
     "Bad PDF Header": 4,
     "%%EOF missing": 5,
