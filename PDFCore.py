@@ -6728,6 +6728,12 @@ class PDFFile:
         elif self.detectionRate != []:
             factorsDict['detectionRate'] = self.detectionRate
             factorsDict['detectionReport'] = self.detectionReport
+        errors = self.getErrors()
+        parsingErrorList = []
+        for error in errors:
+            if 'Error parsing object'.lower() in error.lower():
+                parsingErrorList.append(error)
+        factorsDict['Object Parsing Errors'] = parsingErrorList
         return factorsDict
 
     def getSHA1(self):

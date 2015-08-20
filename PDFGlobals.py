@@ -237,6 +237,7 @@ indicatorScores = {
     "containingJS": [5, 7],
     "Garbage bytes before terminator": [6, 8],
     "Duplicate Objects": [6,8],
+    "Object Parsing Errors": [5,10],
 
     # Int/Tuple return
     "pagesNumber": "3 if x is not None and int(x)<=1 else 0",
