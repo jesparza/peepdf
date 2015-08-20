@@ -4888,6 +4888,7 @@ class PDFFile:
         self.brokenXref = False
         self.illegalXref = False
         self.emptyXref = False
+        self.missingXrefEOL = False
         self.largeHeader = False
         self.largeBinaryHeader = False
         self.garbageHeaderPresent = False
@@ -8384,6 +8385,7 @@ class PDFParser:
                 if isForceMode:
                     lastXrefSection = -1
                     pdfFile.addError('EOL not found while looking for the last cross reference section')
+                    pdfFile.missingXrefEOL = True
                 else:
                     return (-1, 'EOL not found while looking for the last cross reference section')
             else:
