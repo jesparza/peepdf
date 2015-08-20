@@ -6275,7 +6275,10 @@ class PDFFile:
                         continue
                     if object.getType() == 'null':
                         continue
-                    objectRealType = object.getElementByName('/Type')
+                    try:
+                        objectRealType = object.getElementByName('/Type')
+                    except AttributeError:
+                        objectRealType = None
                     if objectRealType not in (None, []):
                         objectRealTypeValue = objectRealType.getValue()
                         if objectRealTypeValue.lower() in ignoreTypeList:
