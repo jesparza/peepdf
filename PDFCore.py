@@ -5751,6 +5751,10 @@ class PDFFile:
         pass
 
     def detectGarbageBetweenObjects(self):
+        '''
+            Method to detect garbage whitespace or garbage text between the end of one object and starting of other.
+
+        '''
         offsetDict = self.getOffsets()
         offsetList = []
         for version, content in enumerate(offsetDict):
@@ -6217,6 +6221,11 @@ class PDFFile:
                     self._updateReferenceList(referenceObject, referenceId, version, isolatedList)
 
     def getIsolatedObjects(self):
+        '''
+            Method to get objects which have no recursive direct/indirect references from catalog.
+
+            @return A dictionary containing isolated objects of each version.
+        '''
         if filter(None, self.getCatalogObjectId()) == []:
             return None
         isolatedListDict = {}
@@ -7469,6 +7478,10 @@ class PDFFile:
         pass
 
     def verifyXrefOffsets(self):
+        '''
+            Method to verify origin object offsets with those in xref table.
+
+        '''
         linearezedXrefObjectList = []
         linearizedfaultyList = {}
         for version in range(self.updates + 1):
