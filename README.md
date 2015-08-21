@@ -23,6 +23,8 @@ The main functionalities of peepdf are the following:
   * Extraction of old versions of the document
   * Easy extraction of objects, Javascript code, shellcodes (>, >>, $>, $>>)
   * Checking hashes on **VirusTotal**
+  * Suspicious Elements
+  * Maliciousness score
 
 
 **Creation/Modification:**
