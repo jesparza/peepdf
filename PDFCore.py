@@ -7555,7 +7555,7 @@ class PDFFile:
                     continue
                 for objectId in realObjectOffsets.keys():
                     if objectId not in xrefList:
-                        indirectObj = self.getObject(objectId, indirect=True)
+                        indirectObj = self.getObject(objectId, version=version, indirect=True)
                         indirectObj.getObject().missingXref = True
                         self.body[version].deregisterObject(indirectObj)
                         self.body[version].registerObject(indirectObj)
