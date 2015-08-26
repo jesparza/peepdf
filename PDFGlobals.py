@@ -247,6 +247,8 @@ indicatorScores = {
 
 }
 
+
+# PDF Builder List
 UNKNOWN_BUILDER_SCORE = 7
 MAX_BUILDER_SCORE = 9
 PDFBuildersScore = {

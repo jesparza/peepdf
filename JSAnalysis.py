@@ -137,7 +137,7 @@ def analyseJS(code, context=None, manualAnalysis=False):
 
 def getObfuscationScore(jsCode):
     '''
-        Given the Javascript code this method tries to detect JS Obfuscation using frequency analysis, Entropy and Work size.
+        Given the Javascript code this method tries to detect JS Obfuscation using frequency analysis, Entropy and Word size.
 
         @param jsCode: The Javascript code (string)
         @return: Score(maximum: 10) of obfuscation in Javascript

@@ -54,6 +54,7 @@ def restart_line():
 
 
 def format(d, tab=0, level=0):
+    # Format into json with arrays/lists in single line
     s = ['{\n']
     localTab = tab + tab*level
     for k,v in d.items():
@@ -67,6 +68,7 @@ def format(d, tab=0, level=0):
 
 
 def packUp(stats, args):
+    # Packup the testing and write results to file.
     if not args.silent:
         restart_line()
     # Calculate Percentages
