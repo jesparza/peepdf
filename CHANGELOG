@@ -1,4 +1,21 @@
 -----------------------------------------------
+peepdf 0.4 r256, 2015-08-27
+-----------------------------------------------
+
+    * New features:
+
+        - Added scoring system with score command
+        - Added detection of popular suspicious indicators
+        - Added support for json output
+        - Added support for DCTDecode filter
+
+    * Fixes:
+
+        - Fixed offset bug realted to different versions
+        - Fixed signal handling error in interactive console
+        - Fixed object parsing bug with missing terminator
+
+-----------------------------------------------
 peepdf 0.3 r235, 2014-06-09
 -----------------------------------------------
 

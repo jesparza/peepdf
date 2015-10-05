@@ -28,6 +28,20 @@
 import os
 
 
+
+
+'''
+++++++++++++++++++++++++peepdf.py+++++++++++++++++++++++++
+'''
+author = 'Jose Miguel Esparza'
+email = 'peepdf AT eternal-todo.com'
+url = 'http://peepdf.eternal-todo.com'
+twitter = 'http://twitter.com/EternalTodo'
+peepTwitter = 'http://twitter.com/peepdf'
+version = '0.3'
+revision = '255'
+
+
 '''
 ++++++++++++++++++++++++PDFCore.py++++++++++++++++++++++++
 '''
@@ -81,6 +95,7 @@ monitorizedIndicators = {'versionBased':{
                          'fileBased':{
                              'brokenXref': 'Xref Table broken',
                              'illegalXref': 'Illegal entries in Xref',
+                             'emptyXref': 'No entries in Xref Section',
                              'largeHeader': 'Header too large',
                              'largeBinaryHeader': 'Binary Header too large',
                              'garbageHeaderPresent': 'Garbage Header before PDF Header',
@@ -88,6 +103,7 @@ monitorizedIndicators = {'versionBased':{
                              'missingEOF': '%%EOF missing',
                              'missingPages': '/Pages Missing',
                              'missingXref': 'Xref Missing',
+                             'missingXrefEOL': 'Xref EOL Missing',
                              'missingCatalog': 'Catalog Missing',
                              'gapBeforeHeaderPresent': 'Large Gap before Header',
                              'garbageAfterEOFPresent': 'Garbage Bytes after last %EOF',
@@ -177,11 +193,13 @@ indicatorScores = {
     "Garbage Header before PDF Header": 8,
     "Garbage Bytes after last %EOF": 7,
     "Xref Table broken": 7,
+    "No entries in Xref Section": 9,
     "Binary Header too large": 5,
     "Bad PDF Header": 4,
     "%%EOF missing": 5,
     "Xref Missing": 6,
     "Catalog Missing": 6,
+    "Xref EOL Missing": 6,
     "missingInfo": 6,
     "/Pages Missing": 6,
     "File encrypted with default password": 5,
@@ -221,6 +239,7 @@ indicatorScores = {
     "containingJS": [5, 7],
     "Garbage bytes before terminator": [6, 8],
     "Duplicate Objects": [6,8],
+    "Object Parsing Errors": [5,10],
 
     # Int/Tuple return
     "pagesNumber": "3 if x is not None and int(x)<=1 else 0",
@@ -228,6 +247,8 @@ indicatorScores = {
 
 }
 
+
+# PDF Builder List
 UNKNOWN_BUILDER_SCORE = 7
 MAX_BUILDER_SCORE = 9
 PDFBuildersScore = {
