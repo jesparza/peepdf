@@ -6418,13 +6418,13 @@ class PDFFile:
                     self.updateReferenceList(info, infoId, version=version, isolatedList=isolatedList)
                 if self.encrypted:
                     encryptId = self.getEncryptDict()[0]
-                    encryptObject = self.getObject(encryptId)
+                    encryptObject = self.getObject(encryptId, version=version)
                     if encryptId in isolatedList:
                         self.updateReferenceList(encryptObject, encryptId, version=None, isolatedList=isolatedList)
                 self.updateReferenceList(catalog, catalogId, version=version, isolatedList=isolatedList)
                 isolatedListDict[version] = isolatedList
                 for objectId in isolatedList[:]:
-                    indirectObj = self.getObject(objectId, indirect=True)
+                    indirectObj = self.getObject(objectId, version=version, indirect=True)
                     object = indirectObj.getObject()
                     if object.getType() in objectTypeList and object.hasElement('/Linearized'):
                         continue
@@ -6449,7 +6449,7 @@ class PDFFile:
                 self.updateReferenceList(infoL[1], infoL[0], version=None, isolatedList=isolatedList)
             if self.encrypted:
                 encryptId = self.getEncryptDict()[0]
-                encryptObject = self.getObject(encryptId)
+                encryptObject = self.getObject(encryptId, version=version)
                 if encryptId in isolatedList:
                     self.updateReferenceList(encryptObject, encryptId, version=None, isolatedList=isolatedList)
             for catalogL in catalogLinear:
