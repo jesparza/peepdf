@@ -55,7 +55,6 @@ try:
     COLORIZED_OUTPUT = True
 except:
     COLORIZED_OUTPUT = False
-
 try:
     from PIL import Image
     PIL_MODULE = True
@@ -119,8 +118,8 @@ def getPeepXML(statsDict, version, revision):
         detectionReport = etree.SubElement(detection, 'report_link')
         detectionReport.text = statsDict['Detection report']
     score = '%0.1f' % statsDict['Score']
-    maliciousnessScore = etree.SubElement(basicInfo, 'Score')
-    maliciousnessScore.text = str(score)
+    riskScore = etree.SubElement(basicInfo, 'risk_score')
+    riskScore.text = str(score)
     version = etree.SubElement(basicInfo, 'pdf_version')
     version.text = statsDict['Version']
     binary = etree.SubElement(basicInfo, 'binary', status=statsDict['Binary'].lower())
@@ -144,6 +143,10 @@ def getPeepXML(statsDict, version, revision):
         errorMessageXML = etree.SubElement(errors, 'error_message')
         errorMessageXML.text = error
     advancedInfo = etree.SubElement(root, 'advanced')
+    suspiciousProperties = etree.SubElement(advancedInfo, 'suspicious_global_properties')
+    if statsDict['suspiciousProperties']:
+        for suspiciousProperty in statsDict['suspiciousProperties']:
+            suspiciousPropertyInfo = etree.SubElement(suspiciousProperties, 'suspicious_global_property', name=suspiciousProperty)
     for version in range(len(statsDict['Versions'])):
         statsVersion = statsDict['Versions'][version]
         if version == 0:
@@ -242,28 +245,20 @@ def getPeepXML(statsDict, version, revision):
                     for id in vulns[vuln]:
                         etree.SubElement(vulnInfo, 'container_object', id=str(id))
         suspiciousIndicators = etree.SubElement(versionInfo, 'suspicious_indicators')
-        if indicators is not None:
-            suspiciousIndicators = etree.SubElement(suspiciousIndicators, 'suspicious_indicators')
+        if indicators:
             for indicator in indicators:
-                etree.SubElement(suspiciousIndicators, 'indicator', name=indicator)
+                etree.SubElement(suspiciousIndicators, 'suspicious_indicator', name=indicator)
         suspiciousProperties = etree.SubElement(versionInfo, 'suspicious_properties')
-        if properties is not None:
-            propertiesInfo = etree.SubElement(suspiciousProperties, 'suspicious_properties')
-            for p in properties:
-                etree.SubElement(propertiesInfo, 'property', name=p)
+        if properties:
+            for property in properties:
+                etree.SubElement(suspiciousProperties, 'property', name=property)
         urls = statsVersion['URLs']
         suspiciousURLs = etree.SubElement(versionInfo, 'suspicious_urls')
         if urls != None:
             for url in urls:
                 urlInfo = etree.SubElement(suspiciousURLs, 'url')
                 urlInfo.text = url
-    suspiciousProperties = statsDict['suspiciousProperties']
-    suspiciousPropertiesInfo = etree.SubElement(root, 'Suspicious_properties')
-    if suspiciousProperties != None:
-        for suspicious in suspiciousProperties:
-            etree.SubElement(suspiciousPropertiesInfo, 'property', name=suspicious)
     return etree.tostring(root, pretty_print=True)
-
 
 
 def getPeepJSON(statsDict, version, revision):
@@ -301,6 +296,7 @@ def getPeepJSON(statsDict, version, revision):
         basicDict['errors'].append(error)
     # Advanced info
     advancedInfo = []
+    advancedInfo.append({'suspicious_global_properties': statsDict['suspiciousProperties']})
     for version in range(len(statsDict['Versions'])):
         statsVersion = statsDict['Versions'][version]
         if version == 0:
@@ -382,8 +378,8 @@ def getPeepJSON(statsDict, version, revision):
                 indicatorInfo = {'name': indicator}
                 indicatorInfo['objects'] = indicators[indicator]
                 indicatorArray.append(indicatorInfo)
-        versionInfo['suspicious_properties'] = {'properties': propertiesArray}
-        versionInfo['suspicious_indicators'] = {'indicators': indicatorArray}
+        versionInfo['suspicious_properties'] = {'suspicious_properties': propertiesArray}
+        versionInfo['suspicious_indicators'] = {'suspicious_indicators': indicatorArray}
         versionReport = {'version_info': versionInfo}
         advancedInfo.append(versionReport)
     jsonDict = {'peepdf_analysis':
@@ -517,11 +513,11 @@ try:
         elif len(args) > 1 or (len(args) == 0 and not options.isInteractive):
             sys.exit(argsParser.print_help())
 
-        if options.scriptFile != None:
+        if options.scriptFile is not None:
             if not os.path.exists(options.scriptFile):
                 sys.exit('Error: The script file "' + options.scriptFile + '" does not exist!!')
 
-        if fileName != None:
+        if fileName is not None:
             pdfParser = PDFParser()
             # print options.isForceMode, options.isLooseMode, options.isManualAnalysis
             ret, pdf = pdfParser.parse(fileName, options.isForceMode, options.isLooseMode, options.isManualAnalysis, options.checkOnVT)
@@ -658,7 +654,17 @@ try:
                     stats += beforeStaticLabel + 'Objects: ' + resetColor + statsDict['Objects'] + newLine
                     stats += beforeStaticLabel + 'Streams: ' + resetColor + statsDict['Streams'] + newLine
                     stats += beforeStaticLabel + 'Comments: ' + resetColor + statsDict['Comments'] + newLine
-                    stats += beforeStaticLabel + 'Errors: ' + resetColor + str(len(statsDict['Errors'])) + newLine * 2
+                    stats += beforeStaticLabel + 'Errors: ' + resetColor + str(len(statsDict['Errors'])) + newLine
+                    suspiciousProperties = statsDict['suspiciousProperties']
+                    if suspiciousProperties is not None:
+                        if COLORIZED_OUTPUT and not options.avoidColors:
+                            beforeStaticLabel = warningColor
+                        stats += beforeStaticLabel + 'Suspicious Properties:' + resetColor + newLine
+                        for suspiciousProperty in suspiciousProperties:
+                            stats += '\t' + beforeStaticLabel + suspiciousProperty + resetColor + newLine
+                        if COLORIZED_OUTPUT and not options.avoidColors:
+                            beforeStaticLabel = staticColor
+                    stats += newLine
                     for version in range(len(statsDict['Versions'])):
                         statsVersion = statsDict['Versions'][version]
                         stats += beforeStaticLabel + 'Version ' + resetColor + str(version) + ':' + newLine
@@ -743,7 +749,7 @@ try:
                             stats += newLine + beforeStaticLabel + '\tSuspicious Indicators:' + resetColor + newLine
                             for indicator in indicators:
                                 stats += '\t\t' + beforeStaticLabel + indicator + ': ' + resetColor + str(indicators[indicator]) + newLine
-                        if properties != None:
+                        if properties is not None:
                             stats += newLine + beforeStaticLabel + '\tSuspicious Properties:' + resetColor + newLine
                             for prop in properties:
                                 stats += '\t\t' + beforeStaticLabel + prop + newLine
@@ -755,13 +761,6 @@ try:
                             for url in urls:
                                 stats += '\t\t' + url + newLine
                         stats += newLine * 2
-                    if COLORIZED_OUTPUT and not options.avoidColors:
-                        beforeStaticLabel = warningColor
-                    suspiciousProperties = statsDict['suspiciousProperties']
-                    if suspiciousProperties != None:
-                        stats += newLine + beforeStaticLabel + 'Suspicious Properties:' + resetColor + newLine
-                        for suspicious in suspiciousProperties:
-                            stats += '\t' + beforeStaticLabel + suspicious + resetColor + newLine
                 if fileName != None:
                     print stats
                 if options.isInteractive:

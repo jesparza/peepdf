@@ -7,7 +7,7 @@
 <!ELEMENT date ( #PCDATA ) >
 
 
-<!ELEMENT basic ( filename, md5, sha1, sha256, size, detection, pdf_version, binary, linearized, encrypted, updates, num_objects, num_streams, comments, errors ) >
+<!ELEMENT basic ( filename, md5, sha1, sha256, size, pages, detection, risk_score, pdf_version, binary, linearized, encrypted, updates, num_objects, num_streams, comments, errors ) >
 
 <!ELEMENT filename ( #PCDATA ) >
 
@@ -19,11 +19,15 @@
 
 <!ELEMENT size ( #PCDATA ) >
 
+<!ELEMENT pages ( #PCDATA ) >
+
 <!ELEMENT detection ( rate?, report_link? ) >
 
 <!ELEMENT rate ( #PCDATA ) >
 
 <!ELEMENT report_link ( #PCDATA ) >
+
+<!ELEMENT risk_score ( #PCDATA ) >
 
 <!ELEMENT pdf_version ( #PCDATA ) >
 
@@ -55,9 +59,13 @@
 <!ELEMENT error_message ( #PCDATA ) >
 
 
-<!ELEMENT advanced ( version* ) >
+<!ELEMENT advanced ( suspicious_global_properties, version* ) >
 
-<!ELEMENT version ( catalog, info, objects, streams ,js_objects, suspicious_elements, suspicious_urls ) >
+<!ELEMENT suspicious_global_properties ( suspicious_global_property* ) >
+<!ELEMENT suspicious_global_property EMPTY >
+<!ATTLIST suspicious_global_property name CDATA #REQUIRED >
+
+<!ELEMENT version ( catalog, info, objects, streams, js_objects, suspicious_elements, suspicious_indicators, suspicious_properties, suspicious_urls ) >
 <!ATTLIST version num NMTOKEN #REQUIRED >
 <!ATTLIST version type ( original | update ) #REQUIRED >
 
@@ -113,6 +121,14 @@
 
 <!ELEMENT vulnerable_function ( cve*, container_object+ ) >
 <!ATTLIST vulnerable_function name CDATA #REQUIRED >
+
+<!ELEMENT suspicious_indicators ( suspicious_indicator* ) >
+<!ELEMENT suspicious_indicator EMPTY >
+<!ATTLIST suspicious_indicator name CDATA #REQUIRED >
+
+<!ELEMENT suspicious_properties ( suspicious_property* ) >
+<!ELEMENT suspicious_property EMPTY >
+<!ATTLIST suspicious_property name CDATA #REQUIRED >
 
 <!ELEMENT suspicious_urls ( url* ) >
 
