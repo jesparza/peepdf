@@ -27,7 +27,6 @@
 
 import sys, os, re, hashlib, struct, aes as AES
 from operator import itemgetter
-import magic
 from difflib import SequenceMatcher, get_close_matches
 from PDFUtils import *
 from PDFCrypto import *
@@ -2854,56 +2853,66 @@ class PDFStream (PDFDictionary):
 
             @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
         '''
+        try:
+            import magic
+        except:
+            return (-1, 'The module "magic" cannot be imported')
         if self.elements.has_key('/Subtype'):
-            subType = self.elements['/Subtype'].getValue()
-            if subType == None:
-                return (-1, 'Stream subtype missing')
-            if self.getElementByName('/Type') not in (None, []):
-                mainType = self.getElementByName('/Type').getValue()
+            if self.elements['/Subtype']:
+                subType = self.elements['/Subtype'].getValue()
+                if subType is None:
+                    return (-1, 'Stream subtype missing')
+                if self.getElementByName('/Type'):
+                    mainType = self.getElementByName('/Type').getValue()
+                else:
+                    mainType = ''
+                subType = subType.lower()
+                if subType[0] == '/':
+                    subType = subType[1:]
+                subTypeDict = {
+                    'image': 'image',
+                    'form': 'text',
+                    'xml': 'text',
+                    'text': 'text',
+                }
+                ignoreSubTypeList = ['application/zlib']
+                subTypeFound = False
+                for st in subTypeDict:
+                    if st.lower() in subType:
+                        subTypeKey = st
+                        subTypeFound = True
+                        break
+                if self.decodingError is True:
+                    return (-1, 'Ignoring subtypeCheck due to decoding Error')
+                else:
+                    stream = self.getStream()
+                if stream.isspace():
+                    return (0, '')
+                try:
+                    m=magic.open(magic.MAGIC_MIME_TYPE)
+                    m.load()
+                    subTypeMagic = m.buffer(stream)
+                except AttributeError as e:
+                    m = magic.Magic(mime=True)
+                    subTypeMagic = m.from_buffer(stream)
+                subTypeMagic = subTypeMagic.lower()
+                if SequenceMatcher(None, subType, subTypeMagic).ratio() >= 0.8:
+                    return (0, '')
+                if subTypeMagic in ignoreSubTypeList:
+                    return (0, '')
+                if subTypeFound is False:
+                    return (-1, 'Subtype Not found using magic numbers')
+                if subTypeDict[subTypeKey] not in subTypeMagic:
+                    if 'XObject' in mainType:
+                        return (-1, 'Stream part of XObject')
+                    self.invalidSubtype = True
+                    return (-1, 'Invalid Subtype')
+                else:
+                    return (0, '')
             else:
-                mainType = ''
-            subType = subType.lower()
-            if subType[0] == '/':
-                subType = subType[1:]
-            subTypeDict = {
-                'image': 'image',
-                'form': 'text',
-                'xml': 'text',
-                'text': 'text',
-            }
-            ignoreSubTypeList = [
-                'application/zlib'
-            ]
-            subTypeFound = False
-            for st in subTypeDict:
-                if st.lower() in subType:
-                    subTypeKey = st
-                    subTypeFound = True
-                    break
-            if self.decodingError is True:
-                return (-1, 'Ignoring subtypeCheck due to decoding Error')
-            else:
-                stream = self.getStream()
-            if stream.isspace():
-                return (0, '')
-            m = magic.Magic(mime=True)
-            subTypeMagic = m.from_buffer(stream)
-            subTypeMagic = subTypeMagic.lower()
-            if SequenceMatcher(None, subType, subTypeMagic).ratio() >= 0.8:
-                return (0, '')
-            if subTypeMagic in ignoreSubTypeList:
-                return (0, '')
-            if subTypeFound is False:
-                return (-1, 'Subtype Not found using magic numbers')
-            if subTypeDict[subTypeKey] not in subTypeMagic:
-                if 'XObject' in mainType:
-                    return (-1, 'stream part of XObject')
-                self.invalidSubtype = True
-                return (-1, 'Invalid Subtype')
-            else:
-                return (0, '')
+                return (-1, 'The /Subtype element is None')
         else:
-            return (-1, '/Subtype element missing')
+            return (-1, 'Missing /Subtype element')
 
 
 class PDFObjectStream (PDFStream):
