@@ -6217,27 +6217,6 @@ class PDFFile:
                 infoId = streamTrailer.getInfoId()
             return infoId
 
-    def updateReferenceList(self, object, objectId, version, isolatedList=[], linearized=False, doneList= []):
-        if objectId in isolatedList:
-            isolatedList.remove(objectId)
-        elif object in doneList:
-            return None
-        if object is None:
-            return None
-        doneList.append(object)
-        for reference in object.getReferences():
-            referenceId = reference.split()[0]
-            referenceId = int(referenceId)
-            if linearized:
-                for ver in range(self.updates+1):
-                    referenceObject = self.getObject(referenceId, version=ver)
-                    if referenceObject is not None:
-                        self.updateReferenceList(referenceObject, referenceId, ver, isolatedList, linearized = linearized)
-            else:
-                referenceObject = self.getObject(referenceId, version=version)
-                if referenceObject is not None:
-                    self.updateReferenceList(referenceObject, referenceId, version, isolatedList)
-
     def getIsolatedObjects(self):
         '''
             Method to get objects which have no recursive direct/indirect references from catalog.
@@ -7501,6 +7480,27 @@ class PDFFile:
     def updateCrossRefTable(self, version):
         # TODO
         pass
+
+    def updateReferenceList(self, object, objectId, version, isolatedList=[], linearized=False, doneList= []):
+        if objectId in isolatedList:
+            isolatedList.remove(objectId)
+        elif object in doneList:
+            return None
+        if object is None:
+            return None
+        doneList.append(object)
+        for reference in object.getReferences():
+            referenceId = reference.split()[0]
+            referenceId = int(referenceId)
+            if linearized:
+                for ver in range(self.updates+1):
+                    referenceObject = self.getObject(referenceId, version=ver)
+                    if referenceObject is not None:
+                        self.updateReferenceList(referenceObject, referenceId, ver, isolatedList, linearized = linearized)
+            else:
+                referenceObject = self.getObject(referenceId, version=version)
+                if referenceObject is not None:
+                    self.updateReferenceList(referenceObject, referenceId, version, isolatedList)
 
     def updateTrailer(self, version):
         # TODO
