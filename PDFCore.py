@@ -6217,7 +6217,7 @@ class PDFFile:
                 infoId = streamTrailer.getInfoId()
             return infoId
 
-    def _updateReferenceList(self, object, objectId, version, isolatedList=[], linearized=False, doneList= []):
+    def updateReferenceList(self, object, objectId, version, isolatedList=[], linearized=False, doneList= []):
         if objectId in isolatedList:
             isolatedList.remove(objectId)
         elif object in doneList:
@@ -6232,11 +6232,11 @@ class PDFFile:
                 for ver in range(self.updates+1):
                     referenceObject = self.getObject(referenceId, version=ver)
                     if referenceObject is not None:
-                        self._updateReferenceList(referenceObject, referenceId, ver, isolatedList, linearized = linearized)
+                        self.updateReferenceList(referenceObject, referenceId, ver, isolatedList, linearized = linearized)
             else:
                 referenceObject = self.getObject(referenceId, version=version)
                 if referenceObject is not None:
-                    self._updateReferenceList(referenceObject, referenceId, version, isolatedList)
+                    self.updateReferenceList(referenceObject, referenceId, version, isolatedList)
 
     def getIsolatedObjects(self):
         '''
@@ -6291,13 +6291,13 @@ class PDFFile:
                 isolatedList = objectsDict.keys()
                 info = self.getInfoObject(version=version)
                 if infoId in isolatedList:
-                    self._updateReferenceList(info, infoId, version=version, isolatedList=isolatedList)
+                    self.updateReferenceList(info, infoId, version=version, isolatedList=isolatedList)
                 if self.encrypted:
                     encryptId = self.getEncryptDict()[0]
                     encryptObject = self.getObject(encryptId)
                     if encryptId in isolatedList:
-                        self._updateReferenceList(encryptObject, encryptId, version=None, isolatedList=isolatedList)
-                self._updateReferenceList(catalog, catalogId, version=version, isolatedList=isolatedList)
+                        self.updateReferenceList(encryptObject, encryptId, version=None, isolatedList=isolatedList)
+                self.updateReferenceList(catalog, catalogId, version=version, isolatedList=isolatedList)
                 isolatedListDict[version] = isolatedList
                 for objectId in isolatedList[:]:
                     indirectObj = self.getObject(objectId, indirect=True)
@@ -6322,23 +6322,23 @@ class PDFFile:
                 return None
             isolatedList = objectsDict.keys()
             for infoL in infoLinear:
-                self._updateReferenceList(infoL[1], infoL[0], version=None, isolatedList=isolatedList)
+                self.updateReferenceList(infoL[1], infoL[0], version=None, isolatedList=isolatedList)
             if self.encrypted:
                 encryptId = self.getEncryptDict()[0]
                 encryptObject = self.getObject(encryptId)
                 if encryptId in isolatedList:
-                    self._updateReferenceList(encryptObject, encryptId, version=None, isolatedList=isolatedList)
+                    self.updateReferenceList(encryptObject, encryptId, version=None, isolatedList=isolatedList)
             for catalogL in catalogLinear:
                 if catalogL[0] not in isolatedList:
                     isolatedList.append(catalogL[0])
-                self._updateReferenceList(catalogL[1], catalogL[0], version=None, isolatedList=isolatedList, linearized=True)
+                self.updateReferenceList(catalogL[1], catalogL[0], version=None, isolatedList=isolatedList, linearized=True)
             for objectId in isolatedList[:]:
                 for version in range(self.updates, -1, -1):
                     if objectId in self.body[version].getObjects().keys():
                         indirectObj = self.getObject(objectId, version=version, indirect=True)
                         object = indirectObj.getObject()
                         if object.getType() in objectTypeList and (object.hasElement('/Linearized') or (object.hasElement('/S'))):
-                            self._updateReferenceList(object, objectId, version=None, isolatedList=isolatedList)
+                            self.updateReferenceList(object, objectId, version=None, isolatedList=isolatedList)
             for objectId in isolatedList[:]:
                 for version in range(self.updates, -1, -1):
                     if objectId in self.body[version].getObjects().keys():
