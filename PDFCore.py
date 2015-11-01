@@ -52,7 +52,7 @@ class PDFObject:
         self.type = ''
         self.value = ''
         self.rawValue = raw
-        self.JSCode = []
+        self.jsCode = []
         self.updateNeeded = False
         self.containsJScode = False
         self.encryptedValue = raw
@@ -61,6 +61,14 @@ class PDFObject:
         self.errors = []
         self.referencesInElements = {}
         self.compressedIn = None
+        self.containsObfuscatedNames = False
+        self.containsObfuscatedStrings = False
+        self.containsLargeStrings = False
+        self.missingInXref = False
+        self.isolatedObject = False
+        self.missingTerminator = False
+        self.containsGarbageInside = False
+        self.duplicateObject = False
 
     def addError(self, errorMessage):
         '''
@@ -84,7 +92,7 @@ class PDFObject:
         if re.findall(string, value, re.IGNORECASE) != [] or re.findall(string, rawValue, re.IGNORECASE) != [] or re.findall(string, encValue, re.IGNORECASE) != []:
             return True
         if self.containsJS():
-            for js in self.JSCode:
+            for js in self.jsCode:
                 if re.findall(string, js, re.IGNORECASE) != []:
                     return True
         return False
@@ -96,6 +104,38 @@ class PDFObject:
             @return: A boolean
         '''
         return self.containsJScode
+
+    def containsGarbage(self):
+        '''
+            Method to check if there is garbage withing the object (not expected bytes or strings, for instance)
+
+            @return: A boolean
+        '''
+        return self.containsGarbageInside
+
+    def containsLargeString(self):
+        '''
+            Method to check if the object contains large string objects
+
+            @return: A boolean
+        '''
+        return self.containsLargeStrings
+
+    def containsObfuscatedName(self):
+        '''
+            Method to check if the object contains obfuscated names or not
+
+            @return: A boolean
+        '''
+        return self.containsObfuscatedNames
+
+    def containsObfuscatedString(self):
+        '''
+            Method to check if the object contains obfuscated strings or not
+
+            @return: A boolean
+        '''
+        return self.containsObfuscatedStrings
 
     def encodeChars(self):
         '''
@@ -230,6 +270,14 @@ class PDFObject:
         else:
             return False
 
+    def isDuplicatedObject(self):
+        '''
+            Specifies if the object is duplicated or not
+
+            @return: A boolean
+        '''
+        return self.duplicateObject
+
     def isEncrypted(self):
         '''
             Specifies if the object is encrypted or not 
@@ -248,6 +296,30 @@ class PDFObject:
             return False
         else:
             return True
+
+    def isIsolatedObject(self):
+        '''
+            Specifies if the object is not referenced from the Catalog (isolated)
+
+            @return: A boolean
+        '''
+        return self.isolatedObject
+
+    def isMissingInXref(self):
+        '''
+            Specifies if the object is not present in the cross reference table
+
+            @return: A boolean
+        '''
+        return self.missingInXref
+
+    def isTerminatorMissing(self):
+        '''
+            Specifies if the object does not contain its object terminator
+
+            @return: A boolean
+        '''
+        return self.missingTerminator
 
     def replace(self, string1, string2):
         '''
@@ -278,6 +350,14 @@ class PDFObject:
         '''
         self.compressedIn = id
 
+    def setDuplicatedObject(self, booleanValue):
+        '''
+            Sets the variable to indicate if the object is duplicated in the document
+
+            @param booleanValue: The boolean value
+        '''
+        self.duplicateObject = booleanValue
+
     def setEncryptedValue(self, value):
         '''
             Sets the encrypted value of the object
@@ -293,6 +373,54 @@ class PDFObject:
             @param password: The encryption key (string)  
         '''
         self.encryptionKey = password
+
+    def setGarbagePresence(self, booleanValue):
+        '''
+            Sets the variable to indicate if the object contains garbage bytes or strings...
+
+            @param booleanValue: The boolean value
+        '''
+        self.containsGarbageInside = booleanValue
+
+    def setIsolatedObject(self, booleanValue):
+        '''
+            Sets the variable to indicate if the object is not referenced from the Catalog
+
+            @param booleanValue: The boolean value
+        '''
+        self.isolatedObject = booleanValue
+
+    def setLargeStringPresence(self, booleanValue):
+        '''
+            Sets the variable to indicate if the object contains large strings
+
+            @param booleanValue: The boolean value
+        '''
+        self.containsLargeStrings = booleanValue
+
+    def setMissingInXref(self, booleanValue):
+        '''
+            Sets the variable to indicate if the object is missing in the cross reference table
+
+            @param booleanValue: The boolean value
+        '''
+        self.missingInXref = booleanValue
+
+    def setObfuscatedNamePresence(self, booleanValue):
+        '''
+            Sets the variable to indicate if the object contains obfuscated names
+
+            @param booleanValue: The boolean value
+        '''
+        self.containsObfuscatedNames = booleanValue
+
+    def setObfuscatedStringPresence(self, booleanValue):
+        '''
+            Sets the variable to indicate if the object contains obfuscated strings
+
+            @param booleanValue: The boolean value
+        '''
+        self.containsObfuscatedStrings = booleanValue
 
     def setRawValue(self, newRawValue):
         '''
@@ -312,6 +440,14 @@ class PDFObject:
             @param resolvedReferencesDict: A dictionary with the resolved references  
         '''
         self.referencesInElements = resolvedReferencesDict
+
+    def setTerminatorMissing(self, booleanValue):
+        '''
+            Sets the variable to indicate if the object does not contain the object terminator
+
+            @param booleanValue: The boolean value
+        '''
+        self.missingTerminator = booleanValue
 
     def setValue(self, newValue):
         '''
@@ -352,20 +488,20 @@ class PDFBool (PDFObject):
         self.type = 'bool'
         self.errors = []
         self.references = []
-        self.JSCode = []
+        self.jsCode = []
         self.encrypted = False
         self.updateNeeded = False
         self.containsJScode = False
         self.referencesInElements = {}
         self.value = self.rawValue = self.encryptedValue = value
         self.compressedIn = None
-        self.nameObfuscated = False
-        self.stringObfuscated = False
-        self.largeStringPresent = False
-        self.missingXref = False
-        self.missingCatalog = False
-        self.terminatorMissing = False
-        self.garbageInside = False
+        self.containsObfuscatedNames = False
+        self.containsObfuscatedStrings = False
+        self.containsLargeStrings = False
+        self.missingInXref = False
+        self.isolatedObject = False
+        self.missingTerminator = False
+        self.containsGarbageInside = False
         self.duplicateObject = False
 
 
@@ -378,7 +514,7 @@ class PDFNull (PDFObject):
     def __init__(self, content):
         self.type = 'null'
         self.errors = []
-        self.JSCode = []
+        self.jsCode = []
         self.compressedIn = None
         self.encrypted = False
         self.value = self.rawValue = self.encryptedValue = content
@@ -386,13 +522,13 @@ class PDFNull (PDFObject):
         self.containsJScode = False
         self.referencesInElements = {}
         self.references = []
-        self.nameObfuscated = False
-        self.stringObfuscated = False
-        self.largeStringPresent = False
-        self.missingXref = False
-        self.missingCatalog = False
-        self.terminatorMissing = False
-        self.garbageInside = False
+        self.containsObfuscatedNames = False
+        self.containsObfuscatedStrings = False
+        self.containsLargeStrings = False
+        self.missingInXref = False
+        self.isolatedObject = False
+        self.missingTerminator = False
+        self.containsGarbageInside = False
         self.duplicateObject = False
 
 
@@ -404,7 +540,7 @@ class PDFNum (PDFObject):
 
     def __init__(self, num):
         self.errors = []
-        self.JSCode = []
+        self.jsCode = []
         self.compressedIn = None
         self.encrypted = False
         self.value = num
@@ -413,13 +549,13 @@ class PDFNum (PDFObject):
         self.containsJScode = False
         self.referencesInElements = {}
         self.references = []
-        self.nameObfuscated = False
-        self.stringObfuscated = False
-        self.largeStringPresent = False
-        self.missingXref = False
-        self.missingCatalog = False
-        self.terminatorMissing = False
-        self.garbageInside = False
+        self.containsObfuscatedNames = False
+        self.containsObfuscatedStrings = False
+        self.containsLargeStrings = False
+        self.missingInXref = False
+        self.isolatedObject = False
+        self.missingTerminator = False
+        self.containsGarbageInside = False
         self.duplicateObject = False
         ret = self.update()
         if ret[0] == -1:
@@ -472,7 +608,7 @@ class PDFName (PDFObject):
     def __init__(self, name):
         self.type = 'name'
         self.errors = []
-        self.JSCode = []
+        self.jsCode = []
         self.references = []
         self.compressedIn = None
         self.name = name
@@ -485,13 +621,13 @@ class PDFName (PDFObject):
         self.encryptedValue = ''
         self.encrypted = False
         self.referencesInElements = {}
-        self.nameObfuscated = False
-        self.stringObfuscated = False
-        self.largeStringPresent = False
-        self.missingXref = False
-        self.missingCatalog = False
-        self.terminatorMissing = False
-        self.garbageInside = False
+        self.containsObfuscatedNames = False
+        self.containsObfuscatedStrings = False
+        self.containsLargeStrings = False
+        self.missingInXref = False
+        self.isolatedObject = False
+        self.missingTerminator = False
+        self.containsGarbageInside = False
         ret = self.update()
         if ret[0] == -1:
             if isForceMode:
@@ -504,7 +640,7 @@ class PDFName (PDFObject):
         errorMessage = ''
         self.value = self.rawValue
         self.encryptedValue = self.rawValue
-        self.nameObfuscated = False
+        self.containsObfuscatedNames = False
         hexNumbers = re.findall('#([0-9a-f]{2})', self.value, re.DOTALL | re.IGNORECASE)
         try:
             for hexNumber in hexNumbers:
@@ -516,9 +652,9 @@ class PDFName (PDFObject):
         rawValue = str(self.rawValue)
         newValue = str(self.value)
         if newValue != rawValue:
-            self.nameObfuscated = True
+            self.containsObfuscatedNames = True
         else:
-            self.nameObfuscated = False
+            self.containsObfuscatedNames = False
         return (0, '')
 
     def encodeChars(self):
@@ -545,18 +681,18 @@ class PDFString (PDFObject):
         self.value = self.rawValue = self.encryptedValue = string
         self.updateNeeded = False
         self.containsJScode = False
-        self.JSCode = []
+        self.jsCode = []
         self.unescapedBytes = []
         self.urlsFound = []
         self.references = []
-        self.nameObfuscated = False
-        self.stringObfuscated = False
-        self.largeStringPresent = False
+        self.containsObfuscatedNames = False
+        self.containsObfuscatedStrings = False
+        self.containsLargeStrings = False
         self.referencesInElements = {}
-        self.missingXref = False
-        self.missingCatalog = False
-        self.terminatorMissing = False
-        self.garbageInside = False
+        self.missingInXref = False
+        self.isolatedObject = False
+        self.missingTerminator = False
+        self.containsGarbageInside = False
         self.duplicateObject = False
         ret = self.update()
         if ret[0] == -1:
@@ -574,7 +710,7 @@ class PDFString (PDFObject):
         '''
         self.errors = []
         self.containsJScode = False
-        self.JSCode = []
+        self.jsCode = []
         self.unescapedBytes = []
         self.urlsFound = []
         self.rawValue = unescapeString(self.rawValue)
@@ -598,14 +734,14 @@ class PDFString (PDFObject):
         rawValue = str(self.rawValue)
         newValue = str(self.value)
         if newValue != rawValue:
-            self.stringObfuscated = True
+            self.containsObfuscatedStrings = True
         else:
-            self.stringObfuscated = False
+            self.containsObfuscatedStrings = False
         if len(rawValue) > MAX_STR_LEN:
-            self.largeStringPresent = True
+            self.containsLargeStrings = True
         if isJavascript(self.value):
             self.containsJScode = True
-            self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.value, jsContexts['global'], isManualAnalysis)
+            self.jsCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.value, jsContexts['global'], isManualAnalysis)
             if jsErrors != []:
                 for jsError in jsErrors:
                     errorMessage = 'Error analysing Javascript: ' + jsError
@@ -678,7 +814,7 @@ class PDFString (PDFObject):
 
             @return: An array of Javascript code sections
         '''
-        return self.JSCode
+        return self.jsCode
 
     def getRawValue(self):
         return '(' + escapeString(self.rawValue) + ')'
@@ -717,18 +853,18 @@ class PDFHexString (PDFObject):
         self.encryptedValue = hex  # Value after hex decoding
         self.updateNeeded = False
         self.containsJScode = False
-        self.JSCode = []
+        self.jsCode = []
         self.unescapedBytes = []
         self.urlsFound = []
         self.referencesInElements = {}
         self.references = []
-        self.nameObfuscated = False
-        self.stringObfuscated = False
-        self.largeStringPresent = False
-        self.missingXref = False
-        self.missingCatalog = False
-        self.terminatorMissing = False
-        self.garbageInside = False
+        self.containsObfuscatedNames = False
+        self.containsObfuscatedStrings = False
+        self.containsLargeStrings = False
+        self.missingInXref = False
+        self.isolatedObject = False
+        self.missingTerminator = False
+        self.containsGarbageInside = False
         self.duplicateObject = False
         ret = self.update()
         if ret[0] == -1:
@@ -746,7 +882,7 @@ class PDFHexString (PDFObject):
         '''
         self.errors = []
         self.containsJScode = False
-        self.JSCode = []
+        self.jsCode = []
         self.unescapedBytes = []
         self.urlsFound = []
         if not decrypt:
@@ -768,7 +904,7 @@ class PDFHexString (PDFObject):
                 return (-1, errorMessage)
         if isJavascript(self.value):
             self.containsJScode = True
-            self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.value, jsContexts['global'], isManualAnalysis)
+            self.jsCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.value, jsContexts['global'], isManualAnalysis)
             if jsErrors != []:
                 for jsError in jsErrors:
                     errorMessage = 'Error analysing Javascript: ' + jsError
@@ -782,7 +918,7 @@ class PDFHexString (PDFObject):
                 return ret
         newValue = str(self.value)
         if len(newValue) > MAX_STR_LEN:
-            self.largeStringPresent = True
+            self.containsLargeStrings = True
         return (0, '')
 
     def encrypt(self, password=None):
@@ -836,7 +972,7 @@ class PDFHexString (PDFObject):
 
             @return: An array of Javascript code sections
         '''
-        return self.JSCode
+        return self.jsCode
 
     def getRawValue(self):
         return '<' + self.rawValue + '>'
@@ -867,7 +1003,7 @@ class PDFReference (PDFObject):
     def __init__(self, id, genNumber='0'):
         self.type = 'reference'
         self.errors = []
-        self.JSCode = []
+        self.jsCode = []
         self.compressedIn = None
         self.encrypted = False
         self.value = self.rawValue = self.encryptedValue = id + ' ' + genNumber + ' R'
@@ -877,13 +1013,13 @@ class PDFReference (PDFObject):
         self.containsJScode = False
         self.referencesInElements = {}
         self.references = []
-        self.nameObfuscated = False
-        self.stringObfuscated = False
-        self.largeStringPresent = False
-        self.missingXref = False
-        self.missingCatalog = False
-        self.terminatorMissing = False
-        self.garbageInside = False
+        self.containsObfuscatedNames = False
+        self.containsObfuscatedStrings = False
+        self.containsLargeStrings = False
+        self.missingInXref = False
+        self.isolatedObject = False
+        self.missingTerminator = False
+        self.containsGarbageInside = False
         self.duplicateObject = False
         ret = self.update()
         if ret[0] == -1:
@@ -947,7 +1083,7 @@ class PDFArray (PDFObject):
     def __init__(self, rawContent='', elements=[]):
         self.type = 'array'
         self.errors = []
-        self.JSCode = []
+        self.jsCode = []
         self.compressedIn = None
         self.encrypted = False
         self.encryptedValue = rawContent
@@ -958,13 +1094,13 @@ class PDFArray (PDFObject):
         self.containsJScode = False
         self.referencesInElements = {}
         self.references = []
-        self.nameObfuscated = False
-        self.stringObfuscated = False
-        self.largeStringPresent = False
-        self.missingXref = False
-        self.missingCatalog = False
-        self.terminatorMissing = False
-        self.garbageInside = False
+        self.containsObfuscatedNames = False
+        self.containsObfuscatedStrings = False
+        self.containsLargeStrings = False
+        self.missingInXref = False
+        self.isolatedObject = False
+        self.missingTerminator = False
+        self.containsGarbageInside = False
         self.duplicateObject = False
         ret = self.update()
         if ret[0] == -1:
@@ -987,19 +1123,19 @@ class PDFArray (PDFObject):
         self.value = '[ '
         self.references = []
         self.containsJScode = False
-        self.JSCode = []
+        self.jsCode = []
         self.unescapedBytes = []
         self.urlsFound = []
-        self.nameObfuscated = False
-        self.largeStringPresent = False
+        self.containsObfuscatedNames = False
+        self.containsLargeStrings = False
         for element in self.elements:
             if element != None:
-                if element.nameObfuscated is True:
-                    self.nameObfuscated = True
-                if element.stringObfuscated is True:
-                    self.stringObfuscated = True
-                if element.largeStringPresent is True:
-                    self.largeStringPresent = True
+                if element.containsObfuscatedName():
+                    self.containsObfuscatedNames = True
+                if element.containsObfuscatedString():
+                    self.containsObfuscatedStrings = True
+                if element.containsLargeString():
+                    self.containsLargeStrings = True
                 type = element.getType()
                 if type == 'reference':
                     self.references.append(element.getValue())
@@ -1007,7 +1143,7 @@ class PDFArray (PDFObject):
                     self.references += element.getReferences()
                 if element.containsJS():
                     self.containsJScode = True
-                    self.JSCode += element.getJSCode()
+                    self.jsCode += element.getJSCode()
                     self.unescapedBytes += element.getUnescapedBytes()
                     self.urlsFound += element.getURLs()
                 if element.isFaulty():
@@ -1233,7 +1369,7 @@ class PDFDictionary (PDFObject):
         self.value = ''
         self.updateNeeded = False
         self.containsJScode = False
-        self.JSCode = []
+        self.jsCode = []
         self.unescapedBytes = []
         self.urlsFound = []
         self.referencesInElements = {}
@@ -1243,13 +1379,13 @@ class PDFDictionary (PDFObject):
         self.elements = elements
         self.numElements = len(self.elements)
         self.references = []
-        self.nameObfuscated = False
-        self.stringObfuscated = False
-        self.largeStringPresent = False
-        self.missingXref = False
-        self.missingCatalog = False
-        self.terminatorMissing = False
-        self.garbageInside = False
+        self.containsObfuscatedNames = False
+        self.containsObfuscatedStrings = False
+        self.containsLargeStrings = False
+        self.missingInXref = False
+        self.isolatedObject = False
+        self.missingTerminator = False
+        self.containsGarbageInside = False
         self.duplicateObject = False
         ret = self.update()
         if ret[0] == -1:
@@ -1268,7 +1404,7 @@ class PDFDictionary (PDFObject):
         self.errors = []
         self.references = []
         self.containsJScode = False
-        self.JSCode = []
+        self.jsCode = []
         self.dictType = ''
         self.unescapedBytes = []
         self.urlsFound = []
@@ -1276,13 +1412,13 @@ class PDFDictionary (PDFObject):
         self.value = '<< '
         self.rawValue = '<< '
         self.encryptedValue = '<< '
-        self.nameObfuscated = False
-        self.largeStringPresent = False
+        self.containsObfuscatedNames = False
+        self.containsLargeStrings = False
         keys = self.elements.keys()
         values = self.elements.values()
         for name in self.rawNames.keys():
             if name != self.rawNames[name].rawValue:
-                self.nameObfuscated = True
+                self.containsObfuscatedNames = True
                 break
         for i in range(len(keys)):
             if values[i] == None:
@@ -1294,12 +1430,12 @@ class PDFDictionary (PDFObject):
                     return (-1, errorMessage)
             else:
                 valueObject = values[i]
-            if valueObject.nameObfuscated is True:
-                self.nameObfuscated = True
-            if valueObject.stringObfuscated is True:
-                self.stringObfuscated = True
-            if valueObject.largeStringPresent is True:
-                self.largeStringPresent = True
+            if valueObject.containsObfuscatedName():
+                self.containsObfuscatedNames = True
+            if valueObject.containsObfuscatedString():
+                self.containsObfuscatedStrings = True
+            if valueObject.containsLargeString():
+                self.containsLargeStrings = True
             v = valueObject.getValue()
             type = valueObject.getType()
             if keys[i] == '/Type':
@@ -1315,7 +1451,7 @@ class PDFDictionary (PDFObject):
                 self.references += valueObject.getReferences()
             if valueObject.containsJS():
                 self.containsJScode = True
-                self.JSCode += valueObject.getJSCode()
+                self.jsCode += valueObject.getJSCode()
                 self.unescapedBytes += valueObject.getUnescapedBytes()
                 self.urlsFound += valueObject.getURLs()
             if valueObject.isFaulty():
@@ -1468,7 +1604,7 @@ class PDFDictionary (PDFObject):
 
             @return: An array of Javascript code sections
         '''
-        return self.JSCode
+        return self.jsCode
 
     def getNumElements(self):
         '''
@@ -1651,7 +1787,7 @@ class PDFStream (PDFDictionary):
         self.deletedFilters = False
         self.modifiedStream = False
         self.modifiedRawStream = True
-        self.JSCode = []
+        self.jsCode = []
         self.unescapedBytes = []
         self.urlsFound = []
         self.referencesInElements = {}
@@ -1663,15 +1799,15 @@ class PDFStream (PDFDictionary):
         self.file = None
         self.isEncodedStream = False
         self.decodingError = False
-        self.nameObfuscated = False
-        self.stringObfuscated = False
-        self.largeStringPresent = False
+        self.containsObfuscatedNames = False
+        self.containsObfuscatedStrings = False
+        self.containsLargeStrings = False
         self.invalidLength = False
         self.invalidSubtype = False
-        self.missingXref = False
-        self.missingCatalog = False
-        self.terminatorMissing = False
-        self.garbageInside = False
+        self.missingInXref = False
+        self.isolatedObject = False
+        self.missingTerminator = False
+        self.containsGarbageInside = False
         self.streamTerminatorMissing = False
         self.duplicateObject = False
         if self.realSize > MAX_STREAM_SIZE:
@@ -1704,18 +1840,18 @@ class PDFStream (PDFDictionary):
         self.encryptedValue = '<< '
         keys = self.elements.keys()
         values = self.elements.values()
-        self.nameObfuscated = False
-        self.largeStringPresent = False
+        self.containsObfuscatedNames = False
+        self.containsLargeStrings = False
         self.invalidLength = False
         self.invalidSubtype = False
         for name in self.rawNames.keys():
             if name != self.rawNames[name].rawValue:
-                self.nameObfuscated = True
+                self.containsObfuscatedNames = True
                 break
         if not onlyElements:
             self.references = []
             self.errors = []
-            self.JSCode = []
+            self.jsCode = []
             self.unescapedBytes = []
             self.urlsFound = []
             self.containsJScode = False
@@ -1797,12 +1933,12 @@ class PDFStream (PDFDictionary):
 
         for i in range(len(keys)):
             valueElement = values[i]
-            if valueElement.nameObfuscated is True:
-                self.nameObfuscated = True
-            if valueElement.stringObfuscated is True:
-                self.stringObfuscated = True
-            if valueElement.largeStringPresent is True:
-                self.largeStringPresent = True
+            if valueElement.containsObfuscatedName():
+                self.containsObfuscatedNames = True
+            if valueElement.containsObfuscatedString():
+                self.containsObfuscatedStrings = True
+            if valueElement.containsLargeString():
+                self.containsLargeStrings = True
             if valueElement == None:
                 errorMessage = 'Stream dictionary has a None value'
                 self.addError(errorMessage)
@@ -1816,7 +1952,7 @@ class PDFStream (PDFDictionary):
                 self.references = list(set(self.references + valueElement.getReferences()))
             if valueElement.containsJS():
                 self.containsJScode = True
-                self.JSCode = list(set(self.JSCode + valueElement.getJSCode()))
+                self.jsCode = list(set(self.jsCode + valueElement.getJSCode()))
                 self.unescapedBytes = list(set(self.unescapedBytes + valueElement.getUnescapedBytes()))
                 self.urlsFound = list(set(self.urlsFound + valueElement.getURLs()))
             if valueElement.isFaulty():
@@ -1878,7 +2014,7 @@ class PDFStream (PDFDictionary):
                         self.references = list(set(self.references))
                     if isJavascript(self.decodedStream):
                         self.containsJScode = True
-                        self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
+                        self.jsCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
                         if jsErrors != []:
                             for jsError in jsErrors:
                                 errorMessage = 'Error analysing Javascript: ' + jsError
@@ -1977,7 +2113,7 @@ class PDFStream (PDFDictionary):
                                 self.references = list(set(self.references))
                             if isJavascript(self.decodedStream):
                                 self.containsJScode = True
-                                self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
+                                self.jsCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
                                 if jsErrors != []:
                                     for jsError in jsErrors:
                                         errorMessage = 'Error analysing Javascript: ' + jsError
@@ -2048,7 +2184,7 @@ class PDFStream (PDFDictionary):
                                 self.references = list(set(self.references))
                             if isJavascript(self.decodedStream):
                                 self.containsJScode = True
-                                self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
+                                self.jsCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
                                 if jsErrors != []:
                                     for jsError in jsErrors:
                                         errorMessage = 'Error analysing Javascript: ' + jsError
@@ -2139,7 +2275,7 @@ class PDFStream (PDFDictionary):
         if re.findall(string, value, re.IGNORECASE) != [] or re.findall(string, rawValue, re.IGNORECASE) != [] or re.findall(string, encValue, re.IGNORECASE) != [] or re.findall(string, rawStream, re.IGNORECASE) != [] or re.findall(string, encStream, re.IGNORECASE) != [] or re.findall(string, decStream, re.IGNORECASE) != []:
             return True
         if self.containsJS():
-            for js in self.JSCode:
+            for js in self.jsCode:
                 if re.findall(string, js, re.IGNORECASE) != []:
                     return True
         return False
@@ -2579,7 +2715,7 @@ class PDFStream (PDFDictionary):
         return self.decodingError
 
     def isTerminated(self):
-        return not self.terminatorMissing
+        return not self.missingTerminator
 
     def replace(self, string1, string2):
         stringFound = False
@@ -2643,7 +2779,7 @@ class PDFStream (PDFDictionary):
             self.references = list(set(self.references))
         if isJavascript(self.decodedStream):
             self.containsJScode = True
-            self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
+            self.jsCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
             if jsErrors != []:
                 for jsError in jsErrors:
                     errorMessage = 'Error analysing Javascript: ' + jsError
@@ -2793,7 +2929,7 @@ class PDFObjectStream (PDFStream):
         self.value = ''  # string
         self.updateNeeded = False
         self.containsJScode = False
-        self.JSCode = []
+        self.jsCode = []
         self.unescapedBytes = []
         self.urlsFound = []
         self.referencesInElements = {}
@@ -2811,11 +2947,11 @@ class PDFObjectStream (PDFStream):
         self.file = None
         self.isEncodedStream = False
         self.decodingError = False
-        self.nameObfuscated = False
-        self.stringObfuscated = False
-        self.largeStringPresent = False
-        self.terminatorMissing = False
-        self.garbageInside = False
+        self.containsObfuscatedNames = False
+        self.containsObfuscatedStrings = False
+        self.containsLargeStrings = False
+        self.missingTerminator = False
+        self.containsGarbageInside = False
         self.streamTerminatorMissing = False
         self.invalidLength = False
         self.invalidSubtype = False
@@ -2848,18 +2984,18 @@ class PDFObjectStream (PDFStream):
         self.encryptedValue = '<< '
         keys = self.elements.keys()
         values = self.elements.values()
-        self.nameObfuscated = False
-        self.largeStringPresent = False
+        self.containsObfuscatedNames = False
+        self.containsLargeStrings = False
         self.invalidLength = False
         self.invalidSubtype = False
         for name in self.rawNames.keys():
             if name != self.rawNames[name].rawValue:
-                self.nameObfuscated = True
+                self.containsObfuscatedNames = True
                 break
         if not onlyElements:
             self.errors = []
             self.references = []
-            self.JSCode = []
+            self.jsCode = []
             self.unescapedBytes = []
             self.urlsFound = []
             self.containsJScode = False
@@ -2964,12 +3100,12 @@ class PDFObjectStream (PDFStream):
                     valueElement = PDFString('')
                 else:
                     return (-1, 'Stream dictionary has a None value')
-            if valueElement.nameObfuscated is True:
-                self.nameObfuscated = True
-            if valueElement.stringObfuscated is True:
-                self.stringObfuscated = True
-            if valueElement.largeStringPresent is True:
-                self.largeStringPresent = True
+            if valueElement.containsObfuscatedName():
+                self.containsObfuscatedNames = True
+            if valueElement.containsObfuscatedString():
+                self.containsObfuscatedStrings = True
+            if valueElement.containsLargeString():
+                self.containsLargeStrings = True
             v = valueElement.getValue()
             type = valueElement.getType()
             if type == 'reference':
@@ -2979,7 +3115,7 @@ class PDFObjectStream (PDFStream):
                 self.references = list(set(self.references + valueElement.getReferences()))
             if valueElement.containsJS():
                 self.containsJScode = True
-                self.JSCode = list(set(self.JSCode + valueElement.getJSCode()))
+                self.jsCode = list(set(self.jsCode + valueElement.getJSCode()))
                 self.unescapedBytes = list(set(self.unescapedBytes + valueElement.getUnescapedBytes()))
                 self.urlsFound = list(set(self.urlsFound + valueElement.getURLs()))
             if valueElement.isFaulty():
@@ -3243,7 +3379,7 @@ class PDFObjectStream (PDFStream):
                             self.references = list(set(self.references))
                         if isJavascript(self.decodedStream):
                             self.containsJScode = True
-                            self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
+                            self.jsCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
                             if jsErrors != []:
                                 for jsError in jsErrors:
                                     errorMessage = 'Error analysing Javascript: ' + jsError
@@ -3297,7 +3433,7 @@ class PDFObjectStream (PDFStream):
             return self.indexes.index(id)
 
     def isTerminated(self):
-        return not self.terminatorMissing
+        return not self.missingTerminator
 
     def replace(self, string1, string2):
         stringFound = False
@@ -6289,11 +6425,11 @@ class PDFFile:
                         objectRealType = object.getElementByName('/Type')
                     except AttributeError:
                         objectRealType = None
-                    if objectRealType not in (None, []):
+                    if objectRealType:
                         objectRealTypeValue = objectRealType.getValue()
                         if objectRealTypeValue.lower() in ignoreTypeList:
                             continue
-                    object.missingCatalog = True
+                    object.setIsolatedObject(True)
                     self.body[version].deregisterObject(indirectObj)
                     self.body[version].registerObject(indirectObj)
         if self.linearized:
@@ -6330,11 +6466,12 @@ class PDFFile:
                         object = indirectObj.getObject()
                         if object.getType() == 'null':
                             continue
-                        objectRealType = object.getElementByName('/Type')
-                        if objectRealType not in (None, []):
-                            objectRealTypeValue = objectRealType.getValue()
-                            if objectRealTypeValue.lower() in ignoreTypeList:
-                                continue
+                        if object.getType() in ['array', 'dictionary', 'stream']:
+                            objectRealType = object.getElementByName('/Type')
+                            if objectRealType not in (None, []):
+                                objectRealTypeValue = objectRealType.getValue()
+                                if objectRealTypeValue.lower() in ignoreTypeList:
+                                    continue
                         object.missingCatalog = True
                         self.body[version].deregisterObject(indirectObj)
                         self.body[version].registerObject(indirectObj)
