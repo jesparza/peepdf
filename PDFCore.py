@@ -33,7 +33,7 @@ from PDFUtils import *
 from PDFCrypto import *
 from JSAnalysis import *
 from PDFFilters import decodeStream, encodeStream
-from PDFGlobals import *
+from PDFConstants import *
 
 
 class PDFObject:
@@ -4458,7 +4458,7 @@ class PDFBody:
             pdfFile.addError(errorMessage)
             return (-1, errorMessage)
         value = pdfObject.getValue()
-        for event in monitorizedEvents:
+        for event in monitoredEvents:
             if value.find(event) != -1:
                 printedEvent = event.strip()
                 if self.suspiciousEvents.has_key(printedEvent):
@@ -4469,7 +4469,7 @@ class PDFBody:
                         self.suspiciousEvents[printedEvent].append(id)
                 elif not delete:
                     self.suspiciousEvents[printedEvent] = [id]
-        for action in monitorizedActions:
+        for action in monitoredActions:
             index = value.find(action)
             if index != -1 and (action == '/JS ' or len(value) == index + len(action) or value[index + len(action)] in delimiterChars + spacesChars):
                 printedAction = action.strip()
@@ -4481,7 +4481,7 @@ class PDFBody:
                         self.suspiciousActions[printedAction].append(id)
                 elif not delete:
                     self.suspiciousActions[printedAction] = [id]
-        for element in monitorizedElements:
+        for element in monitoredElements:
             index = value.find(element)
             if index != -1 and (element == '/EmbeddedFiles ' or len(value) == index + len(element) or value[index + len(element)] in delimiterChars + spacesChars):
                 printedElement = element.strip()
@@ -4494,8 +4494,8 @@ class PDFBody:
                 elif not delete:
                     self.suspiciousElements[printedElement] = [id]
         objectType = pdfObject.getType()
-        for rawIndicatorVar in monitorizedIndicators['versionBased'].keys():
-            indicatorType = monitorizedIndicators['versionBased'][rawIndicatorVar][1]
+        for rawIndicatorVar in monitoredIndicators['versionBased'].keys():
+            indicatorType = monitoredIndicators['versionBased'][rawIndicatorVar][1]
             if indicatorType != objectType and indicatorType != '*':
                 continue
             indicatorVar = 'pdfObject.' + str(rawIndicatorVar)
@@ -4505,7 +4505,7 @@ class PDFBody:
             except AttributeError:
                 continue
             if indicatorVar not in (None, False) or delete:
-                printedIndicator = monitorizedIndicators['versionBased'][rawIndicatorVar][0]
+                printedIndicator = monitoredIndicators['versionBased'][rawIndicatorVar][0]
                 if self.suspiciousIndicators.has_key(printedIndicator):
                     if delete:
                         if id in self.suspiciousIndicators[printedIndicator]:
@@ -6620,11 +6620,11 @@ class PDFFile:
             for verIndicator in versionIndicators.values():
                 vIndicator = verIndicator[0]
                 factorsDict[vIndicator.strip()] = []
-            for action in monitorizedActions:
+            for action in monitoredActions:
                 factorsDict[action.strip()] = []
-            for event in monitorizedEvents:
+            for event in monitoredEvents:
                 factorsDict[event.strip()] = []
-            for element in monitorizedElements:
+            for element in monitoredElements:
                 factorsDict[element.strip()] = []
             for vuln in jsVulns:
                 factorsDict[vuln.strip()] = []
@@ -7483,14 +7483,14 @@ class PDFFile:
             self.missingInfo = True
         else:
             self.missingInfo = False
-        for rawIndicatorVar in monitorizedIndicators['fileBased'].keys():
+        for rawIndicatorVar in monitoredIndicators['fileBased'].keys():
             indicatorVar = 'self.' + str(rawIndicatorVar)
             try:
                 indicatorVar = eval(indicatorVar)
             except AttributeError:
                 continue
             if indicatorVar not in (None, False):
-                printedIndicator = monitorizedIndicators['fileBased'][rawIndicatorVar]
+                printedIndicator = monitoredIndicators['fileBased'][rawIndicatorVar]
                 self.suspiciousProperties[printedIndicator] = []
         return (0, '')
 
@@ -8190,7 +8190,7 @@ class PDFParser:
         '''
         global isForceMode, pdfFile
         if not isinstance(rawContent, str):
-            return (-1,'Empty xref content')
+            return (-1, 'Empty xref content')
         entries = []
         auxOffset = 0
         subSectionSize = 0
