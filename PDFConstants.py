@@ -3,7 +3,7 @@
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2011-2014 Jose Miguel Esparza
+#    Copyright (C) 2011-2016 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
@@ -27,10 +27,7 @@
 
 import os
 
-
-'''
-++++++++++++++++++++++++PDFCore.py++++++++++++++++++++++++
-'''
+## PDFCore
 VT_KEY = 'fc90df3f5ac749a94a94cb8bf87e05a681a2eb001aef34b6a0084b8c22c97a64'
 MAL_ALL = 1
 MAL_HEAD = 2
@@ -50,11 +47,11 @@ pdfFile = None
 newLine = os.linesep
 isForceMode = False
 isManualAnalysis = False
-spacesChars = ['\x00','\x09','\x0a','\x0c','\x0d','\x20']
-delimiterChars = ['<<','(','<','[','{','/','%']
-monitorizedEvents = ['/OpenAction ','/AA ','/Names ','/AcroForm ', '/XFA ']
-monitorizedActions = ['/JS ','/JavaScript','/Launch','/SubmitForm','/ImportData']
-monitorizedElements = ['/EmbeddedFiles ',
+spacesChars = ['\x00', '\x09', '\x0a', '\x0c', '\x0d', '\x20']
+delimiterChars = ['<<', '(', '<', '[', '{', '/', '%']
+monitoredEvents = ['/OpenAction ', '/AA ', '/Names ', '/AcroForm ', '/XFA ']
+monitoredActions = ['/JS ', '/JavaScript', '/Launch', '/SubmitForm', '/ImportData']
+monitoredElements = ['/EmbeddedFiles ',
                        '/EmbeddedFile',
                        '/JBIG2Decode',
                        'getPageNthWord',
@@ -64,20 +61,19 @@ monitorizedElements = ['/EmbeddedFiles ',
                        '/RichMedia',
                        '.rawValue',
                        'keep.previous']
-monitorizedIndicators = {'versionBased':{
-                             'invalidSubtype': ('Invalid stream /Subtype', 'stream'),
-                             'invalidLength': ('Invalid stream /Length', 'stream'),
-                             'largeSize': ('Large streams', 'stream'),
-                             'nameObfuscated': ('Obfuscated names', '*'),
-                             'stringObfuscated': ('Obfuscated strings', '*'),
-                             'largeStringPresent': ('Large strings', '*'),
-                             'missingXref': ('Missing in xref', '*'),
-                             'streamTerminatorMissing': ('Missing stream terminator', 'stream'),
-                             'terminatorMissing': ('Missing object terminator', '*'),
-                             'garbageInside': ('Garbage bytes before terminator', '*'),
-                             'duplicateObject': ('Duplicate Objects', '*'),
-                             'missingCatalog': ('Not referenced from Catalog', '*')},
-                         'fileBased':{
+monitoredIndicators = {'versionBased': {'invalidSubtype': ('Invalid stream /Subtype', 'stream'),
+                                          'invalidLength': ('Invalid stream /Length', 'stream'),
+                                          'largeSize': ('Large streams', 'stream'),
+                                          'nameObfuscated': ('Obfuscated names', '*'),
+                                          'stringObfuscated': ('Obfuscated strings', '*'),
+                                          'largeStringPresent': ('Large strings', '*'),
+                                          'missingXref': ('Missing in xref', '*'),
+                                          'streamTerminatorMissing': ('Missing stream terminator', 'stream'),
+                                          'terminatorMissing': ('Missing object terminator', '*'),
+                                          'garbageInside': ('Garbage bytes before terminator', '*'),
+                                          'duplicateObject': ('Duplicate Objects', '*'),
+                                          'missingCatalog': ('Not referenced from Catalog', '*')},
+                         'fileBased': {
                              'brokenXref': 'Xref Table broken',
                              'illegalXref': 'Illegal entries in Xref',
                              'largeHeader': 'Header too large',
@@ -102,53 +98,44 @@ jsVulns = ['mailto',
            'app.removeToolButton']
 singUniqueName = 'CoolType.SING.uniqueName'
 bmpVuln = 'BMP/RLE heap corruption'
-vulnsDict = {'mailto':('mailto',['CVE-2007-5020']),
-             'Collab.collectEmailInfo':('Collab.collectEmailInfo',['CVE-2007-5659']),
-             'util.printf':('util.printf',['CVE-2008-2992']),
-             '/JBIG2Decode':('Adobe JBIG2Decode Heap Corruption',['CVE-2009-0658']),
-             'getIcon':('getIcon',['CVE-2009-0927']),
-             'getAnnots':('getAnnots',['CVE-2009-1492']),
-             'spell.customDictionaryOpen':('spell.customDictionaryOpen',['CVE-2009-1493']),
-             'media.newPlayer':('media.newPlayer',['CVE-2009-4324']),
-             '.rawValue':('Adobe Acrobat Bundled LibTIFF Integer Overflow',['CVE-2010-0188']),
-             singUniqueName:(singUniqueName,['CVE-2010-2883']),
-             'doc.printSeps':('doc.printSeps',['CVE-2010-4091']),
-             '/U3D':('/U3D',['CVE-2009-3953','CVE-2009-3959','CVE-2011-2462']),
-             '/PRC':('/PRC',['CVE-2011-4369']),
-             'keep.previous':('Adobe Reader XFA oneOfChild Un-initialized memory vulnerability',['CVE-2013-0640']), # https://labs.portcullis.co.uk/blog/cve-2013-0640-adobe-reader-xfa-oneofchild-un-initialized-memory-vulnerability-part-1/
-             bmpVuln:(bmpVuln,['CVE-2013-2729']),
-             'app.removeToolButton':('app.removeToolButton',['CVE-2013-3346'])}
-jsContexts = {'global':None}
+vulnsDict = {'mailto': ('mailto', ['CVE-2007-5020']),
+             'Collab.collectEmailInfo': ('Collab.collectEmailInfo', ['CVE-2007-5659']),
+             'util.printf': ('util.printf', ['CVE-2008-2992']),
+             '/JBIG2Decode': ('Adobe JBIG2Decode Heap Corruption', ['CVE-2009-0658']),
+             'getIcon': ('getIcon', ['CVE-2009-0927']),
+             'getAnnots': ('getAnnots', ['CVE-2009-1492']),
+             'spell.customDictionaryOpen': ('spell.customDictionaryOpen', ['CVE-2009-1493']),
+             'media.newPlayer': ('media.newPlayer', ['CVE-2009-4324']),
+             '.rawValue': ('Adobe Acrobat Bundled LibTIFF Integer Overflow', ['CVE-2010-0188']),
+             singUniqueName: (singUniqueName, ['CVE-2010-2883']),
+             'doc.printSeps': ('doc.printSeps', ['CVE-2010-4091']),
+             '/U3D': ('/U3D', ['CVE-2009-3953', 'CVE-2009-3959', 'CVE-2011-2462']),
+             '/PRC': ('/PRC', ['CVE-2011-4369']),
+             'keep.previous': ('Adobe Reader XFA oneOfChild Un-initialized memory vulnerability', ['CVE-2013-0640']),
+             # https://labs.portcullis.co.uk/blog/cve-2013-0640-adobe-reader-xfa-oneofchild-un-initialized-memory-vulnerability-part-1/
+             bmpVuln: (bmpVuln, ['CVE-2013-2729']),
+             'app.removeToolButton': ('app.removeToolButton', ['CVE-2013-3346'])}
+jsContexts = {'global': None}
 
-
-
-'''
-++++++++++++++++++++++++PDFConsole.py++++++++++++++++++++++++
-'''
+## PDFConsole
 # File and variable redirections
 FILE_WRITE = 1
 FILE_ADD = 2
 VAR_WRITE = 3
 VAR_ADD = 4
 errorsFile = 'errors.txt'
-filter2RealFilterDict = {'b64':'base64','base64':'base64','asciihex':'/ASCIIHexDecode','ahx':'/ASCIIHexDecode','ascii85':'/ASCII85Decode','a85':'/ASCII85Decode','lzw':'/LZWDecode','flatedecode':'/FlateDecode','fl':'/FlateDecode','runlength':'/RunLengthDecode','rl':'/RunLengthDecode','ccittfax':'/CCITTFaxDecode','ccf':'/CCITTFaxDecode','jbig2':'/JBIG2Decode','dct':'/DCTDecode','jpx':'/JPXDecode'}
+filter2RealFilterDict = {'b64': 'base64', 'base64': 'base64', 'asciihex': '/ASCIIHexDecode', 'ahx': '/ASCIIHexDecode',
+                         'ascii85': '/ASCII85Decode', 'a85': '/ASCII85Decode', 'lzw': '/LZWDecode',
+                         'flatedecode': '/FlateDecode', 'fl': '/FlateDecode', 'runlength': '/RunLengthDecode',
+                         'rl': '/RunLengthDecode', 'ccittfax': '/CCITTFaxDecode', 'ccf': '/CCITTFaxDecode',
+                         'jbig2': '/JBIG2Decode', 'dct': '/DCTDecode', 'jpx': '/JPXDecode'}
 
-
-
-'''
-++++++++++++++++++++++++JSAnalysis.py++++++++++++++++++++++++
-'''
+## JSAnalysis
 reJSscript = '<script[^>]*?contentType\s*?=\s*?[\'"]application/x-javascript[\'"][^>]*?>(.*?)</script>'
 preDefinedCode = 'var app = this;'
 
-
-
-'''
-++++++++++++++++++++++++Individual Indicator Scores (x/10)++++++++++++++++++++++++
-'''
-
+# Individual Indicator Scores (x/10)
 indicatorScores = {
-
     # Vulnerabilities
     ".rawValue": 10,
     "/JBIG2Decode": 10,
@@ -166,7 +153,6 @@ indicatorScores = {
     "util.printf": 10,
     "/U3D": 10,
     "/PRC": 10,
-
     # Boolean return
     "Garbage bytes between objects": 3,
     "Header too large": 5,
@@ -175,7 +161,7 @@ indicatorScores = {
     "Large gap after last %EOF": 5,
     "Garbage Header before PDF Header": 8,
     "Garbage Bytes after last %EOF": 7,
-    "Xref Table broken": 5,         # increase after offsets error fix
+    "Xref Table broken": 5,  # increase after offsets error fix
     "Binary Header too large": 5,
     "Bad PDF Header": 4,
     "%%EOF missing": 5,
@@ -184,7 +170,6 @@ indicatorScores = {
     "missingInfo": 6,
     "/Pages Missing": 6,
     "File encrypted with default password": 5,
-
     # List return
     # (min_score, max_score)
     # max_score checked against min_score+len(x)
@@ -218,12 +203,10 @@ indicatorScores = {
     "Xref Table missing": [6, 8],
     "containingJS": [5, 7],
     "Garbage bytes before terminator": [6, 8],
-    "Duplicate Objects": [5,7],
-
+    "Duplicate Objects": [5, 7],
     # Int/Tuple return
     "pagesNumber": "3 if x==None or x<=2 else 2",
     "detectionRate": "0 if x==None else (float(x[0])/float(x[1]))*20"
-
 }
 
 UNKNOWN_BUILDER_SCORE = 7
