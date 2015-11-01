@@ -6613,8 +6613,8 @@ class PDFFile:
             @param nonNull: Return only those factors which have a Non-Null value(Boolean)
             @return: A Dict containing suspicious factors according to the version.
         '''
-        versionIndicators = monitorizedIndicators['versionBased']
-        fileIndicators = monitorizedIndicators['fileBased']
+        versionIndicators = monitoredIndicators['versionBased']
+        fileIndicators = monitoredIndicators['fileBased']
         factorsDict = {}
         if not nonNull:
             for verIndicator in versionIndicators.values():
