@@ -27,6 +27,18 @@
 
 import os
 
+
+
+
+## peepdf
+author = 'Jose Miguel Esparza'
+email = 'peepdf AT eternal-todo.com'
+url = 'http://peepdf.eternal-todo.com'
+twitter = 'http://twitter.com/EternalTodo'
+peepTwitter = 'http://twitter.com/peepdf'
+version = '0.3'
+revision = '255'
+
 ## PDFCore
 VT_KEY = 'fc90df3f5ac749a94a94cb8bf87e05a681a2eb001aef34b6a0084b8c22c97a64'
 MAL_ALL = 1
@@ -42,7 +54,7 @@ MAX_STREAM_SIZE = 50000
 MAX_OBJ_GAP = 4 + 2  # compensation for small offset bug
 MAX_PRE_HEAD_GAP = 4
 MAX_POST_EOF_GAP = 4
-MAX_THRESHOLD_SCORE = 100
+MAX_THRESHOLD_SCORE = 90
 pdfFile = None
 newLine = os.linesep
 isForceMode = False
@@ -59,6 +71,7 @@ monitoredElements = ['/EmbeddedFiles ',
                        '/U3D',
                        '/PRC',
                        '/RichMedia',
+                       '/Flash',
                        '.rawValue',
                        'keep.previous']
 monitoredIndicators = {'versionBased': {'invalidSubtype': ('Invalid stream /Subtype', 'stream'),
@@ -76,6 +89,7 @@ monitoredIndicators = {'versionBased': {'invalidSubtype': ('Invalid stream /Subt
                          'fileBased': {
                              'brokenXref': 'Xref Table broken',
                              'illegalXref': 'Illegal entries in Xref',
+                             'emptyXref': 'No entries in Xref Section',
                              'largeHeader': 'Header too large',
                              'largeBinaryHeader': 'Binary Header too large',
                              'garbageHeaderPresent': 'Garbage Header before PDF Header',
@@ -83,6 +97,7 @@ monitoredIndicators = {'versionBased': {'invalidSubtype': ('Invalid stream /Subt
                              'missingEOF': '%%EOF missing',
                              'missingPages': '/Pages Missing',
                              'missingXref': 'Xref Missing',
+                             'missingXrefEOL': 'Xref EOL Missing',
                              'missingCatalog': 'Catalog Missing',
                              'gapBeforeHeaderPresent': 'Large Gap before Header',
                              'garbageAfterEOFPresent': 'Garbage Bytes after last %EOF',
@@ -161,15 +176,18 @@ indicatorScores = {
     "Large gap after last %EOF": 5,
     "Garbage Header before PDF Header": 8,
     "Garbage Bytes after last %EOF": 7,
-    "Xref Table broken": 5,  # increase after offsets error fix
+    "Xref Table broken": 7,
+    "No entries in Xref Section": 9,
     "Binary Header too large": 5,
     "Bad PDF Header": 4,
     "%%EOF missing": 5,
     "Xref Missing": 6,
     "Catalog Missing": 6,
+    "Xref EOL Missing": 6,
     "missingInfo": 6,
     "/Pages Missing": 6,
     "File encrypted with default password": 5,
+
     # List return
     # (min_score, max_score)
     # max_score checked against min_score+len(x)
@@ -182,8 +200,9 @@ indicatorScores = {
     "/JavaScript": [5, 7],
     "/Launch": [5, 7],
     "/Names": [3, 5],
-    "/OpenAction": [5, 7],
+    "/OpenAction": [6, 8],
     "/RichMedia": [5, 7],
+    "/Flash": [5, 7],
     "/SubmitForm": [5, 7],
     "/XFA": [5, 7],
     "Garbage Bytes before": [6, 8],
@@ -192,9 +211,9 @@ indicatorScores = {
     "Invalid stream /Subtype": [4, 7],
     "Large streams": [5, 7],
     "Large strings": [5, 7],
-    "Missing in xref": [6, 8],
-    "Missing object terminator": [4, 7],
-    "Missing stream terminator": [4, 7],
+    "Missing in xref": [7, 9],
+    "Missing object terminator": [5, 8],
+    "Missing stream terminator": [5, 8],
     "Not referenced from Catalog": [5, 7],
     "Obfuscated names": [4, 7],
     "Obfuscated strings": [3, 6],
@@ -203,21 +222,30 @@ indicatorScores = {
     "Xref Table missing": [6, 8],
     "containingJS": [5, 7],
     "Garbage bytes before terminator": [6, 8],
-    "Duplicate Objects": [5, 7],
+    "Duplicate Objects": [6,8],
+    "Object Parsing Errors": [5,10],
+
     # Int/Tuple return
-    "pagesNumber": "3 if x==None or x<=2 else 2",
+    "pagesNumber": "3 if x is not None and int(x)<=1 else 0",
     "detectionRate": "0 if x==None else (float(x[0])/float(x[1]))*20"
 }
 
+
+# PDF Builder List
 UNKNOWN_BUILDER_SCORE = 7
 MAX_BUILDER_SCORE = 9
 PDFBuildersScore = {
     # Todo: add more creators
     "Acrobat Distiller": 0,
     "Acrobat PDFMaker": 0,
+    "Acrobat PDFWriter": 0,
     "Adobe Acrobat": 0,
+    "AdobePS5.dll": 0,
     "PDF Printer": 0,
     "Microsoft PowerPoint": 0,
+    "Word": 0,
+    "Mac OS X PDFContext": 0,
+    "Ghostscript": 0,
     "FrameMaker": 0,
     "Hewlett-Packard Intelligent Scanning Technology": 0,
     "Arbortext Advanced Print Publisher": 0,
@@ -268,5 +296,13 @@ PDFBuildersScore = {
     "Xpdf": 0,
     "Xournal": 0,
     "Antiword": 0,
-    "dvipdfm": 0
+    "dvipdfm": 0,
+    "PScript5.dll": 0,
+    "APJavaScript": 0,
+    "OneForm Designer": 0,
+    "purepdf": 0,
+    "Scribus": 0,
+    "OpenOffice": 0,
+    "Writer": 0,
+
 }

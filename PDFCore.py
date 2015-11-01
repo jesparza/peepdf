@@ -3,7 +3,7 @@
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2011-2014 Jose Miguel Esparza
+#    Copyright (C) 2011-2015 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
@@ -2713,6 +2713,11 @@ class PDFStream (PDFDictionary):
         return ret
 
     def verifySubType(self):
+        '''
+            Verifies the stream subtype with that of its magic numbers.
+
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         if self.elements.has_key('/Subtype'):
             subType = self.elements['/Subtype'].getValue()
             if subType == None:
@@ -2740,7 +2745,7 @@ class PDFStream (PDFDictionary):
                     subTypeFound = True
                     break
             if self.decodingError is True:
-                stream = self.getRawStream()
+                return (-1, 'Ignoring subtypeCheck due to decoding Error')
             else:
                 stream = self.getStream()
             if stream.isspace():
@@ -4439,6 +4444,7 @@ class PDFBody:
                                 compressedObject = compressedObjectsDict[compressedId][1]
                                 self.setObject(compressedId, compressedObject, offset)
                             del(compressedObjectsDict)
+            self.updateStats(id, object)
         if errorMessage != '':
             return (-1, errorMessage)
         return (0, '')
@@ -4494,6 +4500,7 @@ class PDFBody:
                 continue
             indicatorVar = 'pdfObject.' + str(rawIndicatorVar)
             try:
+                # Get value of pdfObject.<indicator>
                 indicatorVar = eval(indicatorVar)
             except AttributeError:
                 continue
@@ -4886,6 +4893,8 @@ class PDFFile:
         self.pagesCount = 0
         self.brokenXref = False
         self.illegalXref = False
+        self.emptyXref = False
+        self.missingXrefEOL = False
         self.largeHeader = False
         self.largeBinaryHeader = False
         self.garbageHeaderPresent = False
@@ -4939,9 +4948,16 @@ class PDFFile:
             return (-1, 'Bad PDFTrailer array supplied')
 
     def calculateScore(self, checkOnVT=False):
+        '''
+            Calculate the maliciousness Score(out of 10) using suspicious indicators.
+
+            @param checkOnVT: Check the hash of the PDF file on VirusTotal(Boolean)
+            @return: A tuple (status,score)
+        '''
         indicators = self.getScoringFactors(checkOnVT=checkOnVT, nonNull=True)
         scores = indicatorScores
         scoringCard = []
+        # Lesser threshold score for PDF's with less no. of objects
         if self.numObjects < 30:
             threshold_score = (1.0 - (30.0 - self.numObjects) / 100.0) * MAX_THRESHOLD_SCORE
         else:
@@ -4954,12 +4970,18 @@ class PDFFile:
                 continue
             if indicatorVal in (False, None, []):
                 continue
+            # PDF Metadata(Creator/Producer) Score
             if indicator in ('CreatorList', 'ProducerList'):
                 builderScore = 0
                 for builder in indicatorVal:
                     if builder is None:
                         continue
-                    builderKey = get_close_matches(builder, PDFBuildersScore.keys(), n=1, cutoff=0.6)
+                    if 'windows' in builder.lower():
+                        builder = builder[:builder.lower().index('windows')]
+                    builderRE = re.search('^(.*?)[\d\.\s\0]*$',builder)
+                    if builderRE:
+                        builder = builderRE.group(1)
+                    builderKey = get_close_matches(builder, PDFBuildersScore.keys(), n=1, cutoff=0.5)
                     if builderKey != []:
                         builderKey = builderKey[0]
                         builderScore += PDFBuildersScore[builderKey]
@@ -4977,6 +4999,7 @@ class PDFFile:
                 scoringCard.append((text, builderScore))
                 maliciousness += builderScore
                 continue
+            # Suspicious Indicator Scores
             scoreVal = scores[indicator]
             scoringText = indicator
             if isinstance(scoreVal, (tuple, list)) and isinstance(indicatorVal, (list, tuple)):
@@ -4988,23 +5011,25 @@ class PDFFile:
             elif not isinstance(scoreVal, (int, long, float, complex)):
                 scoreVal = scoreVal.replace('x', 'indicatorVal')
                 scoreVal = eval(scoreVal)
-            # print indicator, scoreVal, maliciousness
-            scoringCard.append((scoringText, scoreVal))
+            if scoreVal > 0:
+                scoringCard.append((scoringText, scoreVal))
             maliciousness += scoreVal
         filterScore = 0
         singleFilter = 0
+        # Filters Score
         for streamId in indicators['streamDict']:
             if filterScore >= 5:
                 break
             stream = indicators['streamDict'][streamId]
-            if stream['numFilters'] == 1:
+            if stream['numFilters'] > 1:
                 filterScore += 2
                 singleFilter += 1
         if filterScore > 0:
-            scoringCard.append(('streams present with 1 filter (%d)' % singleFilter, filterScore))
+            scoringCard.append(('streams with many filters (%d)' % singleFilter, filterScore))
             maliciousness += filterScore
         obfuscationScore = 0
         obfuscatedStreamCount = 0
+        # JS Obfuscation Score
         for version in range(self.updates + 1):
             objs = self.body[version].getContainingJS()
             for obj in objs:
@@ -5018,6 +5043,7 @@ class PDFFile:
         if obfuscationScore > 0:
             scoringCard.append(('Obfuscated Javascript (%d)' % obfuscatedStreamCount, obfuscationScore))
         maliciousness += obfuscationScore
+        self.rawScore = maliciousness
         maliciousness = (float(maliciousness) / float(threshold_score)) * 10.0
         if maliciousness > 10:
             maliciousness = 10
@@ -5741,6 +5767,11 @@ class PDFFile:
         pass
 
     def detectGarbageBetweenObjects(self):
+        '''
+            Method to detect garbage whitespace or garbage text between the end of one object and starting of other.
+
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         offsetDict = self.getOffsets()
         offsetList = []
         for version, content in enumerate(offsetDict):
@@ -5753,7 +5784,6 @@ class PDFFile:
                     offsetList.append((version, element, offset[0], offset[0] + offset[1]))
                 elif type(offset) == list:
                     if element == 'compressed':
-                        # TODO ERROR: compressed objects
                         continue
                     for object in offset:
                         if int(object[0]) in compressedIgnoreList:
@@ -5773,20 +5803,25 @@ class PDFFile:
             for x in spacesChars:
                 schars = schars + x
             if abs(offset[3] - offsetList[index + 1][2]) > MAX_OBJ_GAP:
-                data = rawFile[offset[3] + 2:offsetList[index + 1][2]]  # compensation(+2) for small offset bug
-                data = data.translate(None, schars)
+                rawData = rawFile[offset[3] + 2:offsetList[index + 1][2]]  # compensation(+2) for small offset bug
+                data = rawData.translate(None, schars)
                 if data.isspace() or data == '':
+                    # Ignore for small whitespace(<20) after eof.(made by some pdf producers)
+                    if rawData.isspace() and len(rawData) > 4 and len(rawData) <= 20 and offset[1] == 'eof':
+                        continue
                     spaceGapList.append((offsetList[index + 1][0], offsetList[index + 1][1]))
                 else:
                     garbageList.append((offsetList[index + 1][0], offsetList[index + 1][1]))
         bytesText = 'Garbage Bytes before'
         gapText = 'Whitespace gap before'
+        # Text Bytes check
         for obj in garbageList:
             if bytesText in self.body[obj[0]].suspiciousIndicators:
                 if obj[1] not in self.body[obj[0]].suspiciousIndicators[bytesText]:
                     self.body[obj[0]].suspiciousIndicators[bytesText].append(obj[1])
             else:
                 self.body[obj[0]].suspiciousIndicators[bytesText] = [obj[1]]
+        # Whitespace Gap check
         for obj in spaceGapList:
             if gapText in self.body[obj[0]].suspiciousIndicators:
                 if obj[1] not in self.body[obj[0]].suspiciousIndicators[gapText]:
@@ -6182,19 +6217,33 @@ class PDFFile:
                 infoId = streamTrailer.getInfoId()
             return infoId
 
-    def _updateReferenceList(self, object, objectId, version, isolatedList=[]):
+    def _updateReferenceList(self, object, objectId, version, isolatedList=[], linearized=False, doneList= []):
         if objectId in isolatedList:
             isolatedList.remove(objectId)
-        else:
+        elif object in doneList:
             return None
+        if object is None:
+            return None
+        doneList.append(object)
         for reference in object.getReferences():
             referenceId = reference.split()[0]
             referenceId = int(referenceId)
-            referenceObject = self.getObject(referenceId, version=version)
-            if referenceObject is not None:
-                self._updateReferenceList(referenceObject, referenceId, version, isolatedList)
+            if linearized:
+                for ver in range(self.updates+1):
+                    referenceObject = self.getObject(referenceId, version=ver)
+                    if referenceObject is not None:
+                        self._updateReferenceList(referenceObject, referenceId, ver, isolatedList, linearized = linearized)
+            else:
+                referenceObject = self.getObject(referenceId, version=version)
+                if referenceObject is not None:
+                    self._updateReferenceList(referenceObject, referenceId, version, isolatedList)
 
     def getIsolatedObjects(self):
+        '''
+            Method to get objects which have no recursive direct/indirect references from catalog.
+
+            @return A dictionary containing isolated objects of each version.
+        '''
         if filter(None, self.getCatalogObjectId()) == []:
             return None
         isolatedListDict = {}
@@ -6203,10 +6252,11 @@ class PDFFile:
         infoIdLinear = None
         catalogLinear = None
         objectTypeList = ['dictionary', 'array', 'stream']
+        ignoreTypeList = ['/sig']
         catalogLinear = []
+        infoLinear = []
         for version in range(self.updates + 1):
             catalogId = None
-            catalogIdLinear = None
             infoId = None
             trailer, streamTrailer = self.trailer[version]
             if trailer != None:
@@ -6227,27 +6277,43 @@ class PDFFile:
                 objectsDict.update(objList)
                 if catalogId is not None:
                     catalogIdLinear = catalogId
+                if infoId is not None:
                     infoIdLinear = infoId
-                catalog = self.getObject(catalogIdLinear)
+                info = self.getObject(infoIdLinear)
+                if info is not None:
+                    infoLinear.append((infoIdLinear, info))
+                catalog = self.getObject(catalogIdLinear, version=version)
                 if catalog is not None:
                     catalogLinear.append((catalogIdLinear, catalog))
             else:
                 objectsDict = objList
                 catalog = self.getCatalogObject(version=version)
                 isolatedList = objectsDict.keys()
+                info = self.getInfoObject(version=version)
                 if infoId in isolatedList:
-                    isolatedList.remove(infoId)
+                    self._updateReferenceList(info, infoId, version=version, isolatedList=isolatedList)
                 if self.encrypted:
                     encryptId = self.getEncryptDict()[0]
+                    encryptObject = self.getObject(encryptId)
                     if encryptId in isolatedList:
-                        isolatedList.remove(encryptId)
+                        self._updateReferenceList(encryptObject, encryptId, version=None, isolatedList=isolatedList)
                 self._updateReferenceList(catalog, catalogId, version=version, isolatedList=isolatedList)
                 isolatedListDict[version] = isolatedList
-                for objectId in isolatedList:
+                for objectId in isolatedList[:]:
                     indirectObj = self.getObject(objectId, indirect=True)
                     object = indirectObj.getObject()
                     if object.getType() in objectTypeList and object.hasElement('/Linearized'):
                         continue
+                    if object.getType() == 'null':
+                        continue
+                    try:
+                        objectRealType = object.getElementByName('/Type')
+                    except AttributeError:
+                        objectRealType = None
+                    if objectRealType not in (None, []):
+                        objectRealTypeValue = objectRealType.getValue()
+                        if objectRealTypeValue.lower() in ignoreTypeList:
+                            continue
                     object.missingCatalog = True
                     self.body[version].deregisterObject(indirectObj)
                     self.body[version].registerObject(indirectObj)
@@ -6255,18 +6321,26 @@ class PDFFile:
             if catalogLinear is None:
                 return None
             isolatedList = objectsDict.keys()
-            if infoIdLinear in isolatedList:
-                isolatedList.remove(infoIdLinear)
+            for infoL in infoLinear:
+                self._updateReferenceList(infoL[1], infoL[0], version=None, isolatedList=isolatedList)
             if self.encrypted:
                 encryptId = self.getEncryptDict()[0]
+                encryptObject = self.getObject(encryptId)
                 if encryptId in isolatedList:
-                    isolatedList.remove(encryptId)
+                    self._updateReferenceList(encryptObject, encryptId, version=None, isolatedList=isolatedList)
             for catalogL in catalogLinear:
                 if catalogL[0] not in isolatedList:
                     isolatedList.append(catalogL[0])
-                self._updateReferenceList(catalogL[1], catalogL[0], version=None, isolatedList=isolatedList)
-            for objectId in isolatedList:
-                for version in range(self.updates + 1):
+                self._updateReferenceList(catalogL[1], catalogL[0], version=None, isolatedList=isolatedList, linearized=True)
+            for objectId in isolatedList[:]:
+                for version in range(self.updates, -1, -1):
+                    if objectId in self.body[version].getObjects().keys():
+                        indirectObj = self.getObject(objectId, version=version, indirect=True)
+                        object = indirectObj.getObject()
+                        if object.getType() in objectTypeList and (object.hasElement('/Linearized') or (object.hasElement('/S'))):
+                            self._updateReferenceList(object, objectId, version=None, isolatedList=isolatedList)
+            for objectId in isolatedList[:]:
+                for version in range(self.updates, -1, -1):
                     if objectId in self.body[version].getObjects().keys():
                         if version in isolatedListDict.keys():
                             isolatedListDict[version].append(objectId)
@@ -6275,8 +6349,13 @@ class PDFFile:
                             isolatedListDict[version].append(objectId)
                         indirectObj = self.getObject(objectId, version=version, indirect=True)
                         object = indirectObj.getObject()
-                        if object.getType() in objectTypeList and object.hasElement('/Linearized'):
+                        if object.getType() == 'null':
                             continue
+                        objectRealType = object.getElementByName('/Type')
+                        if objectRealType not in (None, []):
+                            objectRealTypeValue = objectRealType.getValue()
+                            if objectRealTypeValue.lower() in ignoreTypeList:
+                                continue
                         object.missingCatalog = True
                         self.body[version].deregisterObject(indirectObj)
                         self.body[version].registerObject(indirectObj)
@@ -6435,6 +6514,11 @@ class PDFFile:
         return self.path
 
     def getPagesCount(self):
+        '''
+            Get Nnmber of Pages in the PDF.
+
+            @return: Number of Pages(char) or None if error.
+        '''
         catalog = self.getCatalogObject()
         if catalog == None or len(catalog) < 1:
             self.addError('Pages Number not found as Catalog is None')
@@ -6522,7 +6606,13 @@ class PDFFile:
         return matchedObjects
 
     def getScoringFactors(self, checkOnVT=False, nonNull=False):
-        '''returns dictionay type containing factors used to score the pdf maliciousness'''
+        '''
+            Get all the suspicous Indicators/elements/properties that affect the scoring of PDF.
+
+            @param checkOnVT: Check the hash on Virus Total, if not already done. (Boolean)
+            @param nonNull: Return only those factors which have a Non-Null value(Boolean)
+            @return: A Dict containing suspicious factors according to the version.
+        '''
         versionIndicators = monitorizedIndicators['versionBased']
         fileIndicators = monitorizedIndicators['fileBased']
         factorsDict = {}
@@ -6677,6 +6767,12 @@ class PDFFile:
         elif self.detectionRate != []:
             factorsDict['detectionRate'] = self.detectionRate
             factorsDict['detectionReport'] = self.detectionReport
+        errors = self.getErrors()
+        parsingErrorList = []
+        for error in errors:
+            if 'Error parsing object'.lower() in error.lower():
+                parsingErrorList.append(error)
+        factorsDict['Object Parsing Errors'] = parsingErrorList
         return factorsDict
 
     def getSHA1(self):
@@ -7375,9 +7471,9 @@ class PDFFile:
             self.missingXref = True
         else:
             self.missingXref = False
-        catalogId = self.getCatalogObjectId()
-        catalogId = filter(None, catalogId)
-        if catalogId == []:
+        catalogObj = self.getCatalogObject()
+        catalogObj = filter(None, catalogObj)
+        if catalogObj == []:
             self.missingCatalog = True
         else:
             self.missingCatalog = False
@@ -7411,6 +7507,11 @@ class PDFFile:
         pass
 
     def verifyXrefOffsets(self):
+        '''
+            Method to verify object offsets with those in xref table.
+
+            @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
+        '''
         linearezedXrefObjectList = []
         linearizedfaultyList = {}
         for version in range(self.updates + 1):
@@ -7454,7 +7555,7 @@ class PDFFile:
                     continue
                 for objectId in realObjectOffsets.keys():
                     if objectId not in xrefList:
-                        indirectObj = self.getObject(objectId, indirect=True)
+                        indirectObj = self.getObject(objectId, version=version, indirect=True)
                         indirectObj.getObject().missingXref = True
                         self.body[version].deregisterObject(indirectObj)
                         self.body[version].registerObject(indirectObj)
@@ -7471,6 +7572,7 @@ class PDFFile:
                             self.body[version].deregisterObject(indirectObj)
                             self.body[version].registerObject(indirectObj)
                         del linearizedfaultyList[objectId]
+        return (0, '')
 
 
 class PDFParser:
@@ -7683,6 +7785,7 @@ class PDFParser:
                             else:
                                 pdfIndirectObject.setOffset(bodyOffset + relativeOffset)
                             if pdfIndirectObject.getId() in body.getObjects():
+                                # Duplicate Object
                                 pdfIndirectObject.getObject().duplicateObject = True
                                 ret = body.registerObject(pdfIndirectObject, duplicate=True)
                             else:
@@ -7878,12 +7981,12 @@ class PDFParser:
             pdfIndirectObject.setObject(object)
             ret = self.readSymbol(rawIndirectObject, 'endobj', False)
             if ret[0] == -1:
-                pdfIndirectObject.getObject().garbageInside = True
                 ret = self.readUntilSymbol(rawIndirectObject, 'endobj')
                 if ret[0] == -1:
                     pdfIndirectObject.getObject().terminatorMissing = True
                 else:
                     self.charCounter += len('endobj')
+                    pdfIndirectObject.getObject().garbageInside = True
             pdfIndirectObject.setSize(self.charCounter)
         except:
             errorMessage = 'Unspecified parsing error'
@@ -8087,7 +8190,7 @@ class PDFParser:
         '''
         global isForceMode, pdfFile
         if not isinstance(rawContent, str):
-            return (-1, 'Empty xref content')
+            return (-1,'Empty xref content')
         entries = []
         auxOffset = 0
         subSectionSize = 0
@@ -8107,6 +8210,7 @@ class PDFParser:
             if isForceMode:
                 pdfCrossRefSubSection = PDFCrossRefSubSection(0, offset=-1)
                 pdfFile.addError('No entries in xref section')
+                pdfFile.emptyXref = True
             else:
                 return (-1, 'Error: No entries in xref section!!')
         else:
@@ -8143,6 +8247,13 @@ class PDFParser:
                             return (-1, 'Bad format for cross reference entry')
                 auxOffset += len(line)
                 subSectionSize += len(line)
+            else:
+                if not pdfCrossRefSubSection:
+                    if isForceMode:
+                        pdfCrossRefSubSection = PDFCrossRefSubSection(0, len(entries), offset=auxOffset)
+                        pdfFile.addError('Missing xref section header')
+                    else:
+                        return (-1, 'Missing xref section header')
         pdfCrossRefSubSection.setSize(subSectionSize)
         pdfCrossRefSection.addSubsection(pdfCrossRefSubSection)
         pdfCrossRefSubSection.setEntries(entries)
@@ -8319,6 +8430,7 @@ class PDFParser:
                 if isForceMode:
                     lastXrefSection = -1
                     pdfFile.addError('EOL not found while looking for the last cross reference section')
+                    pdfFile.missingXrefEOL = True
                 else:
                     return (-1, 'EOL not found while looking for the last cross reference section')
             else:
@@ -8437,7 +8549,7 @@ class PDFParser:
                     matchingObjectsAux = regExp.findall(content)
                 else:
                     matchingObjectsAux = []
-            lastObject = re.findall('(\d{1,5}\s\d{1,5}\sobj)', content, re.DOTALL)
+            lastObject = re.findall('(\d{1,10}\s\d{1,10}\sobj)', content, re.DOTALL)
             if lastObject != []:
                 content = content[content.find(lastObject[0]):]
                 matchingObjects.append((content, lastObject[0]))

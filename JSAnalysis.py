@@ -137,7 +137,7 @@ def analyseJS(code, context=None, manualAnalysis=False):
 
 def getObfuscationScore(jsCode):
     '''
-        Given the Javascript code this method tries to detect JS Obfuscation using frequency analysis, Entropy and Work size.
+        Given the Javascript code this method tries to detect JS Obfuscation using frequency analysis, Entropy and Word size.
 
         @param jsCode: The Javascript code (string)
         @return: Score(maximum: 10) of obfuscation in Javascript
@@ -164,6 +164,8 @@ def getObfuscationScore(jsCode):
             break
     if suspiciousCharsPopular:
         obfuscationScore += 3
+    if float(charFreq[sortedCharFreq[:5][0]])/float(len(jsCode)) > 0.33:
+        obfuscationScore += 3
     for ch in sortedCharFreq[:5]:
         if ch not in morePopular:
             obfuscationScore += 2
@@ -173,7 +175,7 @@ def getObfuscationScore(jsCode):
     for ch in charFreq:
         entropy += (float(charFreq[ch]) / len(jsCode)) * log(float(charFreq[ch]) / len(jsCode))
     entropy *= -1
-    if entropy <= 3.4:
+    if entropy <= 3.3:
         obfuscationScore += 2
     # Word Size Analysis ++++++++++++++++++++++++++++++++++++++++
     words = jsCode.split()
