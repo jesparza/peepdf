@@ -28,7 +28,7 @@
 '''
 
 import PDFCore
-import PDFGlobals
+import PDFConstants
 import argparse
 import sys
 import os
@@ -122,8 +122,8 @@ def main():
     isLooseMode = True
     isManualAnalysis = False
     checkonVT = args.checkonVT
-    version = PDFGlobals.version
-    revision = PDFGlobals.revision
+    version = PDFConstants.version
+    revision = PDFConstants.revision
     if args.clean:
         userDefinedStatus = 'clean'
     elif args.malicious:
