@@ -58,6 +58,12 @@ try:
 except:
     COLORIZED_OUTPUT = False
 
+try:
+    from PIL import Image
+    PIL_MODULE = True
+except:
+    PIL_MODULE = False
+
 
 def getRepPaths(url, path=''):
     paths = []
@@ -306,7 +312,7 @@ def getPeepJSON(statsDict, version, revision):
             versionInfo['encoded_streams'] = statsVersion['Encoded'][1]
         else:
             versionInfo['encoded_streams'] = []
-        if statsVersion['Decoding Errors'] is not None:
+        if versionInfo['encoded_streams'] and statsVersion['Decoding Errors'] is not None:
             versionInfo['decoding_error_streams'] = statsVersion['Decoding Errors'][1]
         else:
             versionInfo['decoding_error_streams'] = []
@@ -356,7 +362,7 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.3'
-revision = '256'
+revision = '255'
 stats = ''
 pdf = None
 fileName = None
@@ -554,6 +560,9 @@ try:
                         stats += warningColor + warningMessage + resetColor + newLine
                     if not EMU_MODULE:
                         warningMessage = 'Warning: pylibemu is not installed!!'
+                        stats += warningColor + warningMessage + resetColor + newLine
+                    if not PIL_MODULE:
+                        warningMessage = 'Warning: Python Imaging Library (PIL) is not installed!!'
                         stats += warningColor + warningMessage + resetColor + newLine
                     errors = statsDict['Errors']
                     for error in errors:
