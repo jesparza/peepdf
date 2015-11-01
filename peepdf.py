@@ -38,7 +38,7 @@ import json
 from datetime import datetime
 from PDFCore import PDFParser, vulnsDict
 from PDFUtils import vtcheck
-from PDFGlobals import *
+from PDFConstants import *
 
 try:
     import PyV8

@@ -38,7 +38,7 @@ from PDFUtils import *
 from PDFCrypto import *
 from JSAnalysis import *
 from PDFCore import *
-from PDFGlobals import *
+from PDFConstants import *
 from base64 import b64encode, b64decode
 from PDFFilters import decodeStream, encodeStream
 from jjdecode import JJDecoder

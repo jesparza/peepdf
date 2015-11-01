@@ -28,7 +28,7 @@
 import sys, re, os, jsbeautifier, traceback, operator
 from collections import Counter
 from PDFUtils import unescapeHTMLEntities, escapeString, average, stddev
-from PDFGlobals import *
+from PDFConstants import *
 from math import log
 try:
     import PyV8
