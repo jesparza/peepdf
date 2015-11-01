@@ -1,5 +1,5 @@
 -----------------------------------------------
-peepdf 0.4 r256, 2015-08-27
+peepdf 0.4 r256 beta, 2015-08-27
 -----------------------------------------------
 
     * New features:
@@ -11,7 +11,7 @@ peepdf 0.4 r256, 2015-08-27
 
     * Fixes:
 
-        - Fixed offset bug realted to different versions
+        - Fixed offset bug related to different versions
         - Fixed signal handling error in interactive console
         - Fixed object parsing bug with missing terminator
 
