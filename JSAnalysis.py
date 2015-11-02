@@ -99,6 +99,7 @@ def analyseJS(code, context = None, manualAnalysis = False):
                         open('jserror.log','ab').write(error + newLine)
                         errors.append(error)
                         break
+                context.leave()
             
             if code != '':
                 escapedVars = re.findall('(\w*?)\s*?=\s*?(unescape\((.*?)\))', code, re.DOTALL)
