@@ -5719,23 +5719,24 @@ class PDFFile :
     
     def getHeaderOffset(self):
         return self.headerOffset
-        
-    def getInfoObject(self, version = None, indirect = False):
-        if version == None:
+
+    def getInfoObject(self, version=None, indirect=False):
+        if version is None:
             infoObjects = []
             infoIds = self.getInfoObjectId()
-            for id in infoIds:
-                if id != None:
-                    infoObject = self.getObject(id, version, indirect)
+            for i in xrange(len(infoIds)):
+                id = infoIds[i]
+                if id is not None:
+                    infoObject = self.getObject(id, i, indirect)
                     infoObjects.append(infoObject)
                 else:
                     infoObjects.append(None)
             return infoObjects
         else:
             infoId = self.getInfoObjectId(version)
-            if infoId != None:
+            if infoId is not None:
                 infoObject = self.getObject(infoId, version, indirect)
-                if infoObject == None and version == 0 and self.getLinearized():
+                if infoObject is None and version == 0 and self.getLinearized():
                     # Linearized documents can store Info object in the next update
                     infoObject = self.getObject(infoId, None, indirect)
                     return infoObject
