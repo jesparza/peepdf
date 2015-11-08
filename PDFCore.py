@@ -5594,13 +5594,14 @@ class PDFFile :
                         break
         return basicMetadata
     
-    def getCatalogObject(self, version = None, indirect = False):
+    def getCatalogObject(self, version=None, indirect=False):
         if version == None:
             catalogObjects = []
             catalogIds = self.getCatalogObjectId()
-            for id in catalogIds:
+            for i in xrange(len(catalogIds)):
+                id = catalogIds[i]
                 if id != None:
-                    catalogObject = self.getObject(id, version, indirect)
+                    catalogObject = self.getObject(id, i, indirect)
                     catalogObjects.append(catalogObject)
                 else:
                     catalogObjects.append(None)
