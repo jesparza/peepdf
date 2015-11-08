@@ -4145,6 +4145,7 @@ class PDFBody:
         self.numStreams = 0  # int
         self.numEncodedStreams = 0
         self.numDecodingErrors = 0
+        self.linearizationObjectId = None
         self.streams = []
         self.nextOffset = 0
         self.encodedStreams = []
@@ -4331,6 +4332,9 @@ class PDFBody:
     def getJSCode(self):
         return self.JSCode
 
+    def getLinearizationObjectId(self):
+        return self.linearizationObjectId
+
     def getNextOffset(self):
         return self.nextOffset
 
@@ -4477,6 +4481,9 @@ class PDFBody:
             return (-1, errorMessage)
         return (0, type)
 
+    def setLinearizationObjectId(self, myId):
+        self.linearizationObjectId = myId
+
     def setNextOffset(self, newOffset):
         self.nextOffset = newOffset
 
@@ -4513,6 +4520,8 @@ class PDFBody:
                 return (-1, errorMessage)
             else:
                 objectType = ret[1]
+                if objectType == 'dictionary' and object.hasElement('/Linearized'):
+                    self.linearizationObjectId = id
                 return (0, [id, objectType])
         else:
             return ret
@@ -6319,21 +6328,22 @@ class PDFFile:
         return self.headerOffset
 
     def getInfoObject(self, version=None, indirect=False):
-        if version == None:
+        if version is None:
             infoObjects = []
             infoIds = self.getInfoObjectId()
-            for id in infoIds:
-                if id != None:
-                    infoObject = self.getObject(id, version, indirect)
+            for i in xrange(len(infoIds)):
+                id = infoIds[i]
+                if id is not None:
+                    infoObject = self.getObject(id, i, indirect)
                     infoObjects.append(infoObject)
                 else:
                     infoObjects.append(None)
             return infoObjects
         else:
             infoId = self.getInfoObjectId(version)
-            if infoId != None:
+            if infoId is not None:
                 infoObject = self.getObject(infoId, version, indirect)
-                if infoObject == None and version == 0 and self.getLinearized():
+                if infoObject is None and version == 0 and self.getLinearized():
                     # Linearized documents can store Info object in the next update
                     infoObject = self.getObject(infoId, None, indirect)
                     return infoObject
@@ -6498,6 +6508,37 @@ class PDFFile:
                 JSCode = self.body[version].getJSCode()
         return JSCode
 
+    def getLinearizationObject(self, version=None, indirect=False):
+        if version is None:
+            linearizationObjects = []
+            linearizationObjectIds = self.getLinearizationObjectId()
+            for i in xrange(len(linearizationObjectIds)):
+                id = linearizationObjectIds[i]
+                if id is not None:
+                    linearizationObject = self.getObject(id, i, indirect)
+                    linearizationObjects.append(linearizationObject)
+                else:
+                    linearizationObjects.append(None)
+            return linearizationObjects
+        else:
+            linearizationObjectId = self.getLinearizationObjectId(version)
+            if linearizationObjectId is not None:
+                linearizationObject = self.getObject(linearizationObjectId, version, indirect)
+                return linearizationObject
+            else:
+                return None
+
+    def getLinearizationObjectId(self, version=None):
+        if version is None:
+            linearizationIds = []
+            for v in xrange(self.updates + 1):
+                linearizationId = self.body[v].getLinearizationObjectId()
+                linearizationIds.append(linearizationId)
+            return linearizationIds
+        else:
+            linearizationId = self.body[version].getLinearizationObjectId()
+            return linearizationId
+
     def getLinearized(self):
         return self.linearized
 
@@ -6645,34 +6686,49 @@ class PDFFile:
 
             @return: Number of Pages(char) or None if error.
         '''
-        catalog = self.getCatalogObject()
-        if catalog == None or len(catalog) < 1:
-            self.addError('Pages Number not found as Catalog is None')
-            return None
-        if catalog[0] is None:
-            self.addError('Pages Number not found as Catalog is None')
-            return None
-        pagesElement = catalog[0].getElement('/Pages')
-        if pagesElement == None:
-            self.missingPages = True
-            self.addError('/Pages element missing')
-            return None
-        pagesElementId = pagesElement.getId()
-        pages = self.getObject(pagesElementId)
-        if pages is None:
-            self.missingPages = True
-            self.addError('/Pages element missing')
-            return None
-        count = pages.getElement('/Count')
-        if count == None:
-            self.missingPages = True
-            self.addError('/Count element missing')
-            return None
-        pagesCount = count.getValue()
-        if not pagesCount.isdigit():
-            self.missingPages = True
-            self.addError('Invalid /Count value')
-            return None
+        if not self.linearized:
+            catalog = self.getCatalogObject()
+            if catalog == None or len(catalog) < 1:
+                self.addError('Pages Number not found as Catalog is None')
+                return None
+            if catalog[0] is None:
+                self.addError('Pages Number not found as Catalog is None')
+                return None
+            pagesElement = catalog[0].getElement('/Pages')
+            if pagesElement == None:
+                self.missingPages = True
+                self.addError('/Pages element missing')
+                return None
+            pagesElementId = pagesElement.getId()
+            pages = self.getObject(pagesElementId)
+            if pages is None:
+                self.missingPages = True
+                self.addError('/Pages element missing')
+                return None
+            count = pages.getElement('/Count')
+            if count == None:
+                self.missingPages = True
+                self.addError('/Count element missing')
+                return None
+            pagesCount = count.getValue()
+            if not pagesCount.isdigit():
+                self.missingPages = True
+                self.addError('Invalid /Count value')
+                return None
+        else:
+            linearizationObject = self.getLinearizationObject(version=0)
+            if linearizationObject:
+                nObject = linearizationObject.getElement('/N')
+                if nObject and nObject.getType() == 'integer':
+                    pagesCount = nObject.getValue()
+                else:
+                    self.missingPages = True
+                    self.addError('Missing /N element in linearization object')
+                    return None
+            else:
+                self.missingPages = True
+                self.addError('Invalid linearization object')
+                return None
         return pagesCount
 
     def getReferencesIn(self, id, version=None):
@@ -7506,8 +7562,7 @@ class PDFFile:
                 if ret[0] == -1:
                     errorMessage = ret[1]
                 else:
-                    objectType = object.getType()
-                    if objectType == 'dictionary' and object.hasElement('/Linearized'):
+                    if self.body[i].getLinearizationObjectId():
                         self.setLinearized(True)
                     return ret
             else:
@@ -7520,8 +7575,7 @@ class PDFFile:
                 self.addError(ret[1])
                 return (-1, ret[1])
             else:
-                objectType = object.getType()
-                if objectType == 'dictionary' and object.hasElement('/Linearized'):
+                if self.body[version].getLinearizationObjectId():
                     self.setLinearized(True)
                 return ret
 
@@ -7947,6 +8001,7 @@ class PDFParser:
                                     if isFirstBody and not linearizedFound:
                                         if pdfObject.hasElement('/Linearized'):
                                             pdfFile.setLinearized(True)
+                                            body.setLinearizationObjectId(pdfIndirectObject.getId())
                                             linearizedFound = True
                                 elif objectType == 'stream' and type == '/XRef':
                                     xrefObject = pdfIndirectObject
