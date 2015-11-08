@@ -50,7 +50,7 @@ except:
 try:
     import PyV8
     JS_MODULE = True
-except ImportError, e:
+except ImportError as e:
     JS_MODULE = False
 try:
     import pylibemu
