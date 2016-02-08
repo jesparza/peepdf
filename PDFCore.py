@@ -55,7 +55,8 @@ monitorizedElements = ['/EmbeddedFiles ',
                        '/RichMedia',
                        '/Flash',
                        '.rawValue',
-                       'keep.previous']
+                       'keep.previous',
+                       '/URI ']
 jsVulns = ['mailto',
            'Collab.collectEmailInfo',
            'util.printf',
