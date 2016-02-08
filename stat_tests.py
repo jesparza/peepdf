@@ -34,6 +34,7 @@ import sys
 import os
 import signal
 import gc
+import json
 
 
 interruptCaught = False
@@ -159,6 +160,7 @@ def main():
     }
     numFiles = len(files)
     numExceptions = 0
+    totalStats = []
     if args.output:
         individualStatsFileName = args.output + '_files'
         individualStatsFile = open(individualStatsFileName, 'w')
@@ -185,6 +187,7 @@ def main():
         if fileSize > 999999:
             # Skipping very large files
             continue
+        print filePath
         pdfParser = PDFCore.PDFParser()
         try:
             ret, pdf = pdfParser.parse(filePath, isForceMode, isLooseMode, isManualAnalysis, checkonVT)
@@ -220,6 +223,9 @@ def main():
         fileData['thresholdScore'] = pdf.thresholdScore
         fileData['md5'] = pdf.md5
         fileData['index'] = index+1
+        totalStats.append(fileData)
+        if (userDefinedStatus == 'malicious' and fileData['score'] < 6) or (userDefinedStatus == 'clean' and fileData['score'] > 4):
+            print '[%s][CHECK][%f] %s' % (userDefinedStatus.upper(), fileData['score'], fileData['filePath'])
         fileDataFormatted = format(fileData, tab=4)
         individualStatsFile.write(fileDataFormatted)
         individualStatsFile.flush()
@@ -227,6 +233,7 @@ def main():
         stats['numAnalyzedFiles'] = numAnalyzedFiles
         freeMemory(pdfParser, pdf, ret, fileData, exception, exceptionData, fileDataFormatted)
     packUp(stats, args)
+    open(individualStatsFileName+'_stats.json', 'wb').write(json.dumps(totalStats, sort_keys=True, indent=4))
 
 
 if __name__ == '__main__':
