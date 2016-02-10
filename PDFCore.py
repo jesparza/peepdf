@@ -101,6 +101,7 @@ class PDFObject :
         self.value = ''
         self.rawValue = raw
         self.JSCode = []
+        self.uriList = []
         self.updateNeeded = False
         self.containsJScode = False
         self.encryptedValue = raw
@@ -144,6 +145,17 @@ class PDFObject :
             @return: A boolean
         '''
         return self.containsJScode
+
+    def containsURIs(self):
+        '''
+            Method to check if there are URIs inside the object
+
+            @return: A boolean
+        '''
+        if self.uriList:
+            return True
+        else:
+            return False
 
     def encodeChars(self):
         '''
@@ -399,6 +411,7 @@ class PDFBool (PDFObject) :
         self.errors = []
         self.references = []
         self.JSCode = []
+        self.uriList = []
         self.encrypted = False
         self.updateNeeded = False
         self.containsJScode = False
@@ -415,6 +428,7 @@ class PDFNull (PDFObject) :
         self.type = 'null'
         self.errors = []
         self.JSCode = []
+        self.uriList = []
         self.compressedIn = None
         self.encrypted = False
         self.value = self.rawValue = self.encryptedValue = content
@@ -431,6 +445,7 @@ class PDFNum (PDFObject) :
     def __init__(self, num) :
         self.errors = []
         self.JSCode = []
+        self.uriList = []
         self.compressedIn = None
         self.encrypted = False
         self.value = num
@@ -489,6 +504,7 @@ class PDFName (PDFObject) :
         self.type = 'name'
         self.errors = []
         self.JSCode = []
+        self.uriList = []
         self.references = []
         self.compressedIn = None
         if name[0] == '/':
@@ -545,6 +561,7 @@ class PDFString (PDFObject) :
         self.updateNeeded = False
         self.containsJScode = False
         self.JSCode = []
+        self.uriList = []
         self.unescapedBytes = []
         self.urlsFound = []
         self.references = []
@@ -699,6 +716,7 @@ class PDFHexString (PDFObject) :
         self.updateNeeded = False
         self.containsJScode = False
         self.JSCode = []
+        self.uriList = []
         self.unescapedBytes = []
         self.urlsFound = []
         self.referencesInElements = {}
@@ -836,6 +854,7 @@ class PDFReference (PDFObject) :
         self.type = 'reference'
         self.errors = []
         self.JSCode = []
+        self.uriList = []
         self.compressedIn = None
         self.encrypted = False
         self.value = self.rawValue = self.encryptedValue = id + ' ' + genNumber + ' R'
@@ -906,6 +925,7 @@ class PDFArray (PDFObject) :
         self.type = 'array'
         self.errors = []
         self.JSCode = []
+        self.uriList = []
         self.compressedIn = None
         self.encrypted = False
         self.encryptedValue = rawContent
@@ -1175,6 +1195,7 @@ class PDFDictionary (PDFObject):
         self.updateNeeded = False
         self.containsJScode = False
         self.JSCode = []
+        self.uriList = []
         self.unescapedBytes = []
         self.urlsFound = []
         self.referencesInElements = {}
@@ -1205,6 +1226,7 @@ class PDFDictionary (PDFObject):
         self.dictType = ''
         self.unescapedBytes = []
         self.urlsFound = []
+        self.uriList = []
         errorMessage = ''
         self.value = '<< '
         self.rawValue = '<< '
@@ -1230,6 +1252,8 @@ class PDFDictionary (PDFObject):
                     self.dictType = '/Action ' + v
                 else:
                     self.dictType += ' ' + v
+            elif keys[i] == '/URI' and v:
+                self.uriList.append(v)
             if type == 'reference':
                 self.references.append(v)
             elif type == 'dictionary' or type == 'array':
@@ -1239,6 +1263,8 @@ class PDFDictionary (PDFObject):
                 self.JSCode += valueObject.getJSCode()
                 self.unescapedBytes += valueObject.getUnescapedBytes()
                 self.urlsFound += valueObject.getURLs()
+            if valueObject.containsURIs():
+                self.uriList += valueObject.getURIs()
             if valueObject.isFaulty():
                 for error in valueObject.getErrors():
                     self.addError('Children element contains errors: ' + error)
@@ -1446,7 +1472,15 @@ class PDFDictionary (PDFObject):
             @return: An array of unescaped bytes (string)
         '''
         return self.unescapedBytes
-    
+
+    def getURIs(self):
+        '''
+            Gets the URIs of the object
+
+            @return: An array of URIs
+        '''
+        return self.uriList
+
     def getURLs(self):
         '''
             Gets the URLs of the object 
@@ -1571,6 +1605,7 @@ class PDFStream (PDFDictionary) :
         self.modifiedStream = False
         self.modifiedRawStream = True
         self.JSCode = []
+        self.uriList = []
         self.unescapedBytes = []
         self.urlsFound = []
         self.referencesInElements = {}
@@ -2616,6 +2651,7 @@ class PDFObjectStream (PDFStream) :
         self.updateNeeded = False
         self.containsJScode = False
         self.JSCode = []
+        self.uriList = []
         self.unescapedBytes = []
         self.urlsFound = []
         self.referencesInElements = {}
@@ -3776,18 +3812,21 @@ class PDFBody :
         self.numStreams = 0 # int
         self.numEncodedStreams = 0
         self.numDecodingErrors = 0
+        self.numURIs = 0
         self.streams = []
         self.nextOffset = 0
         self.encodedStreams = []
         self.faultyStreams = []
         self.faultyObjects = []
         self.containingJS = []
+        self.containingURIs = []
         self.suspiciousEvents = {}
         self.suspiciousActions = {}
         self.suspiciousElements = {}
         self.vulns = {}
         self.JSCode = []
         self.URLs = []
+        self.uriList = []
         self.toUpdate = []
         self.xrefStreams = []
         self.objectStreams = []
@@ -3938,6 +3977,9 @@ class PDFBody :
     def getContainingJS(self):
         return self.containingJS
 
+    def getContainingURIs(self):
+        return self.containingURIs
+
     def getEncodedStreams(self):
         return self.encodedStreams
     
@@ -3973,6 +4015,9 @@ class PDFBody :
     
     def getNumStreams(self):
         return self.numStreams
+
+    def getNumURIs(self):
+        return len(self.uriList)
 
     def getObject(self, id, indirect = False):
         if self.objects.has_key(id):
@@ -4018,7 +4063,10 @@ class PDFBody :
     
     def getSuspiciousEvents(self):
         return self.suspiciousEvents
-    
+
+    def getURIs(self):
+        return self.uriList
+
     def getURLs(self):
         return self.URLs
 
@@ -4280,6 +4328,19 @@ class PDFBody :
                                 self.vulns[vuln].append(id)
                             else:
                                 self.vulns[vuln] = [id]
+        if pdfObject.containsURIs():
+            uris = pdfObject.getURIs()
+            if delete:
+                if id in self.containingURIs:
+                    self.containingURIs.remove(id)
+                    for uri in uris:
+                        if uri in self.uriList:
+                            self.uriList.remove(uri)
+            else:
+                if id not in self.containingURIs:
+                    self.containingURIs.append(id)
+                for uri in uris:
+                    self.uriList.append(uri)
         ## Extra checks
         objectType = pdfObject.getType()
         if objectType == 'stream':
@@ -4625,6 +4686,7 @@ class PDFFile :
         self.errors = []
         self.numObjects = 0
         self.numStreams = 0
+        self.numURIs = 0
         self.numEncodedStreams = 0
         self.numDecodingErrors = 0
         self.maxObjectId = 0
@@ -4658,7 +4720,10 @@ class PDFFile :
         
     def addNumStreams(self, num):
         self.numStreams += num
-        
+
+    def addNumURIs(self, num):
+        self.numURIs += num
+
     def addTrailer(self, newTrailerArray):
         if newTrailerArray != None and isinstance(newTrailerArray,list) and len(newTrailerArray) == 2 and (newTrailerArray[0] == None or isinstance(newTrailerArray[0],PDFTrailer)) and (newTrailerArray[1] == None or isinstance(newTrailerArray[1],PDFTrailer)):
             self.trailer.append(newTrailerArray)
@@ -5993,6 +6058,7 @@ class PDFFile :
         stats['Updates'] = str(self.updates)
         stats['Objects'] = str(self.numObjects)
         stats['Streams'] = str(self.numStreams)
+        stats['URIs'] = str(self.numURIs)
         stats['Comments'] = str(len(self.comments))
         stats['Errors'] = self.errors
         stats['Versions'] = []
@@ -6049,6 +6115,11 @@ class PDFFile :
                     statsVersion['Decoding Errors'] = None
             else:
                 statsVersion['Encoded'] = None
+            containingURIs = self.body[version].getContainingURIs()
+            if len(containingURIs) > 0:
+                statsVersion['URIs'] = [str(len(containingURIs)), containingURIs]
+            else:
+                statsVersion['URIs'] = None
             containingJS = self.body[version].getContainingJS()
             if len(containingJS) > 0:
                 statsVersion['Objects with JS code'] = [str(len(containingJS)),containingJS]
@@ -6173,6 +6244,16 @@ class PDFFile :
             if version <= self.updates and not version < 0:
                 urls = self.body[version].getURLs()
         return urls 
+
+    def getURIs(self, version=None):
+        uris = []
+        if version is None:
+            for version in range(self.updates+1):
+                uris += self.body[version].getURIs()
+        else:
+            if version <= self.updates and not version < 0:
+                uris = self.body[version].getURIs()
+        return uris
 
     def getUserPass(self):
         return self.userPass
@@ -6624,6 +6705,7 @@ class PDFFile :
             self.addNumStreams(self.body[v].getNumStreams())
             self.addNumEncodedStreams(self.body[v].getNumEncodedStreams())
             self.addNumDecodingErrors(self.body[v].getNumDecodingErrors())
+            self.addNumURIs(self.body[v].getNumURIs())
             trailer, streamTrailer = self.trailer[v]
             if trailer != None:
                 if trailer.getDictEntry('/Encrypt') != None:
@@ -6884,6 +6966,7 @@ class PDFParser :
             pdfFile.addBody(body)
             pdfFile.addNumObjects(body.getNumObjects())
             pdfFile.addNumStreams(body.getNumStreams())
+            pdfFile.addNumURIs(body.getNumURIs())
             pdfFile.addNumEncodedStreams(body.getNumEncodedStreams())
             pdfFile.addNumDecodingErrors(body.getNumDecodingErrors())
             isFirstBody = False
