@@ -4252,23 +4252,24 @@ class PDFConsole(cmd.Cmd):
                         else:
                             self.variables[varName] = [bytes, bytes]
         elif printOutput:
-            niceOutput = newLine + niceOutput + newLine
-            if self.variables['output_limit'][0] is None or self.variables['output_limit'][
-                0] == -1 or not self.use_rawinput:
-                print niceOutput
-            else:
-                limit = int(self.variables['output_limit'][0])
-                lines = niceOutput.split(newLine)
-                while len(lines) > 0:
-                    outputStepLines = lines[:limit]
-                    lines = lines[limit:]
-                    for line in outputStepLines:
-                        print line
-                    if len(lines) == 0:
-                        break
-                    ch = raw_input('( Press <intro> to continue or <q><intro> to quit )')
-                    if ch == 'q' or ch == 'Q':
-                        break
+            if niceOutput:
+                niceOutput = newLine + niceOutput + newLine
+                if self.variables['output_limit'][0] is None or self.variables['output_limit'][
+                    0] == -1 or not self.use_rawinput:
+                    print niceOutput
+                else:
+                    limit = int(self.variables['output_limit'][0])
+                    lines = niceOutput.split(newLine)
+                    while len(lines) > 0:
+                        outputStepLines = lines[:limit]
+                        lines = lines[limit:]
+                        for line in outputStepLines:
+                            print line
+                        if len(lines) == 0:
+                            break
+                        ch = raw_input('( Press <intro> to continue or <q><intro> to quit )')
+                        if ch == 'q' or ch == 'Q':
+                            break
 
     def modifyObject(self, object, iteration=0, contentFile=None, maxDepth=10):
         '''
