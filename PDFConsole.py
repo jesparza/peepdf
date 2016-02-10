@@ -1132,7 +1132,7 @@ class PDFConsole(cmd.Cmd):
         self.log_output('extract ' + argv, output)
 
     def help_extract(self):
-        print newLine + 'Usage: extract uri [$version]'
+        print newLine + 'Usage: extract uri|js [$version]'
         print newLine + 'Extracts all the given type elements of the specified version after being decoded and decrypted (if necessary)' + newLine
 
 
