@@ -610,6 +610,7 @@ try:
                     stats += beforeStaticLabel + 'Updates: ' + resetColor + statsDict['Updates'] + newLine
                     stats += beforeStaticLabel + 'Objects: ' + resetColor + statsDict['Objects'] + newLine
                     stats += beforeStaticLabel + 'Streams: ' + resetColor + statsDict['Streams'] + newLine
+                    stats += beforeStaticLabel + 'URIs: ' + resetColor + statsDict['URIs'] + newLine
                     stats += beforeStaticLabel + 'Comments: ' + resetColor + statsDict['Comments'] + newLine
                     stats += beforeStaticLabel + 'Errors: ' + resetColor + str(len(statsDict['Errors'])) + newLine * 2
                     for version in range(len(statsDict['Versions'])):
@@ -647,6 +648,9 @@ try:
                                 stats += newLine + beforeStaticLabel + '\t\tDecoding errors (' + \
                                          statsVersion['Decoding Errors'][0] + '): ' + resetColor + str(
                                     statsVersion['Decoding Errors'][1])
+                        if statsVersion['URIs'] is not None:
+                            stats += newLine + beforeStaticLabel + '\tObjects with URIs (' + \
+                                     statsVersion['URIs'][0] + '): ' + resetColor + str(statsVersion['URIs'][1])
                         if COLORIZED_OUTPUT and not options.avoidColors:
                             beforeStaticLabel = warningColor
                         if statsVersion['Objects with JS code'] != None:
