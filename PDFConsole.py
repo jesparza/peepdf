@@ -1092,6 +1092,50 @@ class PDFConsole(cmd.Cmd):
         print newLine + 'Usage: exit'
         print newLine + 'Exits from the console' + newLine
 
+    def do_extract(self, argv):
+        validTypes = ['uri', 'js']
+        if self.pdfFile is None:
+            message = '*** Error: You must open a file!!'
+            self.log_output('extract ' + argv, message)
+            return False
+        args = self.parseArgs(argv)
+        if args is None:
+            message = '*** Error: The command line arguments have not been parsed successfully!!'
+            self.log_output('extract ' + argv, message)
+            return False
+        if len(args) == 1:
+            version = None
+        elif len(args) == 2:
+            version = args[1]
+        else:
+            self.help_extract()
+            return False
+        elementType = args[0]
+        if not elementType or elementType not in validTypes:
+            self.help_extract()
+            return False
+        if version is not None:
+            version = int(version)
+            if version > self.pdfFile.getNumUpdates():
+                message = '*** Error: The version number is not valid!!'
+                self.log_output('extract ' + argv, message)
+                return False
+        # Getting all the elements belonging to the given type
+        output = ''
+        extractedElements = []
+        if elementType == 'uri':
+            extractedElements = self.pdfFile.getURIs(version)
+        elif elementType == 'js':
+            extractedElements = self.pdfFile.getJavascriptCode(version)
+        for extractedElement in extractedElements:
+            output += extractedElement + newLine
+        self.log_output('extract ' + argv, output)
+
+    def help_extract(self):
+        print newLine + 'Usage: extract uri [$version]'
+        print newLine + 'Extracts all the given type elements of the specified version after being decoded and decrypted (if necessary)' + newLine
+
+
     def do_filters(self, argv):
         if self.pdfFile is None:
             message = '*** Error: You must open a file!!'
@@ -1390,6 +1434,7 @@ class PDFConsole(cmd.Cmd):
             stats += beforeStaticLabel + 'Updates: ' + self.resetColor + statsDict['Updates'] + newLine
             stats += beforeStaticLabel + 'Objects: ' + self.resetColor + statsDict['Objects'] + newLine
             stats += beforeStaticLabel + 'Streams: ' + self.resetColor + statsDict['Streams'] + newLine
+            stats += beforeStaticLabel + 'URIs: ' + self.resetColor + statsDict['URIs'] + newLine
             stats += beforeStaticLabel + 'Comments: ' + self.resetColor + statsDict['Comments'] + newLine
             stats += beforeStaticLabel + 'Errors: ' + self.resetColor + str(len(statsDict['Errors'])) + newLine * 2
             for version in range(len(statsDict['Versions'])):
@@ -1403,35 +1448,41 @@ class PDFConsole(cmd.Cmd):
                     stats += beforeStaticLabel + '\tInfo: ' + self.resetColor + statsVersion['Info'] + newLine
                 else:
                     stats += beforeStaticLabel + '\tInfo: ' + self.resetColor + 'No' + newLine
-                stats += beforeStaticLabel + '\tObjects (' + statsVersion['Objects'][0] + '): ' + self.resetColor + str(
-                    statsVersion['Objects'][1]) + newLine
+                stats += beforeStaticLabel + '\tObjects (' + statsVersion['Objects'][0] + '): ' + \
+                         self.resetColor + str(statsVersion['Objects'][1]) + newLine
                 if statsVersion['Compressed Objects'] is not None:
-                    stats += beforeStaticLabel + '\tCompressed objects (' + statsVersion['Compressed Objects'][
-                        0] + '): ' + self.resetColor + str(statsVersion['Compressed Objects'][1]) + newLine
+                    stats += beforeStaticLabel + '\tCompressed objects (' +\
+                             statsVersion['Compressed Objects'][0] + '): ' + self.resetColor + \
+                             str(statsVersion['Compressed Objects'][1]) + newLine
                 if statsVersion['Errors'] is not None:
-                    stats += beforeStaticLabel + '\t\tErrors (' + statsVersion['Errors'][
-                        0] + '): ' + self.resetColor + str(statsVersion['Errors'][1]) + newLine
-                stats += beforeStaticLabel + '\tStreams (' + statsVersion['Streams'][0] + '): ' + self.resetColor + str(
-                    statsVersion['Streams'][1])
+                    stats += beforeStaticLabel + '\t\tErrors (' + statsVersion['Errors'][0] + '): ' + \
+                             self.resetColor + str(statsVersion['Errors'][1]) + newLine
+                stats += beforeStaticLabel + '\tStreams (' + statsVersion['Streams'][0] + '): ' + \
+                         self.resetColor + str(statsVersion['Streams'][1])
                 if statsVersion['Xref Streams'] is not None:
-                    stats += newLine + beforeStaticLabel + '\t\tXref streams (' + statsVersion['Xref Streams'][
-                        0] + '): ' + self.resetColor + str(statsVersion['Xref Streams'][1])
+                    stats += newLine + beforeStaticLabel + '\t\tXref streams (' + \
+                             statsVersion['Xref Streams'][0] + '): ' + self.resetColor + \
+                             str(statsVersion['Xref Streams'][1])
                 if statsVersion['Object Streams'] is not None:
-                    stats += newLine + beforeStaticLabel + '\t\tObject streams (' + statsVersion['Object Streams'][
-                        0] + '): ' + self.resetColor + str(statsVersion['Object Streams'][1])
+                    stats += newLine + beforeStaticLabel + '\t\tObject streams (' + \
+                             statsVersion['Object Streams'][0] + '): ' + self.resetColor + \
+                             str(statsVersion['Object Streams'][1])
                 if int(statsVersion['Streams'][0]) > 0:
-                    stats += newLine + beforeStaticLabel + '\t\tEncoded (' + statsVersion['Encoded'][
-                        0] + '): ' + self.resetColor + str(statsVersion['Encoded'][1])
+                    stats += newLine + beforeStaticLabel + '\t\tEncoded (' + statsVersion['Encoded'][0] + '): ' + \
+                             self.resetColor + str(statsVersion['Encoded'][1])
                     if statsVersion['Decoding Errors'] is not None:
                         stats += newLine + beforeStaticLabel + '\t\tDecoding errors (' + \
                                  statsVersion['Decoding Errors'][0] + '): ' + self.resetColor + str(
                             statsVersion['Decoding Errors'][1])
+                if statsVersion['URIs'] is not None:
+                    stats += newLine + beforeStaticLabel + '\tObjects with URIs (' + \
+                             statsVersion['URIs'][0] + '): ' + self.resetColor + str(statsVersion['URIs'][1])
                 if not self.avoidOutputColors:
                     beforeStaticLabel = self.warningColor
                 if statsVersion['Objects with JS code'] is not None:
                     stats += newLine + beforeStaticLabel + '\tObjects with JS code (' + \
-                             statsVersion['Objects with JS code'][0] + '): ' + self.resetColor + str(
-                        statsVersion['Objects with JS code'][1])
+                             statsVersion['Objects with JS code'][0] + '): ' + \
+                             self.resetColor + str(statsVersion['Objects with JS code'][1])
                 actions = statsVersion['Actions']
                 events = statsVersion['Events']
                 vulns = statsVersion['Vulns']
