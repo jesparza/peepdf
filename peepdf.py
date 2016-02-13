@@ -403,6 +403,7 @@ argsParser.add_option('-x', '--xml', action='store_true', dest='xmlOutput', defa
                       help='Shows the document information in XML format.')
 argsParser.add_option('-j', '--json', action='store_true', dest='jsonOutput', default=False,
                       help='Shows the document information in JSON format.')
+argsParser.add_option('-C','--command',action='store',type='string', dest='commands',help='execute mentioned commands.')
 (options, args) = argsParser.parse_args()
 
 try:
@@ -548,6 +549,25 @@ try:
                     scriptFileObject.close()
                     traceback.print_exc(file=open(errorsFile, 'a'))
                     raise Exception('PeepException', 'Send me an email ;)')
+            if options.commands != None:
+                from PDFConsole import PDFConsole
+                import tempfile
+
+                comm = options.commands.strip().split(',')
+                newfileobj = tempfile.TemporaryFile()
+                for c in comm:
+                    newfileobj.write(c+'\n')
+                
+                newfileobj.seek(0)
+                console = PDFConsole(pdf, VT_KEY, options.avoidColors, stdin=newfileobj)
+                try:
+                    console.cmdloop()
+                except:
+                    errorMessage = '*** Error: Exception not handled using the batch mode!!'
+                    newfileobj.close()
+                    traceback.print_exc(file=open(errorsFile, 'a'))
+                    raise Exception('PeepException', 'Send me an email ;)')
+
             else:
                 if statsDict != None:
                     if COLORIZED_OUTPUT and not options.avoidColors:
