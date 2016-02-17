@@ -1,4 +1,5 @@
 import sys
+from peepdf.jsbeautifier import unpackers as unpackers
 import getopt
 import re
 import string
@@ -242,7 +243,6 @@ class Beautifier:
         return sweet_code
 
     def unpack(self, source, evalcode=False):
-        import jsbeautifier.unpackers as unpackers
         try:
             return unpackers.run(source, evalcode)
         except unpackers.UnpackingError as error:

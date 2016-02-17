@@ -32,18 +32,18 @@ import re
 import subprocess
 import optparse
 import hashlib
-import jsbeautifier
 import traceback
-from PDFUtils import *
-from PDFCrypto import *
-from JSAnalysis import *
-from PDFCore import *
+from peepdf import jsbeautifier
+from peepdf.PDFUtils import *
+from peepdf.PDFCrypto import *
+from peepdf.JSAnalysis import *
+from peepdf.PDFCore import *
 from base64 import b64encode, b64decode
 from PDFFilters import decodeStream, encodeStream
-from jjdecode import JJDecoder
+from peepdf.jjdecode import JJDecoder
 
 try:
-    from colorama import init, Fore, Back, Style
+    from peepdf.colorama import init, Fore, Back, Style
     COLORIZED_OUTPUT = True
 except:
     COLORIZED_OUTPUT = False

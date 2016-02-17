@@ -25,7 +25,8 @@
     Module to manage cryptographic operations with PDF files
 '''    
 
-import hashlib,struct,random,warnings,aes,sys
+import hashlib,struct,random,warnings,sys
+import peepdf.aes
 from itertools import cycle, izip
 warnings.filterwarnings("ignore")
 

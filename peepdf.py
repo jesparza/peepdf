@@ -36,8 +36,8 @@ import hashlib
 import traceback
 import json
 from datetime import datetime
-from PDFCore import PDFParser, vulnsDict
-from PDFUtils import vtcheck
+from peepdf.PDFCore import PDFParser, vulnsDict
+from peepdf.PDFUtils import vtcheck
 
 
 VT_KEY = 'fc90df3f5ac749a94a94cb8bf87e05a681a2eb001aef34b6a0084b8c22c97a64'
@@ -53,7 +53,7 @@ try:
 except:
     EMU_MODULE = False
 try:
-    from colorama import init, Fore, Back, Style
+    from peepdf.colorama import init, Fore, Back, Style
     COLORIZED_OUTPUT = True
 except:
     COLORIZED_OUTPUT = False
@@ -537,7 +537,7 @@ try:
                 except:
                     COLORIZED_OUTPUT = False
             if options.scriptFile != None:
-                from PDFConsole import PDFConsole
+                from peepdf.PDFConsole import PDFConsole
 
                 scriptFileObject = open(options.scriptFile, 'rb')
                 console = PDFConsole(pdf, VT_KEY, options.avoidColors, stdin=scriptFileObject)
@@ -706,7 +706,7 @@ try:
                 if fileName != None:
                     print stats
                 if options.isInteractive:
-                    from PDFConsole import PDFConsole
+                    from peepdf.PDFConsole import PDFConsole
 
                     console = PDFConsole(pdf, VT_KEY, options.avoidColors)
                     while not console.leaving:
