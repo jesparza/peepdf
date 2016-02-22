@@ -25,8 +25,9 @@
     This module contains some functions to analyse Javascript code inside the PDF file
 '''
 
-import sys, re , os, jsbeautifier, traceback
-from PDFUtils import unescapeHTMLEntities, escapeString
+import sys, re , os, traceback
+from peepdf import jsbeautifier
+from peepdf.PDFUtils import unescapeHTMLEntities, escapeString
 try:
     import PyV8
     

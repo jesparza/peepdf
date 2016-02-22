@@ -40,7 +40,7 @@ try:
 except ImportError:
     from urllib.parse import unquote
 
-from jsbeautifier.unpackers import UnpackingError
+from peepdf.jsbeautifier.unpackers import UnpackingError
 
 PRIORITY = 1
 
