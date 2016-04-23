@@ -488,6 +488,8 @@ try:
                 sys.exit('Error: The script file "' + options.scriptFile + '" does not exist!!')
 
         if fileName is not None:
+            import pdb
+            pdb.set_trace()
             pdfParser = PDFParser()
             ret, pdf = pdfParser.parse(fileName, options.isForceMode, options.isLooseMode, options.isManualAnalysis)
             if options.checkOnVT:
@@ -714,8 +716,8 @@ try:
                             console.cmdloop()
                         except KeyboardInterrupt as e:
                             sys.exit()
-                        except:
-                            errorMessage = '*** Error: Exception not handled using the interactive console!! Please, report it to the author!!'
+                        except Exception, e:
+                            errorMessage = '*** Error: Exception not handled using the interactive console!! Please, report it to the author!! \n %s' %e
                             print errorColor + errorMessage + resetColor + newLine
                             traceback.print_exc(file=open(errorsFile, 'a'))
 except Exception as e:

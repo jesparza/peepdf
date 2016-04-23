@@ -6872,6 +6872,8 @@ class PDFParser :
                 
             # Getting the content for each section
             bodyContent,xrefContent,trailerContent = self.parsePDFSections(content,forceMode,looseMode)
+            import pdb
+            pdb.set_trace()
             if xrefContent != None:    
                 xrefOffset = bodyOffset + len(bodyContent)
                 trailerOffset = xrefOffset + len(xrefContent)
@@ -6929,6 +6931,7 @@ class PDFParser :
                             type = ret[1]
                             pdfObject = pdfIndirectObject.getObject()
                             if pdfObject != None:
+
                                 objectType = pdfObject.getType()
                                 if objectType == 'dictionary':
                                     if isFirstBody and not linearizedFound:
@@ -6936,10 +6939,14 @@ class PDFParser :
                                             pdfFile.setLinearized(True)
                                             linearizedFound = True
                                 elif objectType == 'stream' and type == '/XRef':
+                                    pdb.set_trace()
+
                                     xrefObject = pdfIndirectObject
                                     ret = self.createPDFCrossRefSectionFromStream(pdfIndirectObject)
                                     if ret[0] != -1:
                                         xrefStreamSection = ret[1]    
+
+                                
                             else:
                                 if not forceMode:
                                     sys.exit('Error: An error has occurred while parsing an indirect object!!')
@@ -6962,6 +6969,7 @@ class PDFParser :
             ret = body.updateObjects()
             if ret[0] == -1:
                 pdfFile.addError(ret[1])
+            pdb.set_trace()
             pdfFile.addBody(body)
             pdfFile.addNumObjects(body.getNumObjects())
             pdfFile.addNumStreams(body.getNumStreams())
