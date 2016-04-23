@@ -387,7 +387,7 @@ class PDFConsole(cmd.Cmd):
         offset = 0
         size = 0
         validTypes = ['variable', 'file', 'raw']
-        notImplementedFilters = ['ccittfax''ccf', 'jbig2', 'dct', 'jpx']
+        notImplementedFilters = ['ccittfax''ccf', 'jbig2', 'jpx']
         filters = []
         args = self.parseArgs(argv)
         if args is None:
@@ -789,7 +789,8 @@ class PDFConsole(cmd.Cmd):
         offset = 0
         size = 0
         validTypes = ['variable', 'file', 'raw']
-        notImplementedFilters = ['ascii85', 'a85', 'runlength', 'rl', 'jbig2', 'jpx', 'ccittfax', 'ccf', 'dct']
+         #remove 'dct' - kk
+        notImplementedFilters = ['ascii85', 'a85', 'runlength', 'rl', 'jbig2', 'jpx', 'ccittfax', 'ccf']
         filters = []
         args = self.parseArgs(argv)
         if args is None:
@@ -1144,7 +1145,7 @@ class PDFConsole(cmd.Cmd):
         message = ''
         value = ''
         filtersArray = []
-        notImplementedFilters = ['ascii85', 'a85', 'runlength', 'rl', 'jbig2', 'jpx', 'ccittfax', 'ccf', 'dct']
+        notImplementedFilters = ['ascii85', 'a85', 'runlength', 'rl', 'jbig2', 'jpx', 'ccittfax', 'ccf']
         iniFilterArgs = 1
         filters = []
         args = self.parseArgs(argv)
