@@ -1,3 +1,4 @@
+
 #
 # peepdf is a tool to analyse and modify PDF files
 #    http://peepdf.eternal-todo.com
@@ -59,6 +60,9 @@
 import sys, zlib, lzw, struct
 from PDFUtils import getNumsFromBytes, getBytesFromBits, getBitsFromNum
 from ccitt import CCITTFax
+import cv2 #kK added
+import numpy as np #kk added
+import StringIO #kk added
 
 
 def decodeStream(stream, filter, parameters={}):
@@ -70,6 +74,9 @@ def decodeStream(stream, filter, parameters={}):
         @param parameters: List of PDFObjects containing the parameters for the filter
         @return: A tuple (status,statusContent), where statusContent is the decoded stream in case status = 0 or an error in case status = -1
     '''
+    
+
+    print filter
     if filter == '/ASCIIHexDecode' or filter == '/AHx':
         ret = asciiHexDecode(stream)
     elif filter == '/ASCII85Decode' or filter == '/A85':
@@ -85,7 +92,7 @@ def decodeStream(stream, filter, parameters={}):
     elif filter == '/JBIG2Decode':
         ret = jbig2Decode(stream, parameters)
     elif filter == '/DCTDecode' or filter == '/DCT':
-        ret = dctDecode(stream, parameters)
+        ret = dctDecode(stream, parameters) 
     elif filter == '/JPXDecode':
         ret = jpxDecode(stream)
     elif filter == '/Crypt':
@@ -104,6 +111,8 @@ def encodeStream(stream, filter, parameters={}):
         @param parameters: List of PDFObjects containing the parameters for the filter
         @return: A tuple (status,statusContent), where statusContent is the encoded stream in case status = 0 or an error in case status = -1
     '''
+
+    print filter
     if filter == '/ASCIIHexDecode':
         ret = asciiHexEncode(stream)
     elif filter == '/ASCII85Decode':
@@ -788,6 +797,11 @@ def decrypt(stream, parameters):
                 return (-1, 'Decrypt not supported yet')
 
 
+def create_opencv_image_from_stringio(img_stream, cv2_img_flag=0):
+    img_stream.seek(0)
+    img_array = np.asarray(bytearray(img_stream.read()))
+    return cv2.imdecode(img_array, cv2_img_flag)
+    
 def dctDecode(stream, parameters):
     '''
         Method to decode streams using a DCT technique based on the JPEG standard (NOT IMPLEMENTED YET)
@@ -795,19 +809,38 @@ def dctDecode(stream, parameters):
         @param stream: A PDF stream
         @return: A tuple (status,statusContent), where statusContent is the decoded PDF stream in case status = 0 or an error in case status = -1
     '''
-    decodedStream = ''
     try:
-        from PIL import Image
-        import StringIO
-    except:
-        return (-1, 'Python Imaging Library (PIL) not installed')
-    # Quick implementation, assuming the library can detect the parameters
-    try:
-        im = Image.open(StringIO.StringIO(stream))
-        decodedStream = im.tostring()
-        return (0, decodedStream)
+        import tempfile
+        tf = tempfile.NamedTemporaryFile()
+        tmp_filename = tf.name
+
+        imgString = StringIO.StringIO(stream)
+        img1 = create_opencv_image_from_stringio(imgString)
+        test = open('test_encode', 'w')
+        test.write(img1)
+        test.close()
+
+        if img1 != None:
+            #print tmp_filename, img1
+            try:
+                cv2.cv.SaveImage('%s.jpg' %tmp_filename, cv2.cv.fromarray(img1))
+
+            except Exception, e:
+                print e
+
+        return (0, cv2.cv.fromarray(imgString))
     except:
         return (-1, 'Error decompresing image data')
+
+def encode_opencv_image_from_stringio(img_stream):
+    img_stream.seek(0) 
+    img_array = np.asarray(bytearray(img_stream.read()))
+
+    img_array2 = np.reshape(img_array, (-1, 2))
+    
+    small = cv2.resize(img_array2, (0,0), fx=0.5, fy=0.5) 
+
+    return cv2.imencode('.jpg', small)
 
 
 def dctEncode(stream, parameters):
@@ -817,9 +850,24 @@ def dctEncode(stream, parameters):
         @param stream: A PDF stream
         @return: A tuple (status,statusContent), where statusContent is the encoded PDF stream in case status = 0 or an error in case status = -1
     '''
-    encodedStream = ''
-    return (-1, 'DctEncode not supported yet')
+    try:
+        imgString = StringIO.StringIO(stream)
+        retval, img_buf = encode_opencv_image_from_stringio(imgString)
+        
+        fh_buf = open('test_encode_buf.jpg', 'w')
+        fh_buf.write(img_buf)
+        fh_buf.close()
 
+        imgString = StringIO.StringIO(img_buf)
+        imgString_out = imgString.getvalue()
+
+        fh_stringio = open('test_encode_stringio', 'w')
+        fh_stringio.write(imgString_out)
+        fh_stringio.close()
+
+        return (0, imgString_out)
+    except Exception, e: 
+        return (-1, 'Error encoding image data : %s' %e)
 
 def jbig2Decode(stream, parameters):
     '''
