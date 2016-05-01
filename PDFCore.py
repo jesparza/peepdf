@@ -1282,6 +1282,8 @@ class PDFDictionary (PDFObject):
             elif type == 'dictionary' or type == 'array':
                 self.references += valueObject.getReferences()
             if valueObject.containsJS() or (keys[i] == '/JS' and type != 'reference'):
+                if not valueObject.containsJS():
+                    valueObject.setReferencedJSObject(True)
                 self.containsJScode = True
                 self.JSCode += valueObject.getJSCode()
                 self.unescapedBytes += valueObject.getUnescapedBytes()
