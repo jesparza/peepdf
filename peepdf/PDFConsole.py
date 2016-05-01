@@ -1491,12 +1491,12 @@ class PDFConsole(cmd.Cmd):
                     stats += newLine + beforeStaticLabel + '\tSuspicious elements:' + self.resetColor + newLine
                     if events is not None:
                         for event in events:
-                            stats += '\t\t' + beforeStaticLabel + event + ': ' + self.resetColor + str(
-                                events[event]) + newLine
+                            stats += '\t\t' + beforeStaticLabel + event + ' (%d): ' % len(events[event]) + \
+                                     self.resetColor + str(events[event]) + newLine
                     if actions is not None:
                         for action in actions:
-                            stats += '\t\t' + beforeStaticLabel + action + ': ' + self.resetColor + str(
-                                actions[action]) + newLine
+                            stats += '\t\t' + beforeStaticLabel + action + ' (%d): ' % len(actions[action]) + \
+                                     self.resetColor + str(actions[action]) + newLine
                     if vulns is not None:
                         for vuln in vulns:
                             if vulnsDict.has_key(vuln):
@@ -1505,10 +1505,11 @@ class PDFConsole(cmd.Cmd):
                                 stats += '\t\t' + beforeStaticLabel + vulnName + ' ('
                                 for vulnCVE in vulnCVEList:
                                     stats += vulnCVE + ','
-                                stats = stats[:-1] + '): ' + self.resetColor + str(vulns[vuln]) + newLine
+                                stats = stats[:-1] + ') (%d): ' % len(vulns[vuln]) + self.resetColor + \
+                                        str(vulns[vuln]) + newLine
                             else:
-                                stats += '\t\t' + beforeStaticLabel + vuln + ': ' + self.resetColor + str(
-                                    vulns[vuln]) + newLine
+                                stats += '\t\t' + beforeStaticLabel + vuln + ' (%d): ' % len(vulns[vuln]) + \
+                                         self.resetColor + str(vulns[vuln]) + newLine
                     if elements is not None:
                         for element in elements:
                             if vulnsDict.has_key(element):
