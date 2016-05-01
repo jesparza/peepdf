@@ -362,7 +362,7 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.3'
-revision = '274'
+revision = '275'
 stats = ''
 pdf = None
 fileName = None
@@ -403,6 +403,8 @@ argsParser.add_option('-x', '--xml', action='store_true', dest='xmlOutput', defa
                       help='Shows the document information in XML format.')
 argsParser.add_option('-j', '--json', action='store_true', dest='jsonOutput', default=False,
                       help='Shows the document information in JSON format.')
+argsParser.add_option('-C', '--command', action='append', type='string', dest='commands',
+                      help='Specifies a command from the interactive console to be executed.')
 (options, args) = argsParser.parse_args()
 
 try:
@@ -522,7 +524,7 @@ try:
                 errorMessage = '*** Error: Exception while generating the XML file!!'
                 traceback.print_exc(file=open(errorsFile, 'a'))
                 raise Exception('PeepException', 'Send me an email ;)')
-        elif options.jsonOutput:
+        elif options.jsonOutput and not options.commands:
             try:
                 jsonReport = getPeepJSON(statsDict, version, revision)
                 sys.stdout.write(jsonReport)
@@ -536,7 +538,7 @@ try:
                     init()
                 except:
                     COLORIZED_OUTPUT = False
-            if options.scriptFile != None:
+            if options.scriptFile is not None:
                 from PDFConsole import PDFConsole
 
                 scriptFileObject = open(options.scriptFile, 'rb')
@@ -548,8 +550,19 @@ try:
                     scriptFileObject.close()
                     traceback.print_exc(file=open(errorsFile, 'a'))
                     raise Exception('PeepException', 'Send me an email ;)')
+            elif options.commands is not None:
+                from PDFConsole import PDFConsole
+
+                console = PDFConsole(pdf, VT_KEY, options.avoidColors)
+                try:
+                    for command in options.commands:
+                        console.onecmd(command)
+                except:
+                    errorMessage = '*** Error: Exception not handled using the batch commands!!'
+                    traceback.print_exc(file=open(errorsFile, 'a'))
+                    raise Exception('PeepException', 'Send me an email ;)')
             else:
-                if statsDict != None:
+                if statsDict is not None:
                     if COLORIZED_OUTPUT and not options.avoidColors:
                         beforeStaticLabel = staticColor
                     else:
