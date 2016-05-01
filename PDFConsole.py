@@ -1122,13 +1122,20 @@ class PDFConsole(cmd.Cmd):
                 return False
         # Getting all the elements belonging to the given type
         output = ''
-        extractedElements = []
+        extractedUrisPerObject = []
+        extractedJsPerObject = []
         if elementType == 'uri':
-            extractedElements = self.pdfFile.getURIs(version)
+            extractedUrisPerObject = self.pdfFile.getURIs(version, perObject=True)
         elif elementType == 'js':
-            extractedElements = self.pdfFile.getJavascriptCode(version)
-        for extractedElement in extractedElements:
-            output += extractedElement + newLine
+            extractedJsPerObject = self.pdfFile.getJavascriptCode(version, perObject=True)
+        for extractedUri in extractedUrisPerObject:
+            output += '%s (%d)%s' % (extractedUri[1], extractedUri[0], newLine)
+        if output:
+            output += newLine
+        for extractedJs in extractedJsPerObject:
+            output += '// peepdf comment: Javascript code located in object %d%s%s%s' % (extractedJs[0], newLine*2, extractedJs[1],
+                                                                         newLine*2)
+        #TODO Output per PDF version, we are now including potential confusing object ids (without version info)
         self.log_output('extract ' + argv, output)
 
     def help_extract(self):
