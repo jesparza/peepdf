@@ -3,7 +3,7 @@
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2011-2014 Jose Miguel Esparza
+#    Copyright (C) 2011-2017 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
@@ -193,6 +193,9 @@ def computeUserPass(userPassString, dictO, fileID, pElement, keyLength = 128, re
             while counter < 16:
                 userPass += chr(random.randint(32,255))
                 counter += 1
+        else:
+            # This should not be possible or the PDF specification does not say anything about it
+            return (-1, 'ComputeUserPass error: revision number is < 2 (%d)' % revision)
         return (0, userPass)
     except:
         return (-1, 'ComputeUserPass error: %s %s' % (str(sys.exc_info()[0]),str(sys.exc_info()[1])))
