@@ -991,7 +991,7 @@ class PDFArray (PDFObject) :
                     self.unescapedBytes += element.getUnescapedBytes()
                     self.urlsFound += element.getURLs()
                 if element.isFaulty():
-                    for error in valueObject.getErrors():
+                    for error in element.getErrors():
                         self.addError('Children element contains errors: ' + error)
                 if type in ['string','hexstring','array','dictionary'] and self.encrypted and not decrypt:
                     ret = element.encrypt(self.encryptionKey)
@@ -1776,7 +1776,7 @@ class PDFStream (PDFDictionary) :
                 self.unescapedBytes = list(set(self.unescapedBytes + valueElement.getUnescapedBytes()))
                 self.urlsFound = list(set(self.urlsFound + valueElement.getURLs()))
             if valueElement.isFaulty():
-                for error in valueObject.getErrors():
+                for error in valueElement.getErrors():
                     self.addError('Children element contains errors: ' + error)
             if self.rawNames.has_key(keys[i]):
                 rawName = self.rawNames[keys[i]]
@@ -3494,7 +3494,7 @@ class PDFCrossRefSection :
                 updatedEntry.setObjectOffset(newOffset)
                 ret = subsection.setEntry(objectId, updatedEntry)
                 if ret[0] == -1:
-                    self.addError(errorMessage)
+                    self.addError(ret[1])
                 return ret
         else:
             errorMessage = 'Object entry not found'
@@ -4006,7 +4006,7 @@ class PDFBody :
                 errorMessage = 'Bad indirect object found while encoding strings'
                 pdfFile.addError(errorMessage)
         if errorMessage != '':
-            return (-1,typeObject)
+            return (-1, errorMessage)
         return (0,'')
 
     def getCompressedObjects(self):
