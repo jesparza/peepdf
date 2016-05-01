@@ -4106,6 +4106,9 @@ class PDFBody :
     def getURIs(self):
         return self.uriList
 
+    def getURIsPerObject(self):
+        return self.uriListPerObject
+
     def getURLs(self):
         return self.URLs
 
@@ -6320,14 +6323,20 @@ class PDFFile :
                 urls = self.body[version].getURLs()
         return urls 
 
-    def getURIs(self, version=None):
+    def getURIs(self, version=None, perObject=False):
         uris = []
         if version is None:
             for version in range(self.updates+1):
-                uris += self.body[version].getURIs()
+                if perObject:
+                    uris += self.body[version].getURIsPerObject()
+                else:
+                    uris += self.body[version].getURIs()
         else:
             if version <= self.updates and not version < 0:
-                uris = self.body[version].getURIs()
+                if perObject:
+                    uris = self.body[version].getURIsPerObject()
+                else:
+                    uris = self.body[version].getURIs()
         return uris
 
     def getUserPass(self):
