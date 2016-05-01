@@ -362,7 +362,7 @@ url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.3'
-revision = '264'
+revision = '265'
 stats = ''
 pdf = None
 fileName = None
@@ -665,12 +665,12 @@ try:
                             stats += newLine + beforeStaticLabel + '\tSuspicious elements:' + resetColor + newLine
                             if events != None:
                                 for event in events:
-                                    stats += '\t\t' + beforeStaticLabel + event + ': ' + resetColor + str(
-                                        events[event]) + newLine
+                                    stats += '\t\t' + beforeStaticLabel + event + ' (%d): ' % len(events[event]) + \
+                                             resetColor + str(events[event]) + newLine
                             if actions != None:
                                 for action in actions:
-                                    stats += '\t\t' + beforeStaticLabel + action + ': ' + resetColor + str(
-                                        actions[action]) + newLine
+                                    stats += '\t\t' + beforeStaticLabel + action + ' (%d): ' % len(actions[action]) + \
+                                             resetColor + str(actions[action]) + newLine
                             if vulns != None:
                                 for vuln in vulns:
                                     if vulnsDict.has_key(vuln):
@@ -679,10 +679,10 @@ try:
                                         stats += '\t\t' + beforeStaticLabel + vulnName + ' ('
                                         for vulnCVE in vulnCVEList:
                                             stats += vulnCVE + ','
-                                        stats = stats[:-1] + '): ' + resetColor + str(vulns[vuln]) + newLine
+                                        stats = stats[:-1] + ') (%d): ' % len(vulns[vuln]) + resetColor + str(vulns[vuln]) + newLine
                                     else:
-                                        stats += '\t\t' + beforeStaticLabel + vuln + ': ' + resetColor + str(
-                                            vulns[vuln]) + newLine
+                                        stats += '\t\t' + beforeStaticLabel + vuln + ' (%d): ' % len(vulns[vuln]) + \
+                                                 resetColor + str(vulns[vuln]) + newLine
                             if elements != None:
                                 for element in elements:
                                     if vulnsDict.has_key(element):
