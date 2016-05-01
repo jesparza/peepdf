@@ -386,7 +386,7 @@ class PDFConsole(cmd.Cmd):
         src = ''
         offset = 0
         size = 0
-        validTypes = ['variable', 'file', 'raw']
+        validTypes = ['variable', 'file', 'raw', 'string']
         notImplementedFilters = ['ccittfax''ccf', 'jbig2', 'dct', 'jpx']
         filters = []
         args = self.parseArgs(argv)
@@ -400,7 +400,7 @@ class PDFConsole(cmd.Cmd):
             if type not in validTypes:
                 self.help_decode()
                 return False
-            if type == 'variable' or type == 'file':
+            if type in ['variable', 'file', 'string']:
                 src = args[1]
             else:
                 if self.pdfFile is None:
@@ -447,6 +447,8 @@ class PDFConsole(cmd.Cmd):
                 return False
             else:
                 decodedContent = open(src, 'rb').read()
+        elif type == 'string':
+            decodedContent = src
         else:
             ret = getBytesFromFile(self.pdfFile.getPath(), offset, size)
             if ret[0] == -1:
@@ -479,7 +481,8 @@ class PDFConsole(cmd.Cmd):
     def help_decode(self):
         print newLine + 'Usage: decode variable $var_name $filter1 [$filter2 ...]'
         print 'Usage: decode file $file_name $filter1 [$filter2 ...]'
-        print 'Usage: decode raw $offset $num_bytes $filter1 [$filter2 ...]' + newLine
+        print 'Usage: decode raw $offset $num_bytes $filter1 [$filter2 ...]'
+        print 'Usage: decode string $encoded_string $filter1 [$filter2 ...]' + newLine
         print 'Decodes the content of the specified variable, file or raw bytes using the following filters or algorithms:'
         print '\tbase64,b64: Base64'
         print '\tasciihex,ahx: /ASCIIHexDecode'
@@ -788,7 +791,7 @@ class PDFConsole(cmd.Cmd):
         src = ''
         offset = 0
         size = 0
-        validTypes = ['variable', 'file', 'raw']
+        validTypes = ['variable', 'file', 'raw', 'string']
         notImplementedFilters = ['ascii85', 'a85', 'runlength', 'rl', 'jbig2', 'jpx', 'ccittfax', 'ccf', 'dct']
         filters = []
         args = self.parseArgs(argv)
@@ -802,7 +805,7 @@ class PDFConsole(cmd.Cmd):
             if type not in validTypes:
                 self.help_encode()
                 return False
-            if type == 'variable' or type == 'file':
+            if type in ['variable', 'file', 'string']:
                 src = args[1]
             else:
                 if self.pdfFile is None:
@@ -849,6 +852,8 @@ class PDFConsole(cmd.Cmd):
                 return False
             else:
                 encodedContent = open(src, 'rb').read()
+        elif type == 'string':
+            encodedContent = src
         else:
             ret = getBytesFromFile(self.pdfFile.getPath(), offset, size)
             if ret[0] == -1:
@@ -876,7 +881,8 @@ class PDFConsole(cmd.Cmd):
     def help_encode(self):
         print newLine + 'Usage: encode variable $var_name $filter1 [$filter2 ...]'
         print 'Usage: encode file $file_name $filter1 [$filter2 ...]'
-        print 'Usage: encode raw $offset $num_bytes $filter1 [$filter2 ...]' + newLine
+        print 'Usage: encode raw $offset $num_bytes $filter1 [$filter2 ...]'
+        print 'Usage: encode string $my_string $filter1 [$filter2 ...]' + newLine
         print 'Encodes the content of the specified variable, file or raw bytes using the following filters or algorithms:'
         print '\tbase64,b64: Base64'
         print '\tasciihex,ahx: /ASCIIHexDecode'
@@ -1280,7 +1286,7 @@ class PDFConsole(cmd.Cmd):
 
     def do_hash(self, argv):
         content = ''
-        validTypes = ['variable', 'file', 'raw', 'object', 'rawobject', 'stream', 'rawstream']
+        validTypes = ['variable', 'file', 'raw', 'object', 'rawobject', 'stream', 'rawstream', 'string']
         args = self.parseArgs(argv)
         if args is None:
             message = '*** Error: The command line arguments have not been parsed successfully!!'
@@ -1291,7 +1297,7 @@ class PDFConsole(cmd.Cmd):
             if args[0] in ['object', 'rawobject', 'stream', 'rawstream']:
                 id = args[1]
                 version = None
-            elif args[0] == 'file' or args[0] == 'variable':
+            elif args[0] in ['file', 'variable', 'string']:
                 srcName = args[1]
             else:
                 self.help_hash()
@@ -1328,6 +1334,8 @@ class PDFConsole(cmd.Cmd):
                 return False
             else:
                 content = open(srcName, 'rb').read()
+        elif type == 'string':
+            content = srcName
         else:
             if self.pdfFile is None:
                 message = '*** Error: You must open a file!!'
@@ -1386,6 +1394,7 @@ class PDFConsole(cmd.Cmd):
         print 'Usage: hash raw $offset $num_bytes'
         print 'Usage: hash file $file_name'
         print 'Usage: hash variable $var_name'
+        print 'Usage: hash string $my_string'
         print newLine + 'Generates the hash (MD5/SHA1/SHA256) of the specified source: raw bytes of the file, objects and streams, and the content of files or variables' + newLine
 
     def help_help(self):
@@ -1704,7 +1713,7 @@ class PDFConsole(cmd.Cmd):
 
     def do_js_analyse(self, argv):
         content = ''
-        validTypes = ['variable', 'file', 'object', 'code']
+        validTypes = ['variable', 'file', 'object', 'string']
         if not JS_MODULE:
             message = '*** Error: PyV8 is not installed!!'
             self.log_output('js_analyse ' + argv, message)
@@ -1844,13 +1853,13 @@ class PDFConsole(cmd.Cmd):
         print newLine + 'Usage: js_analyse variable $var_name'
         print 'Usage: js_analyse file $file_name'
         print 'Usage: js_analyse object $object_id [$version]'
-        print 'Usage: js_analyse code $javascript_code'
-        print newLine + 'Analyses the Javascript code stored in the specified variable, file, object or raw code' + newLine
+        print 'Usage: js_analyse string $javascript_code'
+        print newLine + 'Analyses the Javascript code stored in the specified string, variable, file or object' + newLine
 
     def do_js_beautify(self, argv):
         content = ''
         bytes = ''
-        validTypes = ['variable', 'file', 'object']
+        validTypes = ['variable', 'file', 'object', 'string']
         args = self.parseArgs(argv)
         if args is None:
             message = '*** Error: The command line arguments have not been parsed successfully!!'
@@ -1900,6 +1909,8 @@ class PDFConsole(cmd.Cmd):
                             return False
                     else:
                         print 'Warning: the object may not contain Javascript code...' + newLine
+        elif type == 'string':
+            content = src
         else:
             if self.pdfFile is None:
                 message = '*** Error: You must open a file!!'
@@ -1957,6 +1968,7 @@ class PDFConsole(cmd.Cmd):
         print newLine + 'Usage: js_beautify variable $var_name'
         print 'Usage: js_beautify file $file_name'
         print 'Usage: js_beautify object $object_id [$version]'
+        print 'Usage: js_beautify string $javascript_code [$version]'
         print newLine + 'Beautifies the Javascript code stored in the specified variable, file or object' + newLine
 
     def do_js_code(self, argv):
@@ -2030,7 +2042,7 @@ class PDFConsole(cmd.Cmd):
             message = '*** Error: PyV8 is not installed!!'
             self.log_output('js_eval ' + argv, message)
             return False
-        validTypes = ['variable', 'file', 'object', 'code']
+        validTypes = ['variable', 'file', 'object', 'string']
         args = self.parseArgs(argv)
         if args is None:
             message = '*** Error: The command line arguments have not been parsed successfully!!'
@@ -2159,13 +2171,13 @@ class PDFConsole(cmd.Cmd):
         print newLine + 'Usage: js_eval variable $var_name'
         print 'Usage: js_eval file $file_name'
         print 'Usage: js_eval object $object_id [$version]'
-        print 'Usage: js_eval code $javascript_code'
+        print 'Usage: js_eval string $javascript_code'
         print newLine + 'Evaluates the Javascript code stored in the specified variable, file, object or raw code in a global context' + newLine
 
     def do_js_jjdecode(self, argv):
         content = ''
         bytes = ''
-        validTypes = ['variable', 'file', 'object']
+        validTypes = ['variable', 'file', 'object', 'string']
         args = self.parseArgs(argv)
         if args is None:
             message = '*** Error: The command line arguments have not been parsed successfully!!'
@@ -2215,6 +2227,8 @@ class PDFConsole(cmd.Cmd):
                             return False
                     else:
                         print 'Warning: the object may not contain Javascript code...' + newLine
+        elif type == 'string':
+            content = src
         else:
             if self.pdfFile is None:
                 message = '*** Error: You must open a file!!'
@@ -2291,13 +2305,14 @@ class PDFConsole(cmd.Cmd):
         print newLine + 'Usage: js_jjdecode variable $var_name'
         print 'Usage: js_jjdecode file $file_name'
         print 'Usage: js_jjdecode object $object_id [$version]'
+        print 'Usage: js_jjdecode string $encoded_js_code [$version]'
         print newLine + 'Decodes the Javascript code stored in the specified variable, file or object using the jjencode/decode algorithm by Yosuke Hasegawa (http://utf-8.jp/public/jjencode.html)' + newLine
 
     def do_js_join(self, argv):
         content = ''
         finalString = ''
         reSeparatedStrings = '["\'](.*?)["\']'
-        validTypes = ['variable', 'file']
+        validTypes = ['variable', 'file', 'string']
         args = self.parseArgs(argv)
         if args is None:
             message = '*** Error: The command line arguments have not been parsed successfully!!'
@@ -2325,6 +2340,8 @@ class PDFConsole(cmd.Cmd):
                 return False
             else:
                 content = open(src, 'rb').read()
+        else:
+            content = src
         strings = re.findall(reSeparatedStrings, content)
         if strings == []:
             message = '*** Error: The variable or file does not contain separated strings!!'
@@ -2337,6 +2354,7 @@ class PDFConsole(cmd.Cmd):
     def help_js_join(self):
         print newLine + 'Usage: js_join variable $var_name'
         print 'Usage: js_join file $file_name'
+        print 'Usage: js_join string $my_string'
         print newLine + 'Joins some strings separated by quotes and stored in the specified variable or file in a unique one' + newLine
         print 'Example:' + newLine
         print 'aux = "%u65"+"54"+"%u74"+"73"' + newLine
@@ -2349,7 +2367,7 @@ class PDFConsole(cmd.Cmd):
         bytes = ''
         reUnicodeChars = '([%\]u[0-9a-f]{4})+'
         reHexChars = '(%[0-9a-f]{2})+'
-        validTypes = ['variable', 'file']
+        validTypes = ['variable', 'file', 'string']
         args = self.parseArgs(argv)
         if args is None:
             message = '*** Error: The command line arguments have not been parsed successfully!!'
@@ -2370,11 +2388,6 @@ class PDFConsole(cmd.Cmd):
                 return False
             else:
                 content = self.variables[src][0]
-                if re.findall(reUnicodeChars, content, re.IGNORECASE) == [] and re.findall(reHexChars, content,
-                                                                                           re.IGNORECASE) == []:
-                    message = '*** Error: The variable does not contain escaped chars!!'
-                    self.log_output('js_unescape ' + argv, message)
-                    return False
         elif type == 'file':
             if not os.path.exists(src):
                 message = '*** Error: The file does not exist!!'
@@ -2382,11 +2395,14 @@ class PDFConsole(cmd.Cmd):
                 return False
             else:
                 content = open(src, 'rb').read()
-                if re.findall(reUnicodeChars, content, re.IGNORECASE) == [] and re.findall(reHexChars, content,
-                                                                                           re.IGNORECASE) == []:
-                    message = '*** Error: The file does not contain escaped chars!!'
-                    self.log_output('js_unescape ' + argv, message)
-                    return False
+        else:
+            content = src
+        if re.findall(reUnicodeChars, content, re.IGNORECASE) == [] and re.findall(reHexChars,
+                                                                                   content,
+                                                                                   re.IGNORECASE) == []:
+            message = '*** Error: The file does not contain escaped chars!!'
+            self.log_output('js_unescape ' + argv, message)
+            return False
         ret = unescape(content)
         if ret[0] != -1:
             unescapedBytes = ret[1]
@@ -2409,6 +2425,7 @@ class PDFConsole(cmd.Cmd):
     def help_js_unescape(self):
         print newLine + 'Usage: js_unescape variable $var_name'
         print 'Usage: js_unescape file $file_name'
+        print 'Usage: js_unescape string $escaped_string'
         print newLine + 'Unescapes the escaped characters stored in the specified variable or file' + newLine
         print 'Example:' + newLine
         print 'aux = "%u6554%u7473"' + newLine
