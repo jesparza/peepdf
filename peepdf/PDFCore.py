@@ -3858,9 +3858,11 @@ class PDFBody :
         self.suspiciousActions = {}
         self.suspiciousElements = {}
         self.vulns = {}
-        self.JSCode = []
+        self.javascriptCode = []
+        self.javascriptCodePerObject = []
         self.URLs = []
         self.uriList = []
+        self.uriListPerObject = []
         self.toUpdate = []
         self.xrefStreams = []
         self.objectStreams = []
@@ -4030,8 +4032,11 @@ class PDFBody :
             return None
 
     def getJSCode(self):
-        return self.JSCode
-    
+        return self.javascriptCode
+
+    def getJSCodePerObject(self):
+        return self.javascriptCodePerObject
+
     def getNextOffset(self):
         return self.nextOffset
 
@@ -4358,8 +4363,10 @@ class PDFBody :
                 if id in self.containingJS:
                     self.containingJS.remove(id)
                     for jsCode in jsCodeArray:
-                        if jsCode in self.JSCode:
-                            self.JSCode.remove(jsCode)
+                        if jsCode in self.javascriptCode:
+                            self.javascriptCode.remove(jsCode)
+                            if [id, jsCode] in self.javascriptCodePerObject:
+                                self.javascriptCodePerObject.remove([id, jsCode])
                         for vuln in jsVulns:
                             if jsCode.find(vuln) != -1:
                                 if self.vulns.has_key(vuln) and id in self.vulns[vuln]:
@@ -4369,8 +4376,10 @@ class PDFBody :
                 if id not in self.containingJS:
                     self.containingJS.append(id)
                 for js in jsCode:
-                    if js not in self.JSCode:
-                        self.JSCode.append(js)
+                    if js not in self.javascriptCode:
+                        self.javascriptCode.append(js)
+                        if [id, js] not in self.javascriptCodePerObject:
+                            self.javascriptCodePerObject.append([id, js])
                 for code in jsCode:
                     for vuln in jsVulns:
                         if code.find(vuln) != -1:
@@ -4386,11 +4395,15 @@ class PDFBody :
                     for uri in uris:
                         if uri in self.uriList:
                             self.uriList.remove(uri)
+                            if [id, uri] in self.uriListPerObject:
+                                self.uriListPerObject.remove([id, uri])
             else:
                 if id not in self.containingURIs:
                     self.containingURIs.append(id)
                 for uri in uris:
                     self.uriList.append(uri)
+                    if [id, uri] not in self.uriListPerObject:
+                        self.uriListPerObject.append([id, uri])
         ## Extra checks
         objectType = pdfObject.getType()
         if objectType == 'stream':
