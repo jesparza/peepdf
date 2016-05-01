@@ -4221,6 +4221,7 @@ class PDFBody :
                         return (-1,errorMessage)
             object.setReferencesInElements(updatedElements)
             object.resolveReferences()
+            self.updateStats(id, object)
             if object.getType() == 'stream':
                 self.numStreams += 1
                 self.streams.append(id)
@@ -4260,7 +4261,7 @@ class PDFBody :
     def updateOffsets (self) :
         pass
 
-    def updateStats(self, id, pdfObject, delete = False):
+    def updateStats(self, id, pdfObject, delete=False):
         if pdfObject == None:
             errorMessage = 'Object is None'
             pdfFile.addError(errorMessage)
