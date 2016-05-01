@@ -1094,6 +1094,7 @@ class PDFConsole(cmd.Cmd):
 
     def do_extract(self, argv):
         validTypes = ['uri', 'js']
+        #TODO Add more extraction types like embedded files, flash, etc
         if self.pdfFile is None:
             message = '*** Error: You must open a file!!'
             self.log_output('extract ' + argv, message)
