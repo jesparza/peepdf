@@ -1663,12 +1663,13 @@ class PDFStream (PDFDictionary) :
             else:
                 raise Exception(ret[1])
 
-    def update(self, onlyElements = False, decrypt = False, algorithm = 'RC4'):
+    def update(self, onlyElements=False, decrypt=False, algorithm='RC4'):
         '''
             Updates the object after some modification has occurred
             
             @param onlyElements: A boolean indicating if it's only necessary to update the stream dictionary or also the stream itself. By default: False (stream included).
             @param decrypt: A boolean indicating if a decryption has been performed. By default: False.
+            @param algorithm: A string indicating the algorithm to use for decryption
             @return: A tuple (status,statusContent), where statusContent is empty in case status = 0 or an error message in case status = -1
         '''
         self.value = '<< '
@@ -2646,6 +2647,17 @@ class PDFStream (PDFDictionary) :
                     self.newFilters = True
                     onlyElements = False
                     break
+        ret = self.update()
+        return ret
+
+    def setReferencedJSObject(self, value):
+        '''
+            Modifies the referencedJSObject element
+
+            @param value: The new value (bool)
+        '''
+        self.referencedJSObject = value
+        self.modifiedRawStream = True  # The stream has not been modified but we want to force all the operations again
         ret = self.update()
         return ret
 
