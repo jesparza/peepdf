@@ -5911,15 +5911,15 @@ class PDFFile :
         if version is None:
             for version in range(self.updates+1):
                 if perObject:
-                    jsCode += self.body[version].getJSCodePerObject()
+                    jsCode.append(self.body[version].getJSCodePerObject())
                 else:
-                    jsCode += self.body[version].getJSCode()
+                    jsCode.append(self.body[version].getJSCode())
         else:
             if version <= self.updates and not version < 0:
                 if perObject:
-                    jsCode = self.body[version].getJSCodePerObject()
+                    jsCode.append(self.body[version].getJSCodePerObject())
                 else:
-                    jsCode = self.body[version].getJSCode()
+                    jsCode.append(self.body[version].getJSCode())
         return jsCode
     
     def getLinearized(self):
@@ -6330,15 +6330,15 @@ class PDFFile :
         if version is None:
             for version in range(self.updates+1):
                 if perObject:
-                    uris += self.body[version].getURIsPerObject()
+                    uris.append(self.body[version].getURIsPerObject())
                 else:
-                    uris += self.body[version].getURIs()
+                    uris.append(self.body[version].getURIs())
         else:
             if version <= self.updates and not version < 0:
                 if perObject:
-                    uris = self.body[version].getURIsPerObject()
+                    uris.append(self.body[version].getURIsPerObject())
                 else:
-                    uris = self.body[version].getURIs()
+                    uris.append(self.body[version].getURIs())
         return uris
 
     def getUserPass(self):
