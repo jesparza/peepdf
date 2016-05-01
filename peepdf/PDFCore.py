@@ -5901,15 +5901,21 @@ class PDFFile :
                 infoId = streamTrailer.getInfoId()
             return infoId
             
-    def getJavascriptCode (self, version = None) :
-        JSCode = []
-        if version == None:
+    def getJavascriptCode(self, version=None, perObject=False):
+        jsCode = []
+        if version is None:
             for version in range(self.updates+1):
-                JSCode += self.body[version].getJSCode()
+                if perObject:
+                    jsCode += self.body[version].getJSCodePerObject()
+                else:
+                    jsCode += self.body[version].getJSCode()
         else:
             if version <= self.updates and not version < 0:
-                JSCode = self.body[version].getJSCode()
-        return JSCode 
+                if perObject:
+                    jsCode = self.body[version].getJSCodePerObject()
+                else:
+                    jsCode = self.body[version].getJSCode()
+        return jsCode
     
     def getLinearized(self):
         return self.linearized
