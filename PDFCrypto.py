@@ -31,6 +31,7 @@ warnings.filterwarnings("ignore")
 
 paddingString = '\x28\xBF\x4E\x5E\x4E\x75\x8A\x41\x64\x00\x4E\x56\xFF\xFA\x01\x08\x2E\x2E\x00\xB6\xD0\x68\x3E\x80\x2F\x0C\xA9\xFE\x64\x53\x69\x7A'
 
+
 def computeEncryptionKey(password, dictOwnerPass, dictUserPass, dictOE, dictUE, fileID, pElement, dictKeyLength = 128, revision = 3, encryptMetadata = False, passwordType = None):
     '''
         Compute an encryption key to encrypt/decrypt the PDF file
@@ -84,6 +85,7 @@ def computeEncryptionKey(password, dictOwnerPass, dictUserPass, dictOE, dictUE, 
     except:
         return (-1, 'ComputeEncryptionKey error: %s %s' % (str(sys.exc_info()[0]),str(sys.exc_info()[1])))
 
+
 def computeObjectKey(id, generationNum, encryptionKey, keyLengthBytes, algorithm = 'RC4'):
     '''
         Compute the key necessary to encrypt each object, depending on the id and generation number. Only necessary with /V < 5.
@@ -108,6 +110,7 @@ def computeObjectKey(id, generationNum, encryptionKey, keyLengthBytes, algorithm
         return (0, key)
     except:
         return (-1, 'ComputeObjectKey error: %s %s' % (str(sys.exc_info()[0]),str(sys.exc_info()[1])))
+
 
 def computeOwnerPass(ownerPassString, userPassString, keyLength = 128, revision = 3):
     '''
@@ -151,6 +154,7 @@ def computeOwnerPass(ownerPassString, userPassString, keyLength = 128, revision 
         return (0, ownerPass)
     except:
         return (-1, 'ComputeOwnerPass error: %s %s' % (str(sys.exc_info()[0]),str(sys.exc_info()[1])))
+
 
 def computeUserPass(userPassString, dictO, fileID, pElement, keyLength = 128, revision = 3, encryptMetadata = False):
     '''
@@ -277,7 +281,8 @@ def isOwnerPass(password, dictO, dictU, computedUserPass, keyLength, revision):
             # Is it possible??
             userPass = ''
         return isUserPass(userPass, computedUserPass, dictU, revision)
-    
+
+
 def RC4(data, key):
     '''
         RC4 implementation
@@ -296,23 +301,24 @@ def RC4(data, key):
     #Initialization
     for x in range(256):
         hash[x] = ord(key[x % keyLength])
-        box[x]    = x  
+        box[x] = x
     for x in range(256):
-        y            = (y + int(box[x]) + int(hash[x])) % 256 
-        tmp        = box[x]
+        y = (y + int(box[x]) + int(hash[x])) % 256
+        tmp = box[x]
         box[x] = box[y]
         box[y] = tmp 
 
     z = y = 0
-    for x in range(0,dataLength):
+    for x in range(0, dataLength):
         z = (z + 1) % 256 
         y = (y + box[z]) % 256
-        tmp    = box[z]
+        tmp = box[z]
         box[z] = box[y]
         box[y] = tmp
-        k    = box[((box[z] + box[y]) % 256)]
-        ret    += chr(ord(data[x]) ^ k)
+        k = box[((box[z] + box[y]) % 256)]
+        ret += chr(ord(data[x]) ^ k)
     return ret
+
 
 '''
     Author: Evan Fosmark (http://www.evanfosmark.com/2008/06/xor-encryption-with-python/)
