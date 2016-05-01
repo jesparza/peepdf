@@ -1268,7 +1268,7 @@ class PDFConsole(cmd.Cmd):
             newErrors = object.getErrors()
             if newErrors != errors:
                 message = 'Warning: Some errors found in the modification process!!' + newLine
-        self.log_output('filters ' + argv, message + value, value)
+        self.log_output('filters ' + argv, message + value, [value], bytesOutput=True)
 
     def help_filters(self):
         print newLine + 'Usage: filters $object_id [$version] [$filter1 [$filter2 ...]]'
