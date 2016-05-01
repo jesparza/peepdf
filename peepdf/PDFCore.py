@@ -3,7 +3,7 @@
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2011-2015 Jose Miguel Esparza
+#    Copyright (C) 2011-2017 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
@@ -103,6 +103,7 @@ class PDFObject :
         self.uriList = []
         self.updateNeeded = False
         self.containsJScode = False
+        self.referencedJSObject = False
         self.encryptedValue = raw
         self.encryptionKey = ''
         self.encrypted = False
@@ -329,6 +330,16 @@ class PDFObject :
         '''
         pass
 
+    def setReferencedJSObject(self, value):
+        '''
+            Modifies the referencedJSObject element
+
+            @param value: The new value (bool)
+        '''
+        self.referencedJSObject = value
+        ret = self.update()
+        return ret
+
     def setCompressedIn(self, id):
         '''
             Sets the object id of the object stream containing the actual object
@@ -414,6 +425,7 @@ class PDFBool (PDFObject) :
         self.encrypted = False
         self.updateNeeded = False
         self.containsJScode = False
+        self.referencedJSObject = False
         self.referencesInElements = {}
         self.value = self.rawValue = self.encryptedValue = value
         self.compressedIn = None
@@ -433,6 +445,7 @@ class PDFNull (PDFObject) :
         self.value = self.rawValue = self.encryptedValue = content
         self.updateNeeded = False
         self.containsJScode = False
+        self.referencedJSObject = False
         self.referencesInElements = {}
         self.references = []
 
@@ -451,6 +464,7 @@ class PDFNum (PDFObject) :
         self.compressedIn = None
         self.updateNeeded = False
         self.containsJScode = False
+        self.referencedJSObject = False
         self.referencesInElements = {}
         self.references = []
         ret = self.update()
@@ -512,6 +526,7 @@ class PDFName (PDFObject) :
             self.rawValue = self.value = self.encryptedValue = '/' + name
         self.updateNeeded = False
         self.containsJScode = False
+        self.referencedJSObject = False
         self.encryptedValue = ''
         self.encrypted = False
         self.referencesInElements = {}
@@ -559,6 +574,7 @@ class PDFString (PDFObject) :
         self.value = self.rawValue = self.encryptedValue = string
         self.updateNeeded = False
         self.containsJScode = False
+        self.referencedJSObject = False
         self.JSCode = []
         self.uriList = []
         self.unescapedBytes = []
@@ -602,7 +618,7 @@ class PDFString (PDFObject) :
             errorMessage = 'Error in octal conversion'
             self.addError(errorMessage)
             return (-1,errorMessage)
-        if isJavascript(self.value):
+        if isJavascript(self.value) or self.referencedJSObject:
             self.containsJScode = True
             self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.value, jsContexts['global'], isManualAnalysis)
             if jsErrors != []:
@@ -714,6 +730,7 @@ class PDFHexString (PDFObject) :
         self.encryptedValue = hex # Value after hex decoding
         self.updateNeeded = False
         self.containsJScode = False
+        self.referencedJSObject = False
         self.JSCode = []
         self.uriList = []
         self.unescapedBytes = []
@@ -756,7 +773,7 @@ class PDFHexString (PDFObject) :
                 errorMessage = 'Error in hexadecimal conversion'
                 self.addError(errorMessage)
                 return (-1,errorMessage)
-        if isJavascript(self.value):
+        if isJavascript(self.value) or self.referencedJSObject:
             self.containsJScode = True
             self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.value, jsContexts['global'], isManualAnalysis)
             if jsErrors != []:
@@ -861,6 +878,7 @@ class PDFReference (PDFObject) :
         self.genNumber = genNumber
         self.updateNeeded = False
         self.containsJScode = False
+        self.referencedJSObject = False
         self.referencesInElements = {}
         self.references = []
         ret = self.update()
@@ -933,6 +951,7 @@ class PDFArray (PDFObject) :
         self.value = ''
         self.updateNeeded = False
         self.containsJScode = False
+        self.referencedJSObject = False
         self.referencesInElements = {}
         self.references = []
         ret = self.update()
@@ -1193,10 +1212,12 @@ class PDFDictionary (PDFObject):
         self.value = ''
         self.updateNeeded = False
         self.containsJScode = False
+        self.referencedJSObject = False
         self.JSCode = []
         self.uriList = []
         self.unescapedBytes = []
         self.urlsFound = []
+        self.referencedJSObjects = []
         self.referencesInElements = {}
         self.rawValue = rawContent
         self.encryptedValue = rawContent
@@ -1220,6 +1241,7 @@ class PDFDictionary (PDFObject):
         '''
         self.errors = []
         self.references = []
+        self.referencedJSObjects = []
         self.containsJScode = False
         self.JSCode = []
         self.dictType = ''
@@ -1255,9 +1277,11 @@ class PDFDictionary (PDFObject):
                 self.uriList.append(v)
             if type == 'reference':
                 self.references.append(v)
+                if keys[i] == '/JS':
+                    self.referencedJSObjects.append(valueObject.getId())
             elif type == 'dictionary' or type == 'array':
                 self.references += valueObject.getReferences()
-            if valueObject.containsJS():
+            if valueObject.containsJS() or (keys[i] == '/JS' and type != 'reference'):
                 self.containsJScode = True
                 self.JSCode += valueObject.getJSCode()
                 self.unescapedBytes += valueObject.getUnescapedBytes()
@@ -1423,6 +1447,14 @@ class PDFDictionary (PDFObject):
             @return: The number of elements (int)
         '''
         return len(self.elements)    
+
+    def getReferencedJSObjectIds(self):
+        '''
+            Gets the object ids of the referenced objects which contain Javascript code
+
+            @return: An array of object ids
+        '''
+        return self.referencedJSObjects
 
     def getStats(self):
         stats = {}
@@ -1596,6 +1628,7 @@ class PDFStream (PDFDictionary) :
         self.value = ''
         self.updateNeeded = False
         self.containsJScode = False
+        self.referencedJSObject = False
         self.rawStream = rawStream
         self.encryptedStream = rawStream
         self.xrefStream = False
@@ -1797,7 +1830,7 @@ class PDFStream (PDFDictionary) :
                     if refs != []:
                         self.references += refs
                         self.references = list(set(self.references))
-                    if isJavascript(self.decodedStream):
+                    if isJavascript(self.decodedStream) or self.referencedJSObject:
                         self.containsJScode = True
                         self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
                         if jsErrors != []:
@@ -1896,7 +1929,7 @@ class PDFStream (PDFDictionary) :
                             if refs != []:
                                 self.references += refs
                                 self.references = list(set(self.references))
-                            if isJavascript(self.decodedStream):
+                            if isJavascript(self.decodedStream) or self.referencedJSObject:
                                 self.containsJScode = True
                                 self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
                                 if jsErrors != []:
@@ -1967,7 +2000,7 @@ class PDFStream (PDFDictionary) :
                             if refs != []:
                                 self.references += refs
                                 self.references = list(set(self.references))
-                            if isJavascript(self.decodedStream):
+                            if isJavascript(self.decodedStream) or self.referencedJSObject:
                                 self.containsJScode = True
                                 self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
                                 if jsErrors != []:
@@ -2558,7 +2591,7 @@ class PDFStream (PDFDictionary) :
         if refs != []:
             self.references += refs
             self.references = list(set(self.references))
-        if isJavascript(self.decodedStream):
+        if isJavascript(self.decodedStream) or self.referencedJSObject:
             self.containsJScode = True
             self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
             if jsErrors != []:
@@ -2649,6 +2682,7 @@ class PDFObjectStream (PDFStream) :
         self.value = '' # string
         self.updateNeeded = False
         self.containsJScode = False
+        self.referencedJSObject = False
         self.JSCode = []
         self.uriList = []
         self.unescapedBytes = []
@@ -3067,7 +3101,7 @@ class PDFObjectStream (PDFStream) :
                         if refs != []:
                             self.references += refs
                             self.references = list(set(self.references))
-                        if isJavascript(self.decodedStream):
+                        if isJavascript(self.decodedStream) or self.referencedJSObject:
                             self.containsJScode = True
                             self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.decodedStream, jsContexts['global'], isManualAnalysis)
                             if jsErrors != []:
@@ -3817,6 +3851,7 @@ class PDFBody :
         self.encodedStreams = []
         self.faultyStreams = []
         self.faultyObjects = []
+        self.referencedJSObjects = []
         self.containingJS = []
         self.containingURIs = []
         self.suspiciousEvents = {}
@@ -3888,7 +3923,7 @@ class PDFBody :
         self.numObjects -= 1
         if id in self.faultyObjects:
             self.faultyObjects.remove(id)
-        self.updateStats(id,pdfObject,delete=True)
+        self.updateStats(id, pdfObject, delete=True)
         if not pdfObject.updateNeeded:
             if objectType == 'stream':
                 self.numStreams -= 1
@@ -4092,7 +4127,7 @@ class PDFBody :
         self.numObjects += 1
         if pdfObject.isFaulty():
             self.faultyObjects.append(id)
-        ret = self.updateStats(id,pdfObject)
+        ret = self.updateStats(id, pdfObject)
         if ret[0] == -1:
             errorMessage = ret[1]
         if pdfObject.updateNeeded:
@@ -4129,6 +4164,9 @@ class PDFBody :
                                 compressedObject = compressedObjectsDict[compressedId][1]
                                 self.setObject(compressedId, compressedObject, offset)
                             del(compressedObjectsDict)
+            elif objectType == 'dictionary':
+                self.referencedJSObjects += pdfObject.getReferencedJSObjectIds()
+                self.referencedJSObjects = list(set(self.referencedJSObjects))
         pdfIndirectObject.setObject(pdfObject)
         self.objects[id] = pdfIndirectObject
         self.errors += pdfObject.getErrors()
@@ -4254,6 +4292,18 @@ class PDFBody :
                                 compressedObject = compressedObjectsDict[compressedId][1]
                                 self.setObject(compressedId, compressedObject, offset)
                             del(compressedObjectsDict)
+        for id in self.referencedJSObjects:
+            if id not in self.containingJS:
+                object = self.objects[id].getObject()
+                if object == None:
+                    errorMessage = 'Object is None'
+                    if isForceMode:
+                        pdfFile.addError(errorMessage)
+                        continue
+                    else:
+                        return (-1,errorMessage)
+                object.setReferencedJSObject(True)
+                self.updateStats(id, object)
         if errorMessage != '':
             return (-1,errorMessage)
         return (0,'')
@@ -4985,7 +5035,7 @@ class PDFFile :
             return (-1,errorMessage)
         return (0,lastId)
 
-    def decrypt(self, password = ''):
+    def decrypt(self, password=''):
         badPassword = False
         fatalError = False
         errorMessage = ''
@@ -5397,11 +5447,17 @@ class PDFFile :
                         object = indirectObject.getObject()
                         if object != None and not object.isCompressed():
                             objectType = object.getType()
-                            if objectType in ['string','hexstring','array','dictionary'] or (objectType == 'stream' and (object.getElement('/Type') == None or (object.getElement('/Type').getValue() not in ['/XRef','/Metadata'] or (object.getElement('/Type').getValue() == '/Metadata' and encryptMetadata)))):
+                            if objectType in ['string', 'hexstring', 'array', 'dictionary'] or \
+                                    (objectType == 'stream' and (object.getElement('/Type') is None or
+                                    (object.getElement('/Type').getValue() not in ['/XRef', '/Metadata'] or
+                                    (object.getElement('/Type').getValue() == '/Metadata' and encryptMetadata)))):
                                 key = self.encryptionKey
-                                if objectType in ['string','hexstring','array','dictionary']:
+                                # Removing already set global stats before modifying the object contents
+                                self.body[v].updateStats(id, object, delete=True)
+                                # Computing keys and decrypting objects
+                                if objectType in ['string', 'hexstring', 'array', 'dictionary']:
                                     if revision < 5:
-                                        ret = computeObjectKey(id,generationNum,self.encryptionKey,numKeyBytes,strAlgorithm[0])
+                                        ret = computeObjectKey(id, generationNum, self.encryptionKey, numKeyBytes, strAlgorithm[0])
                                         if ret[0] == -1:
                                             errorMessage = ret[1]
                                             self.addError(ret[1])
@@ -5427,11 +5483,11 @@ class PDFFile :
                                             else:
                                                 key = ret[1]
                                         altAlgorithm = stmAlgorithm[0]
-                                    ret = object.decrypt(key,strAlgorithm[0], altAlgorithm)
+                                    ret = object.decrypt(key, strAlgorithm[0], altAlgorithm)
                                 if ret[0] == -1:
                                     errorMessage = ret[1]
                                     self.addError(ret[1])
-                                ret = self.body[v].setObject(id,object)
+                                ret = self.body[v].setObject(id, object)
                                 if ret[0] == -1:
                                     errorMessage = ret[1]
                                     self.addError(ret[1])
