@@ -3,7 +3,7 @@
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2011-2014 Jose Miguel Esparza
+#    Copyright (C) 2011-2017 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
@@ -48,6 +48,7 @@ errorsFile = 'errors.txt'
 newLine = os.linesep         
 reJSscript = '<script[^>]*?contentType\s*?=\s*?[\'"]application/x-javascript[\'"][^>]*?>(.*?)</script>'
 preDefinedCode = 'var app = this;'
+
 
 def analyseJS(code, context = None, manualAnalysis = False):
     '''
@@ -136,7 +137,8 @@ def analyseJS(code, context = None, manualAnalysis = False):
             if js == None or js == '':
                  JSCode.remove(js)
     return [JSCode,unescapedBytes,urlsFound,errors,context]
- 
+
+
 def getVarContent(jsCode, varContent):
     '''
         Given the Javascript code and the content of a variable this method tries to obtain the real value of the variable, cleaning expressions like "a = eval; a(js_code);"
@@ -161,6 +163,7 @@ def getVarContent(jsCode, varContent):
                 clearBytes += getVarContent(jsCode, varContent[0])
     return clearBytes
 
+
 def isJavascript(content):
     '''
         Given an string this method looks for typical Javscript strings and try to identify if the string contains Javascrit code or not.
@@ -168,13 +171,19 @@ def isJavascript(content):
         @param content: A string
         @return: A boolean, True if it seems to contain Javascript code or False in the other case
     '''
-    JSStrings = ['var ',';',')','(','function ','=','{','}','if ','else','return','while ','for ',',','eval']
-    keyStrings = [';','(',')']
+    jsStrings = ['var ', ';', ')', '(', 'function ', '=', '{', '}', 'if ', 'else', 'return', 'while ', 'for ',
+                 ',', 'eval']
+    keyStrings = [';', '(', ')']
+    reVarInit = 'var [\w0-9]+\s*?='
+    reFunctionCall = '[\w0-9]+\s*?\(.*?\)\s*?;'
     stringsFound = []
     limit = 15
-    minDistinctStringsFound = 5
+    minDistinctStringsFound = 4
+    minRatio = 10
     results = 0
-    
+    length = len(content)
+    smallScriptLength = 100
+
     if re.findall(reJSscript, content, re.DOTALL | re.IGNORECASE) != []:
         return True
     
@@ -182,7 +191,7 @@ def isJavascript(content):
         if (ord(char) < 32 and char not in ['\n','\r','\t','\f','\x00']) or ord(char) >= 127:
             return False
 
-    for string in JSStrings:
+    for string in jsStrings:
         cont = content.count(string)
         results += cont
         if cont > 0 and string not in stringsFound:
@@ -190,11 +199,15 @@ def isJavascript(content):
         elif cont == 0 and string in keyStrings:
             return False
 
-    if results > limit and len(stringsFound) >= minDistinctStringsFound:
+    numDistinctStringsFound = len(stringsFound)
+    ratio = (results*100.0)/length
+    if (results > limit and numDistinctStringsFound >= minDistinctStringsFound) or \
+            (length < smallScriptLength and ratio > minRatio):
         return True
     else:
         return False
-    
+
+
 def searchObfuscatedFunctions(jsCode, function):
     '''
         Search for obfuscated functions in the Javascript code
@@ -217,6 +230,7 @@ def searchObfuscatedFunctions(jsCode, function):
            obfuscatedElement = obfuscatedFunction[1]
            obfuscatedFunctionsInfo += searchObfuscatedFunctions(jsCode, obfuscatedElement)
     return obfuscatedFunctionsInfo
+
 
 def unescape(escapedBytes, unicode = True):
     '''
