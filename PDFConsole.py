@@ -3,7 +3,7 @@
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2011-2015 Jose Miguel Esparza
+#    Copyright (C) 2011-2017 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
@@ -85,7 +85,7 @@ class PDFConsole(cmd.Cmd):
         Class of the peepdf interactive console. To see details about commands: http://code.google.com/p/peepdf/wiki/Commands
     '''
 
-    def __init__(self, pdfFile, vtKey, avoidOutputColors=False, stdin=None):
+    def __init__(self, pdfFile, vtKey, avoidOutputColors=False, stdin=None, batchMode=False, jsonOutput=False):
         global COLORIZED_OUTPUT
         cmd.Cmd.__init__(self, stdin=stdin)
         self.warningColor = ''
@@ -128,6 +128,8 @@ class PDFConsole(cmd.Cmd):
         self.output = None
         self.redirect = None
         self.leaving = False
+        self.batchMode = batchMode
+        self.jsonOutput = jsonOutput
         self.outputVarName = None
         self.outputFileName = None
 

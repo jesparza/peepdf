@@ -3,7 +3,7 @@
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2011-2015 Jose Miguel Esparza
+#    Copyright (C) 2011-2017 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
