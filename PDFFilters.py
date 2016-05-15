@@ -1,5 +1,6 @@
 
-#
+# Katherine Khusial Final Project CS6963
+
 # peepdf is a tool to analyse and modify PDF files
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
@@ -60,9 +61,9 @@
 import sys, zlib, lzw, struct
 from PDFUtils import getNumsFromBytes, getBytesFromBits, getBitsFromNum
 from ccitt import CCITTFax
-import cv2 #kK added
-import numpy as np #kk added
-import StringIO #kk added
+import cv2 #KK added for DCT 
+import numpy as np #KK added for DCT
+import StringIO #KK added for DCT
 
 
 def decodeStream(stream, filter, parameters={}):
@@ -75,8 +76,8 @@ def decodeStream(stream, filter, parameters={}):
         @return: A tuple (status,statusContent), where statusContent is the decoded stream in case status = 0 or an error in case status = -1
     '''
     
-
-    print filter
+    #print"Decoding Filters!"
+    #print filter
     if filter == '/ASCIIHexDecode' or filter == '/AHx':
         ret = asciiHexDecode(stream)
     elif filter == '/ASCII85Decode' or filter == '/A85':
@@ -111,8 +112,8 @@ def encodeStream(stream, filter, parameters={}):
         @param parameters: List of PDFObjects containing the parameters for the filter
         @return: A tuple (status,statusContent), where statusContent is the encoded stream in case status = 0 or an error in case status = -1
     '''
-
-    print filter
+    #print "Encoding Filters"
+    #print filter
     if filter == '/ASCIIHexDecode':
         ret = asciiHexEncode(stream)
     elif filter == '/ASCII85Decode':
@@ -795,76 +796,106 @@ def decrypt(stream, parameters):
             else:
                 #TODO: algorithm is cryptFilterName, specified in the /CF dictionary
                 return (-1, 'Decrypt not supported yet')
-
-
-def create_opencv_image_from_stringio(img_stream, cv2_img_flag=0):
-    img_stream.seek(0)
-    img_array = np.asarray(bytearray(img_stream.read()))
-    return cv2.imdecode(img_array, cv2_img_flag)
-    
+'''
 def dctDecode(stream, parameters):
-    '''
-        Method to decode streams using a DCT technique based on the JPEG standard (NOT IMPLEMENTED YET)
+
+    decodedStream = '' #create variable
+    try:
+        from PIL import Image
+        import StringIO
+    except:
+        return (-1, 'Python Imaging Library (PIL) not installed')
+
+# Quick implementation, assuming the library can detect the parameters
+    try:
+        #StringIO to read stream as string and open as image
+        im = Image.open(StringIO.StringIO(stream))
+        #print "Printing im"
+        #print im
+        #f = open('im.jpg', 'w' )
+        #f.write(im)
+        #f.close()
+        decodedStream = im.tostring()
+        print "Printing Decoded Stream!"
+        print decodedStream
+        #f = open('decodedStream.jpg', 'w' )
+        #f.write(decodedStream)
+        #f.close()
+        #neither file opens as an image/decoded image...how is this useful for user?
+        return (0, decodedStream)
+    except:
+        return (-1, 'Error decompresing image data')
+'''
+
+#Update DCTDecoded: Input steam to array output decoded image
+
+#Read image from memory
+def opencv_image_from_stringio(img_stream, cv2_img_flag=0): 
+    img_stream.seek(0) #start at beginning of stream
+    #read stream and convert to array
+    img_array = np.asarray(bytearray(img_stream.read()), dtype=np.uint8)
+    #print "Printing Image Array!"
+    #print img_array
+    return cv2.imdecode(img_array, cv2_img_flag)
+#Source: http://stackoverflow.com/questions/13329445/how-to-read-image-from-in-memory-buffer-stringio-or-from-url-with-opencv-pytho
+
+def dctDecode(stream, parameters):
     
-        @param stream: A PDF stream
-        @return: A tuple (status,statusContent), where statusContent is the decoded PDF stream in case status = 0 or an error in case status = -1
-    '''
     try:
         import tempfile
         tf = tempfile.NamedTemporaryFile()
         tmp_filename = tf.name
 
+        #read stream from memory using StringIO
         imgString = StringIO.StringIO(stream)
-        img1 = create_opencv_image_from_stringio(imgString)
+        #run opencv_image_from_stringio function on imgString and save to img1
+        img1 = opencv_image_from_stringio(imgString)
+        #write to output to file 
         test = open('test_encode', 'w')
         test.write(img1)
         test.close()
 
         if img1 != None:
+            #print "Printing tmp_filename and img1!!!"
             #print tmp_filename, img1
             try:
+                #save decoded image in temp folder
                 cv2.cv.SaveImage('%s.jpg' %tmp_filename, cv2.cv.fromarray(img1))
-
+                #print cv2.cv.fromarray(img1)
             except Exception, e:
                 print e
-
         return (0, cv2.cv.fromarray(imgString))
     except:
         return (-1, 'Error decompresing image data')
 
+#Read image from memory
 def encode_opencv_image_from_stringio(img_stream):
-    img_stream.seek(0) 
-    img_array = np.asarray(bytearray(img_stream.read()))
-
+    img_stream.seek(0) #start at the beginning on the stream
+    #reading the stream and converting it into an array
+    img_array = np.asarray(bytearray(img_stream.read()), dtype=np.uint8)
+    #print "Printing Encode Array"
+    #print img_array
     img_array2 = np.reshape(img_array, (-1, 2))
-    
-    small = cv2.resize(img_array2, (0,0), fx=0.5, fy=0.5) 
-
-    return cv2.imencode('.jpg', small)
+    tiny = cv2.resize(img_array2, (0,0), fx=0.5, fy=0.5) 
+    return cv2.imencode('.jpg', tiny)
 
 
 def dctEncode(stream, parameters):
-    '''
-        Method to encode streams using a DCT technique based on the JPEG standard (NOT IMPLEMENTED YET)
-    
-        @param stream: A PDF stream
-        @return: A tuple (status,statusContent), where statusContent is the encoded PDF stream in case status = 0 or an error in case status = -1
-    '''
     try:
         imgString = StringIO.StringIO(stream)
-        retval, img_buf = encode_opencv_image_from_stringio(imgString)
+        #return the value and assign to img_buff
+        retval, img_buff = encode_opencv_image_from_stringio(imgString)
         
-        fh_buf = open('test_encode_buf.jpg', 'w')
-        fh_buf.write(img_buf)
-        fh_buf.close()
+        fh_buff = open('test_encode_buf', 'w')
+        fh_buff.write(img_buff)
+        fh_buff.close()
 
-        imgString = StringIO.StringIO(img_buf)
+        imgString = StringIO.StringIO(img_buff)
         imgString_out = imgString.getvalue()
 
         fh_stringio = open('test_encode_stringio', 'w')
         fh_stringio.write(imgString_out)
         fh_stringio.close()
-
         return (0, imgString_out)
     except Exception, e: 
         return (-1, 'Error encoding image data : %s' %e)
