@@ -387,6 +387,7 @@ class PDFConsole(cmd.Cmd):
         offset = 0
         size = 0
         validTypes = ['variable', 'file', 'raw']
+        #remove dct from the list
         notImplementedFilters = ['ccittfax''ccf', 'jbig2', 'jpx']
         filters = []
         args = self.parseArgs(argv)
@@ -789,7 +790,7 @@ class PDFConsole(cmd.Cmd):
         offset = 0
         size = 0
         validTypes = ['variable', 'file', 'raw']
-         #remove 'dct' - kk
+        #KK - remove dct from the list to enable encode on test_encode file 
         notImplementedFilters = ['ascii85', 'a85', 'runlength', 'rl', 'jbig2', 'jpx', 'ccittfax', 'ccf']
         filters = []
         args = self.parseArgs(argv)
@@ -1145,7 +1146,7 @@ class PDFConsole(cmd.Cmd):
         message = ''
         value = ''
         filtersArray = []
-        notImplementedFilters = ['ascii85', 'a85', 'runlength', 'rl', 'jbig2', 'jpx', 'ccittfax', 'ccf']
+        notImplementedFilters = ['ascii85', 'a85', 'runlength', 'rl', 'jbig2', 'jpx', 'ccittfax', 'ccf', 'dct']
         iniFilterArgs = 1
         filters = []
         args = self.parseArgs(argv)
