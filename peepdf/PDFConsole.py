@@ -33,7 +33,7 @@ import subprocess
 import optparse
 import hashlib
 import traceback
-from peepdf import jsbeautifier
+import jsbeautifier
 from peepdf.PDFUtils import *
 from peepdf.PDFCrypto import *
 from peepdf.JSAnalysis import *

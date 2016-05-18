@@ -26,7 +26,7 @@
 '''
 
 import sys, re , os, traceback
-from peepdf import jsbeautifier
+import jsbeautifier
 from peepdf.PDFUtils import unescapeHTMLEntities, escapeString
 try:
     import PyV8

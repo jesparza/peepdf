@@ -6,5 +6,6 @@ setup(
     author = "Jose Miguel Esparza",
     license = "GNU GPLv3",
     url = "http://eternal-todo.com",
+    install_requires = "jsbeautifier==1.6.2",
     packages = find_packages(),
 )
