@@ -43,7 +43,7 @@ from PDFFilters import decodeStream, encodeStream
 from peepdf.jjdecode import JJDecoder
 
 try:
-    from peepdf.colorama import init, Fore, Back, Style
+    from colorama import init, Fore, Back, Style
     COLORIZED_OUTPUT = True
 except:
     COLORIZED_OUTPUT = False

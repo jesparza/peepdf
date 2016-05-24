@@ -53,7 +53,7 @@ try:
 except:
     EMU_MODULE = False
 try:
-    from peepdf.colorama import init, Fore, Back, Style
+    from colorama import init, Fore, Back, Style
     COLORIZED_OUTPUT = True
 except:
     COLORIZED_OUTPUT = False
