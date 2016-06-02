@@ -6,7 +6,6 @@ http://twitter.com/peepdf
 
 ** Dependencies **
 
-- jsbeautifier
 
 - In order to analyse Javascript code "PyV8" is needed:
 
@@ -24,14 +23,16 @@ http://twitter.com/peepdf
     http://lxml.de/installation.html
     
 
-- Included modules: lzw, colorama, ccitt, pythonaes (Thanks to all the developers!!)
+- Included modules: lzw, ccitt (Thanks to all the developers!!)
 
 
 
 ** Installation **
 
-No installation is needed apart of the commented dependencies, just execute it!
+Run
+    python setup.py install
 
+The setup script handles the installation of jsbeautifier, colorama, pythonaes
 
 
 ** Execution **
@@ -46,25 +47,25 @@ There are two important options when peepdf is executed:
 
 Shows the statistics of the file after being decoded/decrypted and analysed:
 
-    python peepdf.py [options] pdf_file
+    peepdf.py [options] pdf_file
 
 
 * Interactive console
 
 Executes the interactive console to let play with the PDF file:
 
-    python peepdf.py -i [options] pdf_file
+    peepdf.py -i [options] pdf_file
 
 If no PDF file is specified it's possible to use the decode/encode/js*/sctest commands and create a new PDF file:
 
-    python peepdf.py -i
+    peepdf.py -i
 
 
 * Batch execution
 
 It's possible to use a commands file to specify the commands to be executed in the batch mode. This type of execution is good to automatise analysis of several files:
 
-    python peepdf.py [options] -s commands_file pdf_file
+    peepdf.py [options] -s commands_file pdf_file
 
 
 
@@ -72,7 +73,8 @@ It's possible to use a commands file to specify the commands to be executed in t
 
 Just type this and you will be updated to the latest version from the repository:
 
-    python peepdf.py -u
+    peepdf.py -u
+    python setup.py install
 
 
 
