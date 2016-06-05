@@ -393,8 +393,8 @@ argsParser.add_option('-l', '--loose-mode', action='store_true', dest='isLooseMo
                       help='Sets loose parsing mode to catch malformed objects.')
 argsParser.add_option('-m', '--manual-analysis', action='store_true', dest='isManualAnalysis', default=False,
                       help='Avoids automatic Javascript analysis. Useful with eternal loops like heap spraying.')
-argsParser.add_option('-u', '--update', action='store_true', dest='update', default=False,
-                      help='Updates peepdf with the latest files from the repository.')
+#argsParser.add_option('-u', '--update', action='store_true', dest='update', default=False,
+#                      help='DOES NOT WORK.\nUpdates peepdf with the latest files from the repository.')
 argsParser.add_option('-g', '--grinch-mode', action='store_true', dest='avoidColors', default=False,
                       help='Avoids colorized output in the interactive console.')
 argsParser.add_option('-v', '--version', action='store_true', dest='version', default=False,
@@ -423,59 +423,59 @@ try:
         resetColor = Style.RESET_ALL
     if options.version:
         print peepdfHeader
-    elif options.update:
-        updated = False
-        newVersion = ''
-        localVersion = 'v' + version + ' r' + revision
-        reVersion = 'version = \'(\d\.\d)\'\s*?revision = \'(\d+)\''
-        repURL = 'https://api.github.com/repos/jesparza/peepdf/contents/'
-        rawRepURL = 'https://raw.githubusercontent.com/jesparza/peepdf/master/'
-        print '[-] Checking if there are new updates...'
-        try:
-            remotePeepContent = urllib2.urlopen(rawRepURL + 'peepdf.py').read()
-        except:
-            sys.exit('[x] Connection error while trying to connect with the repository')
-        repVer = re.findall(reVersion, remotePeepContent)
-        if repVer:
-            newVersion = 'v' + repVer[0][0] + ' r' + repVer[0][1]
-        else:
-            sys.exit('[x] Error getting the version number from the repository')
-        if localVersion == newVersion:
-            print '[+] No changes! ;)'
-        else:
-            print '[+] There are new updates!!'
-            print '[-] Getting paths from the repository...'
-            pathNames = getRepPaths(repURL, '')
-            print '[+] Done'
-            localFilesInfo = getLocalFilesInfo(pathNames)
-            print '[-] Checking files...'
-            for path in pathNames:
-                try:
-                    fileContent = urllib2.urlopen(rawRepURL + path).read()
-                except:
-                    sys.exit('[x] Connection error while getting file "' + path + '"')
-                if path in localFilesInfo:
-                    # File exists
-                    # Checking hash
-                    shaHash = hashlib.sha256(fileContent).hexdigest()
-                    if shaHash != localFilesInfo[path][0]:
-                        open(localFilesInfo[path][1], 'wb').write(fileContent)
-                        print '[+] File "' + path + '" updated successfully'
-                else:
-                    # File does not exist
-                    index = path.rfind('/')
-                    if index != -1:
-                        dirsPath = path[:index]
-                        absDirsPath = os.path.join(absPeepdfRoot, dirsPath)
-                        if not os.path.exists(absDirsPath):
-                            print '[+] New directory "' + dirsPath + '" created successfully'
-                            os.makedirs(absDirsPath)
-                    open(os.path.join(absPeepdfRoot, path), 'wb').write(fileContent)
-                    print '[+] New file "' + path + '" created successfully'
-            message = '[+] peepdf updated successfully'
-            if newVersion != '':
-                message += ' to ' + newVersion
-            print message
+    #elif options.update:
+    #    updated = False
+    #    newVersion = ''
+    #    localVersion = 'v' + version + ' r' + revision
+    #    reVersion = 'version = \'(\d\.\d)\'\s*?revision = \'(\d+)\''
+    #    repURL = 'https://api.github.com/repos/jesparza/peepdf/contents/'
+    #    rawRepURL = 'https://raw.githubusercontent.com/jesparza/peepdf/master/'
+    #    print '[-] Checking if there are new updates...'
+    #    try:
+    #        remotePeepContent = urllib2.urlopen(rawRepURL + 'peepdf.py').read()
+    #    except:
+    #        sys.exit('[x] Connection error while trying to connect with the repository')
+    #    repVer = re.findall(reVersion, remotePeepContent)
+    #    if repVer:
+    #        newVersion = 'v' + repVer[0][0] + ' r' + repVer[0][1]
+    #    else:
+    #        sys.exit('[x] Error getting the version number from the repository')
+    #    if localVersion == newVersion:
+    #        print '[+] No changes! ;)'
+    #    else:
+    #        print '[+] There are new updates!!'
+    #        print '[-] Getting paths from the repository...'
+    #        pathNames = getRepPaths(repURL, '')
+    #        print '[+] Done'
+    #        localFilesInfo = getLocalFilesInfo(pathNames)
+    #        print '[-] Checking files...'
+    #        for path in pathNames:
+    #            try:
+    #                fileContent = urllib2.urlopen(rawRepURL + path).read()
+    #            except:
+    #                sys.exit('[x] Connection error while getting file "' + path + '"')
+    #            if path in localFilesInfo:
+    #                # File exists
+    #                # Checking hash
+    #                shaHash = hashlib.sha256(fileContent).hexdigest()
+    #                if shaHash != localFilesInfo[path][0]:
+    #                    open(localFilesInfo[path][1], 'wb').write(fileContent)
+    #                    print '[+] File "' + path + '" updated successfully'
+    #            else:
+    #                # File does not exist
+    #                index = path.rfind('/')
+    #                if index != -1:
+    #                    dirsPath = path[:index]
+    #                    absDirsPath = os.path.join(absPeepdfRoot, dirsPath)
+    #                    if not os.path.exists(absDirsPath):
+    #                        print '[+] New directory "' + dirsPath + '" created successfully'
+    #                        os.makedirs(absDirsPath)
+    #                open(os.path.join(absPeepdfRoot, path), 'wb').write(fileContent)
+    #                print '[+] New file "' + path + '" created successfully'
+    #        message = '[+] peepdf updated successfully'
+    #        if newVersion != '':
+    #            message += ' to ' + newVersion
+    #        print message
 
     else:
         if len(args) == 1:

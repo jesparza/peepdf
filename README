@@ -71,10 +71,10 @@ It's possible to use a commands file to specify the commands to be executed in t
 
 ** Updating **
 
+Desactivated feature as it is not working for now.
 Just type this and you will be updated to the latest version from the repository:
 
     peepdf.py -u
-    python setup.py install
 
 
 
