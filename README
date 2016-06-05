@@ -29,8 +29,9 @@ http://twitter.com/peepdf
 
 ** Installation **
 
-Run
-    python setup.py install
+Run, in peepdf directory
+
+    easy_install .
 
 The setup script handles the installation of jsbeautifier, colorama, pythonaes
 
@@ -71,10 +72,11 @@ It's possible to use a commands file to specify the commands to be executed in t
 
 ** Updating **
 
-Desactivated feature as it is not working for now.
-Just type this and you will be updated to the latest version from the repository:
+The option has been desactivated as it is not working for now.
+To update, cd to peepdf directory and type:
 
-    peepdf.py -u
+    git pull origin master
+    easy_install .
 
 
 
