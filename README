@@ -18,13 +18,7 @@ http://twitter.com/peepdf
     https://github.com/buffer/pylibemu
 
 
-- To support XML output "lxml" is needed:
-
-    http://lxml.de/installation.html
-    
-
 - Included modules: lzw, ccitt (Thanks to all the developers!!)
-
 
 
 ** Installation **
@@ -33,7 +27,7 @@ Run, in peepdf directory
 
     easy_install .
 
-The setup script handles the installation of jsbeautifier, colorama, pythonaes
+The setup script handles the installation of jsbeautifier, colorama, pythonaes and lxml
 
 
 ** Execution **
