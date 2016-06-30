@@ -29,7 +29,7 @@ Licensed under the MIT license http://www.opensource.org/licenses/mit-license.ph
 """
 
 import sys
-from peepdf.aespython import key_expander, aes_cipher, cbc_mode
+from aespython import key_expander, aes_cipher, cbc_mode
 
 def decryptData(data, password = None, keyLength =  None, mode = 'CBC'):
     '''
