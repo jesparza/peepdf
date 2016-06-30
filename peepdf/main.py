@@ -661,7 +661,7 @@ def main():
         print errorColor + errorMessage + resetColor + newLine
     finally:
         if os.path.exists(errorsFile):
-            message = newLine + 'Please, don\'t forget to report the errors found:' + newLine * 2
+            message = newLine + 'Please, don\'t forget to report errors if found:' + newLine * 2
             message += '\t- Sending the file "%s" to the author (mailto:peepdfREMOVETHIS@eternal-todo.com)%s' % (
                 errorsFile, newLine)
             message += '\t- And/Or creating an issue on the project webpage (https://github.com/jesparza/peepdf/issues)' + newLine
