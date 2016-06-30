@@ -334,11 +334,6 @@ twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.3'
 revision = '275'
-stats = ''
-pdf = None
-fileName = None
-statsDict = None
-vtJsonDict = None
 newLine = os.linesep
 errorsFile = os.path.expanduser("~/.peepdf-error.txt")
 
@@ -350,32 +345,40 @@ peepdfHeader = versionHeader + newLine * 2 + \
                author + newLine + \
                twitter + newLine
 
-argsParser = optparse.OptionParser(usage='Usage: peepdf.py [options] PDF_file', description=versionHeader)
-argsParser.add_option('-i', '--interactive', action='store_true', dest='isInteractive', default=False,
-                      help='Sets console mode.')
-argsParser.add_option('-s', '--load-script', action='store', type='string', dest='scriptFile',
-                      help='Loads the commands stored in the specified file and execute them.')
-argsParser.add_option('-c', '--check-vt', action='store_true', dest='checkOnVT', default=False,
-                      help='Checks the hash of the PDF file on VirusTotal.')
-argsParser.add_option('-f', '--force-mode', action='store_true', dest='isForceMode', default=False,
-                      help='Sets force parsing mode to ignore errors.')
-argsParser.add_option('-l', '--loose-mode', action='store_true', dest='isLooseMode', default=False,
-                      help='Sets loose parsing mode to catch malformed objects.')
-argsParser.add_option('-m', '--manual-analysis', action='store_true', dest='isManualAnalysis', default=False,
-                      help='Avoids automatic Javascript analysis. Useful with eternal loops like heap spraying.')
-argsParser.add_option('-g', '--grinch-mode', action='store_true', dest='avoidColors', default=False,
-                      help='Avoids colorized output in the interactive console.')
-argsParser.add_option('-v', '--version', action='store_true', dest='version', default=False,
-                      help='Shows program\'s version number.')
-argsParser.add_option('-x', '--xml', action='store_true', dest='xmlOutput', default=False,
-                      help='Shows the document information in XML format.')
-argsParser.add_option('-j', '--json', action='store_true', dest='jsonOutput', default=False,
-                      help='Shows the document information in JSON format.')
-argsParser.add_option('-C', '--command', action='append', type='string', dest='commands',
-                      help='Specifies a command from the interactive console to be executed.')
-(options, args) = argsParser.parse_args()
-
 def main():
+    global COLORIZED_OUTPUT
+
+    argsParser = optparse.OptionParser(usage='Usage: peepdf.py [options] PDF_file', description=versionHeader)
+    argsParser.add_option('-i', '--interactive', action='store_true', dest='isInteractive', default=False,
+                        help='Sets console mode.')
+    argsParser.add_option('-s', '--load-script', action='store', type='string', dest='scriptFile',
+                        help='Loads the commands stored in the specified file and execute them.')
+    argsParser.add_option('-c', '--check-vt', action='store_true', dest='checkOnVT', default=False,
+                        help='Checks the hash of the PDF file on VirusTotal.')
+    argsParser.add_option('-f', '--force-mode', action='store_true', dest='isForceMode', default=False,
+                        help='Sets force parsing mode to ignore errors.')
+    argsParser.add_option('-l', '--loose-mode', action='store_true', dest='isLooseMode', default=False,
+                        help='Sets loose parsing mode to catch malformed objects.')
+    argsParser.add_option('-m', '--manual-analysis', action='store_true', dest='isManualAnalysis', default=False,
+                        help='Avoids automatic Javascript analysis. Useful with eternal loops like heap spraying.')
+    argsParser.add_option('-g', '--grinch-mode', action='store_true', dest='avoidColors', default=False,
+                        help='Avoids colorized output in the interactive console.')
+    argsParser.add_option('-v', '--version', action='store_true', dest='version', default=False,
+                        help='Shows program\'s version number.')
+    argsParser.add_option('-x', '--xml', action='store_true', dest='xmlOutput', default=False,
+                        help='Shows the document information in XML format.')
+    argsParser.add_option('-j', '--json', action='store_true', dest='jsonOutput', default=False,
+                        help='Shows the document information in JSON format.')
+    argsParser.add_option('-C', '--command', action='append', type='string', dest='commands',
+                        help='Specifies a command from the interactive console to be executed.')
+    (options, args) = argsParser.parse_args()
+
+    stats = ""
+    pdf = None
+    fileName = None
+    statsDict = None
+    vtJsonDict = None
+
     try:
         # Avoid colors in the output
         if not COLORIZED_OUTPUT or options.avoidColors:
@@ -390,6 +393,7 @@ def main():
             alertColor = Fore.RED
             staticColor = Fore.BLUE
             resetColor = Style.RESET_ALL
+
         if options.version:
             print peepdfHeader
         else:
