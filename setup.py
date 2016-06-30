@@ -2,16 +2,16 @@ from setuptools import find_packages, setup
 
 setup(
     name="peepdf",
-    version="0.3-r275",
+    version="0.3.1",
     author="Jose Miguel Esparza",
     license="GNU GPLv3",
     url="http://eternal-todo.com",
     install_requires=[
         "jsbeautifier==1.6.2",
-        "colorama",
-        "Pillow",
+        "colorama==0.3.7",
+        "Pillow==3.2.0",
         "pythonaes==1.0",
-        "lxml",
+        "lxml==3.6.0",
     ],
     dependency_links=[
         "git+https://github.com/serprex/pythonaes.git#egg=pythonaes-1.0",
