@@ -2188,7 +2188,8 @@ class PDFConsole(cmd.Cmd):
                 self.log_output('js_eval ' + argv, evalCode)
         except:
             error = str(sys.exc_info()[1])
-            open('jserror.log', 'ab').write(error + newLine)
+            f = open(os.path.expanduser("~/.peepdf-jserror.log"), "ab")
+            f.write(error + newLine)
 
         if error != '':
             self.log_output('js_eval ' + argv, '*** Error: ' + error)

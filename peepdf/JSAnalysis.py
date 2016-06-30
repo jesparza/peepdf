@@ -103,7 +103,8 @@ def analyseJS(code, context=None, manualAnalysis=False):
                         break
                 except:
                     error = str(sys.exc_info()[1])
-                    open('jserror.log', 'ab').write(error + newLine)
+                    f = open(os.path.expanduser("~/.peepdf-jserror.log"), "ab")
+                    f.write(error + newLine)
                     errors.append(error)
                     break
 
