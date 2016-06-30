@@ -5698,12 +5698,15 @@ class PDFFile:
             creator = infoObject.getElementByName('/Creator')
             if creator is not None and creator != []:
                 basicMetadata['creator'] = creator.getValue()
+
             producer = infoObject.getElementByName('/Producer')
             if producer is not None and producer != []:
                 basicMetadata['producer'] = producer.getValue()
+
             creationDate = infoObject.getElementByName('/CreationDate')
             if creationDate is not None and creationDate != []:
                 basicMetadata['creation'] = creationDate.getValue()
+
         if "author" not in basicMetadata:
             ids = self.getObjectsByString('<dc:creator>', version)
             if ids is not None and ids != []:
@@ -5712,6 +5715,7 @@ class PDFFile:
                     if author is not None:
                         basicMetadata['author'] = author
                         break
+
         if "creator" not in basicMetadata:
             ids = self.getObjectsByString('<xap:CreatorTool>', version)
             if ids is not None and ids != []:
@@ -5720,6 +5724,7 @@ class PDFFile:
                     if creator is not None:
                         basicMetadata['creator'] = creator
                         break
+
         if "creator" not in basicMetadata:
             ids = self.getObjectsByString('<xmp:CreatorTool>', version)
             if ids is not None and ids != []:
@@ -5728,6 +5733,7 @@ class PDFFile:
                     if creator is not None:
                         basicMetadata['creator'] = creator
                         break
+
         if "producer" not in basicMetadata:
             ids = self.getObjectsByString('<pdf:Producer>', version)
             if ids is not None and ids != []:
@@ -5736,6 +5742,7 @@ class PDFFile:
                     if producer is not None:
                         basicMetadata['producer'] = producer
                         break
+
         if "creation" not in basicMetadata:
             ids = self.getObjectsByString('<xap:CreateDate>', version)
             if ids is not None and ids != []:
@@ -5744,6 +5751,7 @@ class PDFFile:
                     if creation is not None:
                         basicMetadata['creation'] = creation
                         break
+
         if "creation" not in basicMetadata:
             ids = self.getObjectsByString('<xmp:CreateDate>', version)
             if ids is not None and ids != []:
@@ -5752,6 +5760,7 @@ class PDFFile:
                     if creation is not None:
                         basicMetadata['creation'] = creation
                         break
+
         if "modification" not in basicMetadata:
             ids = self.getObjectsByString('<xap:ModifyDate>', version)
             if ids is not None and ids != []:
@@ -5760,6 +5769,7 @@ class PDFFile:
                     if modification is not None:
                         basicMetadata['modification'] = modification
                         break
+
         if "modification" not in basicMetadata:
             ids = self.getObjectsByString('<xmp:ModifyDate>', version)
             if ids is not None and ids != []:
@@ -5768,6 +5778,7 @@ class PDFFile:
                     if modification is not None:
                         basicMetadata['modification'] = modification
                         break
+
         return basicMetadata
 
     def getCatalogObject(self, version=None, indirect=False):

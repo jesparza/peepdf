@@ -178,8 +178,10 @@ def isJavascript(content):
         @param content: A string
         @return: A boolean, True if it seems to contain Javascript code or False in the other case
     '''
-    jsStrings = ['var ', ';', ')', '(', 'function ', '=', '{', '}', 'if ', 'else', 'return', 'while ', 'for ',
-                 ',', 'eval']
+    jsStrings = [
+        'var ', ';', ')', '(', 'function ', '=', '{', '}', 'if ',
+        'else', 'return', 'while ', 'for ', ',', 'eval',
+    ]
     keyStrings = [';', '(', ')']
     stringsFound = []
     limit = 15
