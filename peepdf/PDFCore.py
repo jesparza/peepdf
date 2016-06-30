@@ -5686,6 +5686,15 @@ class PDFFile:
             author = infoObject.getElementByName('/Author')
             if author is not None and author != []:
                 basicMetadata['author'] = author.getValue()
+
+            subject = infoObject.getElementByName('/Subject')
+            if subject is not None and subject != []:
+                basicMetadata['subject'] = subject.getValue()
+
+            title = infoObject.getElementByName('/Title')
+            if title is not None and title != []:
+                basicMetadata['title'] = title.getValue()
+
             creator = infoObject.getElementByName('/Creator')
             if creator is not None and creator != []:
                 basicMetadata['creator'] = creator.getValue()
