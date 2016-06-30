@@ -16,5 +16,10 @@ setup(
     dependency_links=[
         "git+https://github.com/serprex/pythonaes.git#egg=pythonaes-1.0",
     ],
-    packages=find_packages(),
+    entry_points={
+        "console_scripts": [
+            "peepdf = peepdf.main:main",
+        ],
+    },
+    packages=["peepdf"],
 )
