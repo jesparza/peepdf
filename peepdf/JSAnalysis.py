@@ -51,7 +51,7 @@ except:
         pass
 
 
-errorsFile = 'errors.txt'
+errorsFile = os.path.expanduser("~/.peepdf-error.txt")
 newLine = os.linesep
 reJSscript = '<script[^>]*?contentType\s*?=\s*?[\'"]application/x-javascript[\'"][^>]*?>(.*?)</script>'
 preDefinedCode = 'var app = this;'

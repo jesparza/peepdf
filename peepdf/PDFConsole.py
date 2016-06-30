@@ -79,7 +79,8 @@ FILE_ADD = 2
 VAR_WRITE = 3
 VAR_ADD = 4
 newLine = os.linesep
-errorsFile = 'errors.txt'
+errorsFile = os.path.expanduser("~/.peepdf-error.txt")
+
 filter2RealFilterDict = {'b64': 'base64', 'base64': 'base64', 'asciihex': '/ASCIIHexDecode', 'ahx': '/ASCIIHexDecode',
                          'ascii85': '/ASCII85Decode', 'a85': '/ASCII85Decode', 'lzw': '/LZWDecode',
                          'flatedecode': '/FlateDecode', 'fl': '/FlateDecode', 'runlength': '/RunLengthDecode',
