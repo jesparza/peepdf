@@ -36,8 +36,6 @@ from peepdf.PDFUtils import unescapeHTMLEntities, escapeString
 try:
     import PyV8
 
-    JS_MODULE = True
-
     class Global(PyV8.JSClass):
         evalCode = ''
 
@@ -45,8 +43,12 @@ try:
             self.evalCode += '\n\n// New evaluated code\n' + expression
             return
 
+    JS_MODULE = True
 except:
     JS_MODULE = False
+
+    class Global(object):
+        pass
 
 
 errorsFile = 'errors.txt'
