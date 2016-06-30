@@ -29,21 +29,27 @@ import cmd
 import sys
 import os
 import re
-import subprocess
-import optparse
 import hashlib
 import traceback
 import jsbeautifier
-from peepdf.PDFUtils import *
-from peepdf.PDFCrypto import *
-from peepdf.JSAnalysis import *
-from peepdf.PDFCore import *
+
+from peepdf.PDFUtils import (
+    getBytesFromFile, countArrayElements, clearScreen, hexToString,
+    escapeRegExpString, vtcheck, countNonPrintableChars
+)
+from peepdf.PDFCrypto import xor
+from peepdf.JSAnalysis import isJavascript, analyseJS, Global, unescape
+from peepdf.PDFCore import (
+    PDFFile, PDFHexString, PDFDictionary, PDFNum, PDFName, PDFStream,
+    PDFReference, PDFString, PDFArray, PDFBool, PDFNull, vulnsDict, PDFParser
+)
+
 from base64 import b64encode, b64decode
 from PDFFilters import decodeStream, encodeStream
 from peepdf.jjdecode import JJDecoder
 
 try:
-    from colorama import init, Fore, Back, Style
+    from colorama import init, Fore, Style
     COLORIZED_OUTPUT = True
 except:
     COLORIZED_OUTPUT = False
@@ -63,10 +69,11 @@ try:
     import readline
     RL_PROMPT_START_IGNORE = '\001'
     RL_PROMPT_END_IGNORE = '\002'
+    readline  # Pretend like we use it.
 except:
     RL_PROMPT_START_IGNORE = RL_PROMPT_END_IGNORE = ''
 
-# File and variable redirections 
+# File and variable redirections
 FILE_WRITE = 1
 FILE_ADD = 2
 VAR_WRITE = 3
@@ -213,13 +220,13 @@ class PDFConsole(cmd.Cmd):
             return False
         # Getting information about original document
         data = self.pdfFile.getBasicMetadata(0)
-        if data.has_key('author'):
+        if "author" in data:
             output += '\tAuthor: ' + data['author'] + newLine
-        if data.has_key('creator'):
+        if "creator" in data:
             output += '\tCreator: ' + data['creator'] + newLine
-        if data.has_key('producer'):
+        if "producer" in data:
             output += '\tProducer: ' + data['producer'] + newLine
-        if data.has_key('creation'):
+        if "creation" in data:
             output += '\tCreation date: ' + data['creation'] + newLine
         if output != '':
             output = 'Original document information:' + newLine + output + newLine
@@ -234,13 +241,13 @@ class PDFConsole(cmd.Cmd):
                 output += 'Changes in version ' + str(i + 1) + ':' + newLine
             # Getting modification information
             data = self.pdfFile.getBasicMetadata(i + 1)
-            if data.has_key('author'):
+            if "author" in data:
                 output += '\tAuthor: ' + data['author'] + newLine
-            if data.has_key('creator'):
+            if "creator" in data:
                 output += '\tCreator: ' + data['creator'] + newLine
-            if data.has_key('producer'):
+            if "producer" in data:
                 output += '\tProducer: ' + data['producer'] + newLine
-            if data.has_key('modification'):
+            if "modification" in data:
                 output += '\tModification date: ' + data['modification'] + newLine
             addedObjects = changelog[0]
             modifiedObjects = changelog[1]
@@ -321,8 +328,6 @@ class PDFConsole(cmd.Cmd):
                 message = '*** Error: You must open a file!!'
                 self.log_output('create ' + argv, message)
                 return False
-            objectsToCompress = []
-            streamContent = None
             version = None
             if numArgs == 2:
                 version = args[1]
@@ -436,7 +441,7 @@ class PDFConsole(cmd.Cmd):
             return False
 
         if type == 'variable':
-            if not self.variables.has_key(src):
+            if src not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('decode ' + argv, message)
                 return False
@@ -841,7 +846,7 @@ class PDFConsole(cmd.Cmd):
             return False
 
         if type == 'variable':
-            if not self.variables.has_key(src):
+            if src not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('encode ' + argv, message)
                 return False
@@ -1102,7 +1107,7 @@ class PDFConsole(cmd.Cmd):
 
     def do_extract(self, argv):
         validTypes = ['uri', 'js']
-        #TODO Add more extraction types like embedded files, flash, etc
+        # TODO Add more extraction types like embedded files, flash, etc
         if self.pdfFile is None:
             message = '*** Error: You must open a file!!'
             self.log_output('extract ' + argv, message)
@@ -1154,7 +1159,6 @@ class PDFConsole(cmd.Cmd):
     def help_extract(self):
         print newLine + 'Usage: extract uri|js [$version]'
         print newLine + 'Extracts all the given type elements of the specified version after being decoded and decrypted (if necessary)' + newLine
-
 
     def do_filters(self, argv):
         if self.pdfFile is None:
@@ -1323,7 +1327,7 @@ class PDFConsole(cmd.Cmd):
             self.help_hash()
             return False
         if type == 'variable':
-            if not self.variables.has_key(srcName):
+            if srcName not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('hash ' + argv, message)
                 return False
@@ -1423,7 +1427,7 @@ class PDFConsole(cmd.Cmd):
             stats += beforeStaticLabel + 'File: ' + self.resetColor + statsDict['File'] + newLine
             stats += beforeStaticLabel + 'MD5: ' + self.resetColor + statsDict['MD5'] + newLine
             stats += beforeStaticLabel + 'SHA1: ' + self.resetColor + statsDict['SHA1'] + newLine
-            #stats += beforeStaticLabel + 'SHA256: ' + self.resetColor + statsDict['SHA256'] + newLine
+            # stats += beforeStaticLabel + 'SHA256: ' + self.resetColor + statsDict['SHA256'] + newLine
             stats += beforeStaticLabel + 'Size: ' + self.resetColor + statsDict['Size'] + ' bytes' + newLine
             if statsDict['Detection'] != []:
                 detectionReportInfo = ''
@@ -1471,41 +1475,61 @@ class PDFConsole(cmd.Cmd):
                     stats += beforeStaticLabel + '\tInfo: ' + self.resetColor + statsVersion['Info'] + newLine
                 else:
                     stats += beforeStaticLabel + '\tInfo: ' + self.resetColor + 'No' + newLine
-                stats += beforeStaticLabel + '\tObjects (' + statsVersion['Objects'][0] + '): ' + \
-                         self.resetColor + str(statsVersion['Objects'][1]) + newLine
+                stats += (
+                    beforeStaticLabel + '\tObjects (' + statsVersion['Objects'][0] + '): ' +
+                    self.resetColor + str(statsVersion['Objects'][1]) + newLine
+                )
                 if statsVersion['Compressed Objects'] is not None:
-                    stats += beforeStaticLabel + '\tCompressed objects (' +\
-                             statsVersion['Compressed Objects'][0] + '): ' + self.resetColor + \
-                             str(statsVersion['Compressed Objects'][1]) + newLine
+                    stats += (
+                        beforeStaticLabel + '\tCompressed objects (' +
+                        statsVersion['Compressed Objects'][0] + '): ' + self.resetColor +
+                        str(statsVersion['Compressed Objects'][1]) + newLine
+                    )
                 if statsVersion['Errors'] is not None:
-                    stats += beforeStaticLabel + '\t\tErrors (' + statsVersion['Errors'][0] + '): ' + \
-                             self.resetColor + str(statsVersion['Errors'][1]) + newLine
-                stats += beforeStaticLabel + '\tStreams (' + statsVersion['Streams'][0] + '): ' + \
-                         self.resetColor + str(statsVersion['Streams'][1])
+                    stats += (
+                        beforeStaticLabel + '\t\tErrors (' + statsVersion['Errors'][0] + '): ' +
+                        self.resetColor + str(statsVersion['Errors'][1]) + newLine
+                    )
+                stats += (
+                    beforeStaticLabel + '\tStreams (' + statsVersion['Streams'][0] + '): ' +
+                    self.resetColor + str(statsVersion['Streams'][1])
+                )
                 if statsVersion['Xref Streams'] is not None:
-                    stats += newLine + beforeStaticLabel + '\t\tXref streams (' + \
-                             statsVersion['Xref Streams'][0] + '): ' + self.resetColor + \
-                             str(statsVersion['Xref Streams'][1])
+                    stats += (
+                        newLine + beforeStaticLabel + '\t\tXref streams (' +
+                        statsVersion['Xref Streams'][0] + '): ' + self.resetColor +
+                        str(statsVersion['Xref Streams'][1])
+                    )
                 if statsVersion['Object Streams'] is not None:
-                    stats += newLine + beforeStaticLabel + '\t\tObject streams (' + \
-                             statsVersion['Object Streams'][0] + '): ' + self.resetColor + \
-                             str(statsVersion['Object Streams'][1])
+                    stats += (
+                        newLine + beforeStaticLabel + '\t\tObject streams (' +
+                        statsVersion['Object Streams'][0] + '): ' + self.resetColor +
+                        str(statsVersion['Object Streams'][1])
+                    )
                 if int(statsVersion['Streams'][0]) > 0:
-                    stats += newLine + beforeStaticLabel + '\t\tEncoded (' + statsVersion['Encoded'][0] + '): ' + \
-                             self.resetColor + str(statsVersion['Encoded'][1])
+                    stats += (
+                        newLine + beforeStaticLabel + '\t\tEncoded (' + statsVersion['Encoded'][0] + '): ' +
+                        self.resetColor + str(statsVersion['Encoded'][1])
+                    )
                     if statsVersion['Decoding Errors'] is not None:
-                        stats += newLine + beforeStaticLabel + '\t\tDecoding errors (' + \
-                                 statsVersion['Decoding Errors'][0] + '): ' + self.resetColor + str(
-                            statsVersion['Decoding Errors'][1])
+                        stats += (
+                            newLine + beforeStaticLabel + '\t\tDecoding errors (' +
+                            statsVersion['Decoding Errors'][0] + '): ' + self.resetColor +
+                            str(statsVersion['Decoding Errors'][1])
+                        )
                 if statsVersion['URIs'] is not None:
-                    stats += newLine + beforeStaticLabel + '\tObjects with URIs (' + \
-                             statsVersion['URIs'][0] + '): ' + self.resetColor + str(statsVersion['URIs'][1])
+                    stats += (
+                        newLine + beforeStaticLabel + '\tObjects with URIs (' +
+                        statsVersion['URIs'][0] + '): ' + self.resetColor + str(statsVersion['URIs'][1])
+                    )
                 if not self.avoidOutputColors:
                     beforeStaticLabel = self.warningColor
                 if statsVersion['Objects with JS code'] is not None:
-                    stats += newLine + beforeStaticLabel + '\tObjects with JS code (' + \
-                             statsVersion['Objects with JS code'][0] + '): ' + \
-                             self.resetColor + str(statsVersion['Objects with JS code'][1])
+                    stats += (
+                        newLine + beforeStaticLabel + '\tObjects with JS code (' +
+                        statsVersion['Objects with JS code'][0] + '): ' +
+                        self.resetColor + str(statsVersion['Objects with JS code'][1])
+                    )
                 actions = statsVersion['Actions']
                 events = statsVersion['Events']
                 vulns = statsVersion['Vulns']
@@ -1522,20 +1546,22 @@ class PDFConsole(cmd.Cmd):
                                      self.resetColor + str(actions[action]) + newLine
                     if vulns is not None:
                         for vuln in vulns:
-                            if vulnsDict.has_key(vuln):
+                            if vuln in vulnsDict:
                                 vulnName = vulnsDict[vuln][0]
                                 vulnCVEList = vulnsDict[vuln][1]
                                 stats += '\t\t' + beforeStaticLabel + vulnName + ' ('
                                 for vulnCVE in vulnCVEList:
                                     stats += vulnCVE + ','
-                                stats = stats[:-1] + ') (%d): ' % len(vulns[vuln]) + self.resetColor + \
-                                        str(vulns[vuln]) + newLine
+                                stats = (
+                                    stats[:-1] + ') (%d): ' % len(vulns[vuln]) + self.resetColor +
+                                    str(vulns[vuln]) + newLine
+                                )
                             else:
                                 stats += '\t\t' + beforeStaticLabel + vuln + ' (%d): ' % len(vulns[vuln]) + \
                                          self.resetColor + str(vulns[vuln]) + newLine
                     if elements is not None:
                         for element in elements:
-                            if vulnsDict.has_key(element):
+                            if element in vulnsDict:
                                 vulnName = vulnsDict[element][0]
                                 vulnCVEList = vulnsDict[element][1]
                                 stats += '\t\t' + beforeStaticLabel + vulnName + ' ('
@@ -1586,7 +1612,7 @@ class PDFConsole(cmd.Cmd):
             if xrefArray[1] is not None:
                 statsStream = xrefArray[1].getStats()
                 for key in statsStream:
-                    if not statsDict.has_key(key):
+                    if key not in statsDict:
                         statsDict[key] = statsStream[key]
             if statsDict['Offset'] is not None:
                 stats += beforeStaticLabel + 'Offset: ' + self.resetColor + statsDict['Offset'] + newLine
@@ -1619,7 +1645,7 @@ class PDFConsole(cmd.Cmd):
             if trailerArray[1] is not None:
                 statsStream = trailerArray[1].getStats()
                 for key in statsStream:
-                    if not statsDict.has_key(key):
+                    if key not in statsDict:
                         statsDict[key] = statsStream[key]
             if statsDict['Offset'] is not None:
                 stats += beforeStaticLabel + 'Offset: ' + self.resetColor + statsDict['Offset'] + newLine
@@ -1738,7 +1764,7 @@ class PDFConsole(cmd.Cmd):
             self.help_js_analyse()
             return False
         if type == 'variable':
-            if not self.variables.has_key(src):
+            if src not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('js_analyse ' + argv, message)
                 return False
@@ -1821,9 +1847,7 @@ class PDFConsole(cmd.Cmd):
         else:
             content = src
         content = content.strip()
-        jsCode, unescapedBytes, urlsFound, jsErrors, self.javaScriptContexts['global'] = analyseJS(content,
-                                                                                                   self.javaScriptContexts[
-                                                                                                       'global'])
+        jsCode, unescapedBytes, urlsFound, jsErrors, self.javaScriptContexts['global'] = analyseJS(content, self.javaScriptContexts['global'])
         if content not in jsCode:
             jsCode = [content] + jsCode
         jsanalyseOutput = ''
@@ -1860,7 +1884,6 @@ class PDFConsole(cmd.Cmd):
 
     def do_js_beautify(self, argv):
         content = ''
-        bytes = ''
         validTypes = ['variable', 'file', 'object', 'string']
         args = self.parseArgs(argv)
         if args is None:
@@ -1880,7 +1903,7 @@ class PDFConsole(cmd.Cmd):
             self.help_js_beautify()
             return False
         if type == 'variable':
-            if not self.variables.has_key(src):
+            if src not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('js_beautify ' + argv, message)
                 return False
@@ -2063,7 +2086,7 @@ class PDFConsole(cmd.Cmd):
             self.help_js_eval()
             return False
         if type == 'variable':
-            if not self.variables.has_key(src):
+            if src not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('js_eval ' + argv, message)
                 return False
@@ -2178,7 +2201,6 @@ class PDFConsole(cmd.Cmd):
 
     def do_js_jjdecode(self, argv):
         content = ''
-        bytes = ''
         validTypes = ['variable', 'file', 'object', 'string']
         args = self.parseArgs(argv)
         if args is None:
@@ -2198,7 +2220,7 @@ class PDFConsole(cmd.Cmd):
             self.help_js_jjdecode()
             return False
         if type == 'variable':
-            if not self.variables.has_key(src):
+            if src not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('js_jjdecode ' + argv, message)
                 return False
@@ -2329,7 +2351,7 @@ class PDFConsole(cmd.Cmd):
             self.help_js_join()
             return False
         if type == 'variable':
-            if not self.variables.has_key(src):
+            if src not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('js_join ' + argv, message)
                 return False
@@ -2384,7 +2406,7 @@ class PDFConsole(cmd.Cmd):
             self.help_js_unescape()
             return False
         if type == 'variable':
-            if not self.variables.has_key(src):
+            if src not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('js_unescape ' + argv, message)
                 return False
@@ -2624,7 +2646,6 @@ class PDFConsole(cmd.Cmd):
         print newLine + 'Shows the metadata of the document or version of the document' + newLine
 
     def do_modify(self, argv):
-        maxDepth = 2
         validModifyTypes = ['object', 'stream']
         args = self.parseArgs(argv)
         if args is None:
@@ -2786,16 +2807,16 @@ class PDFConsole(cmd.Cmd):
 
         for i in range(len(offsetsArray)):
             offsets = offsetsArray[i]
-            if i == 0 and offsets.has_key('header'):
+            if i == 0 and "header" in offsets:
                 offset, size = offsets['header']
                 offsetsOutput += '%8d %s%s' % (offset, 'Header', newLine)
             elif version is None:
                 offsetsOutput += newLine + 'Version ' + str(i) + ':' + newLine * 2
-            if offsets.has_key('objects'):
+            if "objects" in offsets:
                 compressedObjects = offsets['compressed']
                 sortedObjectList = sorted(offsets['objects'], key=lambda x: x[1])
                 for id, offset, size in sortedObjectList:
-                    #offsetsOutput += '%8d %s %d (%d)%s' % (offset,'Object ',id,size,newLine)
+                    # offsetsOutput += '%8d %s %d (%d)%s' % (offset,'Object ',id,size,newLine)
                     if id in compressedObjects:
                         offsetsOutput += '%8d%s%8s%s %d (%d)%s%8d%s' % (
                             offset, newLine, '', 'Compressed Object ', id, size, newLine, offset + size - 1, newLine)
@@ -2804,12 +2825,12 @@ class PDFConsole(cmd.Cmd):
                             offset, newLine, '', 'Object ', id, size, newLine, offset + size - 1, newLine)
             if offsets['xref'] is not None:
                 offset, size = offsets['xref']
-                #offsetsOutput += '%8d %s (%d)%s' % (offset,'Xref Section',size,newLine)
+                # offsetsOutput += '%8d %s (%d)%s' % (offset,'Xref Section',size,newLine)
                 offsetsOutput += '%8d%s%8s%s (%d)%s%8d%s' % (
                     offset, newLine, '', 'Xref Section', size, newLine, offset + size - 1, newLine)
             if offsets['trailer'] is not None:
                 offset, size = offsets['trailer']
-                #offsetsOutput += '%8d %s (%d)%s' % (offset,'Trailer',size,newLine)
+                # offsetsOutput += '%8d %s (%d)%s' % (offset,'Trailer',size,newLine)
                 offsetsOutput += '%8d%s%8s%s (%d)%s%8d%s' % (
                     offset, newLine, '', 'Trailer', size, newLine, offset + size - 1, newLine)
             if offsets['eof'] is not None:
@@ -2887,10 +2908,8 @@ class PDFConsole(cmd.Cmd):
             message = '*** Error: You must open a file!!'
             self.log_output('rawobject ' + argv, message)
             return False
-        compressed = False
         rawValue = ''
         offset = 0
-        size = 0
         args = self.parseArgs(argv)
         if args is None:
             message = '*** Error: The command line arguments have not been parsed successfully!!'
@@ -2923,7 +2942,6 @@ class PDFConsole(cmd.Cmd):
                 xrefArray = ret[1]
             if xrefArray[0] is not None:
                 offset = xrefArray[0].getOffset()
-                size = xrefArray[0].getSize()
                 rawValue = xrefArray[0].toFile()
         elif id == 'trailer':
             ret = self.pdfFile.getTrailer(version)
@@ -2935,7 +2953,6 @@ class PDFConsole(cmd.Cmd):
                 trailerArray = ret[1]
             if trailerArray[0] is not None:
                 offset = trailerArray[0].getOffset()
-                size = trailerArray[0].getSize()
                 rawValue = trailerArray[0].toFile()
         else:
             id = int(id)
@@ -2945,9 +2962,7 @@ class PDFConsole(cmd.Cmd):
                 self.log_output('rawobject ' + argv, message)
                 return False
             object = indirectObject.getObject()
-            compressed = object.isCompressed()
             offset = indirectObject.getOffset()
-            size = indirectObject.getSize()
             rawValue = str(object.getRawValue())
         if offset == -1:
             message = '*** Error: offset cannot be calculated!!'
@@ -3033,8 +3048,8 @@ class PDFConsole(cmd.Cmd):
             return False
         command = args[0]
         id = args[1]
-        if not id.isdigit() or (version is not None and not version.isdigit()) or (
-                        command.lower() != 'to' and command.lower() != 'in'):
+        if not id.isdigit() or (version is not None and not version.isdigit()) or \
+                (command.lower() != 'to' and command.lower() != 'in'):
             self.help_references()
             return False
         id = int(id)
@@ -3113,7 +3128,7 @@ class PDFConsole(cmd.Cmd):
                 else:
                     message = 'String not found!!'
             else:
-                if self.variables.has_key(src):
+                if src in self.variables:
                     if self.variables[src][0].find(string1) != -1:
                         replaceOutput = self.variables[src][0].replace(string1, string2)
                         self.variables[src][0] = replaceOutput
@@ -3142,7 +3157,7 @@ class PDFConsole(cmd.Cmd):
             clearScreen()
         elif numArgs == 1:
             var = args[0]
-            if self.variables.has_key(var):
+            if var in self.variables:
                 self.variables[var][0] = self.variables[var][1]
                 if var == 'output' and (self.variables[var][0] == 'file' or self.variables[var][0] == 'variable'):
                     message = var + ' = "' + self.output + '" (' + str(self.variables[var][0]) + ')'
@@ -3302,7 +3317,7 @@ class PDFConsole(cmd.Cmd):
                 src = args[1]
 
         if type == 'variable':
-            if not self.variables.has_key(src):
+            if src not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('sctest ' + argv, message)
                 return False
@@ -3451,7 +3466,7 @@ class PDFConsole(cmd.Cmd):
                     return False
                 else:
                     value = int(value)
-            if self.variables.has_key(varName):
+            if varName in self.variables:
                 self.variables[varName][0] = value
             else:
                 self.variables[varName] = [value, value]
@@ -3475,7 +3490,7 @@ class PDFConsole(cmd.Cmd):
             self.help_show()
             return False
         var = args[0]
-        if not self.variables.has_key(var):
+        if var not in self.variables:
             print newLine + '*** Error: The variable ' + var + ' does not exist!!' + newLine
             return False
         if var == 'output':
@@ -3507,7 +3522,6 @@ class PDFConsole(cmd.Cmd):
             message = '*** Error: You must open a file!!'
             self.log_output('stream ' + argv, message)
             return False
-        result = ''
         args = self.parseArgs(argv)
         if args is None:
             message = '*** Error: The command line arguments have not been parsed successfully!!'
@@ -3550,7 +3564,6 @@ class PDFConsole(cmd.Cmd):
     def help_stream(self):
         print newLine + 'Usage: stream $object_id [$version]'
         print newLine + 'Shows the object stream content of the specified version after being decoded and decrypted (if necessary)' + newLine
-
 
     def do_tree(self, argv):
         if self.pdfFile is None:
@@ -3651,7 +3664,7 @@ class PDFConsole(cmd.Cmd):
                 self.help_vtcheck()
                 return False
             if type == 'variable':
-                if not self.variables.has_key(srcName):
+                if srcName not in self.variables:
                     message = '*** Error: The variable does not exist!!'
                     self.log_output('vtcheck ' + argv, message)
                     return False
@@ -3719,10 +3732,11 @@ class PDFConsole(cmd.Cmd):
             self.log_output('vtcheck ' + argv, message)
             return False
         jsonDict = ret[1]
-        if jsonDict.has_key('response_code'):
+        if "response_code" in jsonDict:
             if jsonDict['response_code'] == 1:
-                if jsonDict.has_key('scan_date') and jsonDict.has_key('positives') and jsonDict.has_key(
-                        'total') and jsonDict.has_key('scans') and jsonDict.has_key('permalink'):
+                if "scan_date" in jsonDict and "positives" in jsonDict and \
+                        "total" in jsonDict and "scans" in jsonDict and \
+                        "permalink" in jsonDict:
                     detectionColor = ''
                     if args == []:
                         self.pdfFile.setDetectionRate([jsonDict['positives'], jsonDict['total']])
@@ -3745,8 +3759,8 @@ class PDFConsole(cmd.Cmd):
 
                         for engine in jsonDict['scans']:
                             engineResults = jsonDict['scans'][engine]
-                            if engineResults.has_key('detected') and engineResults.has_key(
-                                    'version') and engineResults.has_key('result') and engineResults.has_key('update'):
+                            if "detected" in engineResults and "version" in engineResults and \
+                                    "result" in engineResults and "update" in engineResults:
                                 if engineResults['detected']:
                                     output += '%25s\t%18s\t%10s\t%s%s%s%s' % (
                                         engine, engineResults['version'], engineResults['update'], self.alertColor,
@@ -3778,8 +3792,6 @@ class PDFConsole(cmd.Cmd):
 
     def do_xor(self, argv):
         content = ''
-        found = False
-        outputBytes = ''
         validTypes = ['variable', 'file', 'raw', 'stream', 'rawstream']
         args = self.parseArgs(argv)
         if args is None:
@@ -3845,7 +3857,7 @@ class PDFConsole(cmd.Cmd):
                 return False
             key = chr(int(key, 16))
         if type == 'variable':
-            if not self.variables.has_key(srcName):
+            if srcName not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('xor ' + argv, message)
                 return False
@@ -3928,7 +3940,6 @@ class PDFConsole(cmd.Cmd):
         found = False
         decValues = range(256)
         successfullKeys = {}
-        outputBytes = ''
         caseSensitive = True
         validTypes = ['variable', 'file', 'raw', 'stream', 'rawstream']
         args = self.parseArgs(argv)
@@ -3969,7 +3980,7 @@ class PDFConsole(cmd.Cmd):
             self.help_xor_search()
             return False
         if type == 'variable':
-            if not self.variables.has_key(srcName):
+            if srcName not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('xor_search ' + argv, message)
                 return False
@@ -4052,9 +4063,9 @@ class PDFConsole(cmd.Cmd):
                     offset += len(m)
                     auxXored = auxXored[index + len(m):]
                 successfullKeys[hex(i)] = offsets
-                #outputBytes += '[' + hex(i) + ']' + newLine
-                #outputBytes += xored + newLine
-                #outputBytes += '[/' + hex(i) + ']' + newLine*2
+                # outputBytes += '[' + hex(i) + ']' + newLine
+                # outputBytes += xored + newLine
+                # outputBytes += '[/' + hex(i) + ']' + newLine*2
         if found:
             keys = successfullKeys.keys()
             message = 'Pattern found with the following keys: ' + str(keys) + newLine * 2
@@ -4076,7 +4087,7 @@ class PDFConsole(cmd.Cmd):
     def additionRequest(self, dict=False):
         '''
             Method to ask the user if he wants to add more entries to the object or not
-            
+
             @param dict: Boolean to specify if the added object is a dictionary or not. Default value: False.
             @return: The response chosen by the user
         '''
@@ -4093,7 +4104,7 @@ class PDFConsole(cmd.Cmd):
     def addObject(self, iteration, maxDepth=10):
         '''
             Method to add a new object to an array or dictionary
-            
+
             @param iteration: Integer which specifies the depth of the recursion in the same object
             @param maxDepth: The maximum depth for nested objects. Default value: 10.
             @return: The new object
@@ -4175,7 +4186,7 @@ class PDFConsole(cmd.Cmd):
     def checkInputContent(self, objectType, objectContent):
         '''
             Check if the specified content is valid for the specified object type and modify it\'s possible
-            
+
             @param objectType: The type of object: number, string, hexstring, name, reference, null
             @param objectContent: The object content
             @return: The content of the object or None if any problems occur
@@ -4237,12 +4248,12 @@ class PDFConsole(cmd.Cmd):
     def log_output(self, command, output, bytesToSave=None, printOutput=True, bytesOutput=False):
         '''
             Method to check the commands output and write it to the console and/or files / variables
-            
+
             @param command: The command launched
             @param output: The output of the command
             @param bytesToSave: A list with the raw bytes which will be stored in a file or variable if a redirection has been set (>,>>,$>,$>>).
             @param printOutput: Boolean to specify if the output will be written to the console or not. Default value: True.
-            @param bytesOutput: Boolean to specify if we want to print raw bytes or not. Default value: False. 
+            @param bytesOutput: Boolean to specify if we want to print raw bytes or not. Default value: False.
         '''
         errorIndex = output.find('*** Error')
         if errorIndex != -1:
@@ -4279,15 +4290,16 @@ class PDFConsole(cmd.Cmd):
                     if self.redirect == VAR_WRITE:
                         self.variables[varName] = [bytes, bytes]
                     elif self.redirect == VAR_ADD:
-                        if self.variables.has_key(varName):
+                        if varName in self.variables:
                             self.variables[varName][0] += bytes
                         else:
                             self.variables[varName] = [bytes, bytes]
         elif printOutput:
             if niceOutput:
                 niceOutput = newLine + niceOutput + newLine
-                if self.variables['output_limit'][0] is None or self.variables['output_limit'][
-                    0] == -1 or not self.use_rawinput:
+                if self.variables['output_limit'][0] is None or \
+                        self.variables['output_limit'][0] == -1 or \
+                        not self.use_rawinput:
                     print niceOutput
                 else:
                     limit = int(self.variables['output_limit'][0])
@@ -4306,7 +4318,7 @@ class PDFConsole(cmd.Cmd):
     def modifyObject(self, object, iteration=0, contentFile=None, maxDepth=10):
         '''
             Method to modify an existent object
-            
+
             @param object: The object to be modified
             @param iteration: Integer which specifies the depth of the recursion in the same object
             @param contentFile: The content of the file storing the stream
@@ -4433,7 +4445,7 @@ class PDFConsole(cmd.Cmd):
     def modifyRequest(self, value, rawValue, key=None, stream=False):
         '''
             Method to ask the user what he wants to do with the object: modify, delete or nothing.
-            
+
             @param value: The value of the object.
             @param rawValue: The raw value of the object.
             @param key: The key of a dictionary entry.
@@ -4463,7 +4475,7 @@ class PDFConsole(cmd.Cmd):
     def parseArgs(self, args):
         '''
             Method to split up the command arguments by quotes: \'\'\', " or \'
-            
+
             @param args: The command arguments
             @return: An array with the separated arguments
         '''
@@ -4521,7 +4533,6 @@ class PDFConsole(cmd.Cmd):
                 else:
                     argsArray.append(args)
                     args = ''
-        #print argsArray
         if len(argsArray) > 1:
             if argsArray[-2] in redirectSymbols:
                 if argsArray[-2] == '>':
@@ -4582,7 +4593,7 @@ class PDFConsole(cmd.Cmd):
     def printBytes(self, bytes):
         '''
             Given a byte string shows the hexadecimal and ascii output in a nice way
-            
+
             @param bytes: A string
             @return: String with mixed hexadecimal and ascii strings, like the 'hexdump -C' output
         '''
@@ -4616,7 +4627,7 @@ class PDFConsole(cmd.Cmd):
     def printResult(self, result):
         '''
             Given an string returns a mixed hexadecimal-ascci output if there are many non printable characters or the same string in other case
-            
+
             @param result: A string
             @return: A mixed hexadecimal-ascii output if there are many non printable characters or the input string in other case
         '''
@@ -4630,7 +4641,7 @@ class PDFConsole(cmd.Cmd):
     def printTreeNode(self, node, nodesInfo, expandedNodes=[], depth=0, recursive=True):
         '''
             Given a tree prints the whole tree and its dependencies
-            
+
             @param node: Root of the tree
             @param nodesInfo: Information abour the nodes of the tree
             @param expandedNodes: Already expanded nodes
@@ -4639,7 +4650,7 @@ class PDFConsole(cmd.Cmd):
             @return: A tuple (expandedNodes,output), where expandedNodes is a list with the distinct nodes and output is the string representation of the tree
         '''
         output = ''
-        if nodesInfo.has_key(node):
+        if node in nodesInfo:
             if node not in expandedNodes or (node in expandedNodes and depth > 0):
                 output += '\t' * depth + nodesInfo[node][0] + ' (' + str(node) + ')' + newLine
             if node not in expandedNodes:
@@ -4647,7 +4658,7 @@ class PDFConsole(cmd.Cmd):
                 children = nodesInfo[node][1]
                 if children != []:
                     for child in children:
-                        if nodesInfo.has_key(child):
+                        if child in nodesInfo:
                             childType = nodesInfo[child][0]
                         else:
                             childType = 'Unknown'
