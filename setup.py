@@ -1,8 +1,8 @@
-from setuptools import find_packages, setup
+from setuptools import setup
 
 setup(
     name="peepdf",
-    version="0.3.1",
+    version="0.3.2",
     author="Jose Miguel Esparza",
     license="GNU GPLv3",
     url="http://eternal-todo.com",
