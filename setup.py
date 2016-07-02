@@ -13,9 +13,6 @@ setup(
         "pythonaes==1.0",
         "lxml==3.6.0",
     ],
-    dependency_links=[
-        "git+https://github.com/serprex/pythonaes.git#egg=pythonaes-1.0",
-    ],
     entry_points={
         "console_scripts": [
             "peepdf = peepdf.main:main",
