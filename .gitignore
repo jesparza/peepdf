@@ -1,0 +1,4 @@
+*.pyc
+.cache
+.idea
+peepdf.egg-info/
