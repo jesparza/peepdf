@@ -7851,7 +7851,7 @@ class PDFParser:
         else:
             delimiters = self.delimiters
         for delim in delimiters:
-            ret = self.readSymbol(content, delim[0])
+            ret = self.readSymbol(content, delim[0], False if delim[0] == '(' else True)
             if ret[0] != -1:
                 if delim[2] == 'dictionary':
                     ret = self.readUntilClosingDelim(content, delim)
