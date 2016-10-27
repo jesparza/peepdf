@@ -10,7 +10,10 @@ before_install:
 
 install:
     - python setup.py develop
-    - pip install pytest
+    - pip install pytest pytest-cov coveralls
 
 script:
-    - py.test
+    - py.test --cov=peepdf
+
+after_success:
+    - coveralls
