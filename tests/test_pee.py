@@ -18,5 +18,20 @@
 #
 #        You should have received a copy of the GNU General Public License
 #        along with peepdf.    If not, see <http://www.gnu.org/licenses/>.
+#
 
-from . import PDFConsole, PDFCore, PDFCrypto, PDFFilters, PDFUtils
+import peepdf
+
+def test_whitespace_after_opening():
+    p = peepdf.PDFCore.PDFParser()
+    r, f = p.parse(
+        "tests/files/BB-1-Overview.pdf",
+        forceMode=True, looseMode=True, manualAnalysis=False
+    )
+    assert not r
+
+    for obj in f.body[1].objects.values():
+        if obj.object.type == "stream":
+            assert obj.object.errors != [
+                "Decoding error: Error decompressing string"
+            ]
