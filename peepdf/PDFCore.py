@@ -25,11 +25,11 @@
     This module contains classes and methods to analyse and modify PDF files
 '''
 
-import sys,os,re,hashlib,struct,aes as AES
-from PDFUtils import *
-from PDFCrypto import *
-from JSAnalysis import *
-from PDFFilters import decodeStream,encodeStream
+import sys,os,re,hashlib,struct,peepdf.aes as AES
+from peepdf.PDFUtils import *
+from peepdf.PDFCrypto import *
+from peepdf.JSAnalysis import *
+from peepdf.PDFFilters import decodeStream,encodeStream
 
 MAL_ALL = 1
 MAL_HEAD = 2

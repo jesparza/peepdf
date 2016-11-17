@@ -56,9 +56,10 @@
     Module to manage encoding/decoding in PDF files
 '''
 
-import sys, zlib, lzw, struct
-from PDFUtils import getNumsFromBytes, getBytesFromBits, getBitsFromNum
-from ccitt import CCITTFax
+import sys,zlib,struct
+import peepdf.lzw
+from peepdf.PDFUtils import getNumsFromBytes, getBytesFromBits, getBitsFromNum
+from peepdf.ccitt import CCITTFax
 
 
 def decodeStream(stream, filter, parameters={}):

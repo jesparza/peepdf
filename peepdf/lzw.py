@@ -66,7 +66,7 @@ The Details
     code points are stored with their MSB in the most significant bit
     available in the output character.
 
->>> import lzw
+>>> import peepdf.lzw
 >>>
 >>> mybytes = lzw.readbytes("README.txt")
 >>> lessbytes = lzw.compress(mybytes)
@@ -128,7 +128,7 @@ class ByteEncoder(object):
     with a L{BitPacker}.
 
 
-    >>> import lzw
+    >>> import peepdf.lzw
     >>>
     >>> enc = lzw.ByteEncoder(12)
     >>> bigstr = b"gabba gabba yo gabba gabba gabba yo gabba gabba gabba yo gabba gabba gabba yo"
@@ -236,7 +236,7 @@ class BitPacker(object):
         and bytes following END_OF_INFO_CODE will be aligned to the
         next byte boundary.
 
-        >>> import lzw
+        >>> import peepdf.lzw
         >>> pkr = lzw.BitPacker(258)
         >>> [ b for b in pkr.pack([ 1, 257]) ] == [ chr(0), chr(0xC0), chr(0x40) ]
         True
@@ -317,7 +317,7 @@ class BitUnpacker(object):
         stop the generator, just reset the alignment and the width
 
 
-        >>> import lzw
+        >>> import peepdf.lzw
         >>> unpk = lzw.BitUnpacker(initial_code_size=258)
         >>> [ i for i in unpk.unpack([ chr(0), chr(0xC0), chr(0x40) ]) ]
         [1, 257]
@@ -403,7 +403,7 @@ class Decoder(object):
         be handled by the upstream codepoint generator (see
         L{BitUnpacker}, for example)
 
-        >>> import lzw
+        >>> import peepdf.lzw
         >>> dec = lzw.Decoder()
         >>> ''.join(dec.decode([103, 97, 98, 98, 97, 32, 258, 260, 262, 121, 111, 263, 259, 261, 256]))
         'gabba gabba yo gabba'
@@ -424,7 +424,7 @@ class Decoder(object):
         code. EOI codes should be handled by callers if they're
         present in our source stream.
 
-        >>> import lzw
+        >>> import peepdf.lzw
         >>> dec = lzw.Decoder()
         >>> beforesize = dec.code_size()
         >>> dec._decode_codepoint(0x80)
@@ -602,7 +602,7 @@ class PagingEncoder(object):
 
         The dual of PagingDecoder.decodepages
 
-        >>> import lzw
+        >>> import peepdf.lzw
         >>> enc = lzw.PagingEncoder(257, 2**12)
         >>> coded = enc.encodepages([ "say hammer yo hammer mc hammer go hammer", 
         ...                           "and the rest can go and play",
@@ -667,7 +667,7 @@ class PagingDecoder(object):
 
         BUG: Dangling trailing page on decompression.
 
-        >>> import lzw
+        >>> import peepdf.lzw
         >>> pgdec = lzw.PagingDecoder(initial_code_size=257)
         >>> pgdecoded = pgdec.decodepages(
         ...     ''.join([ '\\x80\\x1c\\xcc\\'\\x91\\x01\\xa0\\xc2m6',
@@ -765,7 +765,7 @@ def inttobits(anint, width=None):
     MSBs to the given width (but will NOT truncate overflowing
     results)
 
-    >>> import lzw
+    >>> import peepdf.lzw
     >>> lzw.inttobits(304, width=16)
     [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0]
 
@@ -792,7 +792,7 @@ def intfrombits(bits):
     encoded, MSB-first unsigned integer (with True == 1 and False
     == 0) and returns the result.
     
-    >>> import lzw
+    >>> import peepdf.lzw
     >>> lzw.intfrombits([ 1, 0, 0, 1, 1, 0, 0, 0, 0 ])
     304
     """
@@ -812,7 +812,7 @@ def bytestobits(bytesource):
     Breaks a given iterable of bytes into an iterable of boolean
     values representing those bytes as unsigned integers.
     
-    >>> import lzw
+    >>> import peepdf.lzw
     >>> [ x for x in lzw.bytestobits(b"\\x01\\x30") ]
     [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0]
     """
@@ -836,7 +836,7 @@ def bitstobytes(bits):
 
     Does *NOT* pack the returned values into a bytearray or the like.
 
-    >>> import lzw
+    >>> import peepdf.lzw
     >>> bitstobytes([0, 0, 0, 0, 0, 0, 0, 0, "Yes, I'm True"]) == [ 0x00, 0x80 ]
     True
     >>> bitstobytes([0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0]) == [ 0x01, 0x30 ]
