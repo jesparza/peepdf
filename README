@@ -8,13 +8,26 @@ http://twitter.com/peepdf
 
 - In order to analyse Javascript code "PyV8" is needed:
 
-    http://code.google.com/p/pyv8/
+    https://github.com/buffer/pyv8
+
+    git clone https://github.com/buffer/pyv8.git
+    cd pyv8
+    python setup.py build
+    sudo python setup.py install
+    cd ..
+    rm -rf pyv8
 
 
 - The "sctest" command is a wrapper of "sctest" (libemu). Besides libemu pylibemu is used and must be installed:
 
-    http://libemu.carnivore.it (latest version from git repository, Sourceforge package is outdated)
+    https://github.com/buffer/libemu
     https://github.com/buffer/pylibemu
+
+    git clone https://github.com/buffer/libemu.git
+    autoreconf -v -i
+    ./configure --prefix=/opt/libemu
+    sudo make install
+    sudo pip install pylibemu
 
 
 - To support XML output "lxml" is needed:

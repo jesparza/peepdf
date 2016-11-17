@@ -2,7 +2,7 @@ peepdf is a **Python tool to explore PDF files** in order to find out if the fil
 a security researcher could need in a PDF analysis without using 3 or 4 tools to make
 all the tasks. With peepdf it's possible to see all the objects in the document showing
 the suspicious elements, supports all the most used filters and encodings, it can parse different versions of a file, object streams and encrypted files. With the installation
-of [PyV8](https://code.google.com/p/pyv8) and [Pylibemu](https://github.com/buffer/pylibemu) it provides **Javascript and shellcode analysis** wrappers too. Apart of this it's able to create new PDF files and to modify/obfuscate existent ones.
+of [PyV8](https://github.com/buffer/pyv8) and [Pylibemu](https://github.com/buffer/pylibemu) it provides **Javascript and shellcode analysis** wrappers too. Apart of this it's able to create new PDF files and to modify/obfuscate existent ones.
 
 The main functionalities of peepdf are the following:
 
