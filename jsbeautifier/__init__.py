@@ -1,6 +1,7 @@
 import sys
 import getopt
 import re
+import jsbeautifier.unpackers as unpackers
 import string
 
 #
@@ -242,7 +243,6 @@ class Beautifier:
         return sweet_code
 
     def unpack(self, source, evalcode=False):
-        import jsbeautifier.unpackers as unpackers
         try:
             return unpackers.run(source, evalcode)
         except unpackers.UnpackingError as error:
