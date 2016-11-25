@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/jbremer/peepdf.png)](https://travis-ci.org/jbremer/peepdf)
+[![Linux Build Status](https://travis-ci.org/jbremer/peepdf.png)](https://travis-ci.org/jbremer/peepdf)
+[![Windows Build status](https://ci.appveyor.com/api/projects/status/bpa5ao97264oqe8f?svg=true)](https://ci.appveyor.com/project/jbremer/peepdf)
 [![Coverage Status](https://coveralls.io/repos/github/jbremer/peepdf/badge.svg)](https://coveralls.io/github/jbremer/peepdf)
 
 peepdf is a **Python tool to explore PDF files** in order to find out if the file can be harmful or not. The aim of this tool is to provide all the necessary components that

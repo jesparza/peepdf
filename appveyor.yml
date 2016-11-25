@@ -1,0 +1,14 @@
+environment:
+  matrix:
+    - PYTHON: "C:/Python27"
+
+install:
+  - "set PATH=%PYTHON%;%PYTHON%/Scripts;%PATH%"
+
+  - "python.exe setup.py develop"
+  - "pip.exe install pytest pytest-cov"
+
+build: false
+
+test_script:
+  - "pytest.exe --cov=peepdf"
