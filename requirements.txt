@@ -1,0 +1,4 @@
+jsbeautifier
+colorama
+git+https://github.com/serprex/pythonaes.git
+git+https://github.com/joeatwork/python-lzw.git

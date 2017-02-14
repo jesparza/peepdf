@@ -31,13 +31,13 @@ import sys
 import os
 import optparse
 import re
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import hashlib
 import traceback
 import json
 from datetime import datetime
-from PDFCore import PDFParser, vulnsDict
-from PDFUtils import vtcheck
+from .PDFCore import PDFParser, vulnsDict
+from .PDFUtils import vtcheck
 
 
 VT_KEY = 'fc90df3f5ac749a94a94cb8bf87e05a681a2eb001aef34b6a0084b8c22c97a64'
@@ -68,7 +68,7 @@ except:
 def getRepPaths(url, path=''):
     paths = []
     try:
-        browsingPage = urllib2.urlopen(url + path).read()
+        browsingPage = urllib.request.urlopen(url + path).read()
     except:
         sys.exit('[x] Connection error while getting browsing page "' + url + path + '"')
     browsingPageObject = json.loads(browsingPage)
@@ -83,14 +83,14 @@ def getRepPaths(url, path=''):
 
 def getLocalFilesInfo(filesList):
     localFilesInfo = {}
-    print '[-] Getting local files information...'
+    print('[-] Getting local files information...')
     for path in filesList:
         absFilePath = os.path.join(absPeepdfRoot, path)
         if os.path.exists(absFilePath):
             content = open(absFilePath, 'rb').read()
             shaHash = hashlib.sha256(content).hexdigest()
             localFilesInfo[path] = [shaHash, absFilePath]
-    print '[+] Done'
+    print('[+] Done')
     return localFilesInfo
 
 
@@ -214,7 +214,7 @@ def getPeepXML(statsDict, version, revision):
                 elementsList = etree.SubElement(suspicious, 'elements')
                 for element in elements:
                     elementInfo = etree.SubElement(elementsList, 'element', name=element)
-                    if vulnsDict.has_key(element):
+                    if element in vulnsDict:
                         vulnName = vulnsDict[element][0]
                         vulnCVEList = vulnsDict[element][1]
                         for vulnCVE in vulnCVEList:
@@ -226,7 +226,7 @@ def getPeepXML(statsDict, version, revision):
                 vulnsList = etree.SubElement(suspicious, 'js_vulns')
                 for vuln in vulns:
                     vulnInfo = etree.SubElement(vulnsList, 'vulnerable_function', name=vuln)
-                    if vulnsDict.has_key(vuln):
+                    if vuln in vulnsDict:
                         vulnName = vulnsDict[vuln][0]
                         vulnCVEList = vulnsDict[vuln][1]
                         for vulnCVE in vulnCVEList:
@@ -422,7 +422,7 @@ try:
         staticColor = Fore.BLUE
         resetColor = Style.RESET_ALL
     if options.version:
-        print peepdfHeader
+        print(peepdfHeader)
     elif options.update:
         updated = False
         newVersion = ''
@@ -430,9 +430,9 @@ try:
         reVersion = 'version = \'(\d\.\d)\'\s*?revision = \'(\d+)\''
         repURL = 'https://api.github.com/repos/jesparza/peepdf/contents/'
         rawRepURL = 'https://raw.githubusercontent.com/jesparza/peepdf/master/'
-        print '[-] Checking if there are new updates...'
+        print('[-] Checking if there are new updates...')
         try:
-            remotePeepContent = urllib2.urlopen(rawRepURL + 'peepdf.py').read()
+            remotePeepContent = urllib.request.urlopen(rawRepURL + 'peepdf.py').read()
         except:
             sys.exit('[x] Connection error while trying to connect with the repository')
         repVer = re.findall(reVersion, remotePeepContent)
@@ -441,17 +441,17 @@ try:
         else:
             sys.exit('[x] Error getting the version number from the repository')
         if localVersion == newVersion:
-            print '[+] No changes! ;)'
+            print('[+] No changes! ;)')
         else:
-            print '[+] There are new updates!!'
-            print '[-] Getting paths from the repository...'
+            print('[+] There are new updates!!')
+            print('[-] Getting paths from the repository...')
             pathNames = getRepPaths(repURL, '')
-            print '[+] Done'
+            print('[+] Done')
             localFilesInfo = getLocalFilesInfo(pathNames)
-            print '[-] Checking files...'
+            print('[-] Checking files...')
             for path in pathNames:
                 try:
-                    fileContent = urllib2.urlopen(rawRepURL + path).read()
+                    fileContent = urllib.request.urlopen(rawRepURL + path).read()
                 except:
                     sys.exit('[x] Connection error while getting file "' + path + '"')
                 if path in localFilesInfo:
@@ -460,7 +460,7 @@ try:
                     shaHash = hashlib.sha256(fileContent).hexdigest()
                     if shaHash != localFilesInfo[path][0]:
                         open(localFilesInfo[path][1], 'wb').write(fileContent)
-                        print '[+] File "' + path + '" updated successfully'
+                        print('[+] File "' + path + '" updated successfully')
                 else:
                     # File does not exist
                     index = path.rfind('/')
@@ -468,14 +468,14 @@ try:
                         dirsPath = path[:index]
                         absDirsPath = os.path.join(absPeepdfRoot, dirsPath)
                         if not os.path.exists(absDirsPath):
-                            print '[+] New directory "' + dirsPath + '" created successfully'
+                            print('[+] New directory "' + dirsPath + '" created successfully')
                             os.makedirs(absDirsPath)
                     open(os.path.join(absPeepdfRoot, path), 'wb').write(fileContent)
-                    print '[+] New file "' + path + '" created successfully'
+                    print('[+] New file "' + path + '" created successfully')
             message = '[+] peepdf updated successfully'
             if newVersion != '':
                 message += ' to ' + newVersion
-            print message
+            print(message)
 
     else:
         if len(args) == 1:
@@ -500,13 +500,13 @@ try:
                     pdf.addError(ret[1])
                 else:
                     vtJsonDict = ret[1]
-                    if vtJsonDict.has_key('response_code'):
+                    if 'response_code' in vtJsonDict:
                         if vtJsonDict['response_code'] == 1:
-                            if vtJsonDict.has_key('positives') and vtJsonDict.has_key('total'):
+                            if 'positives' in vtJsonDict and 'total' in vtJsonDict:
                                 pdf.setDetectionRate([vtJsonDict['positives'], vtJsonDict['total']])
                             else:
                                 pdf.addError('Missing elements in the response from VirusTotal!!')
-                            if vtJsonDict.has_key('permalink'):
+                            if 'permalink' in vtJsonDict:
                                 pdf.setDetectionReport(vtJsonDict['permalink'])
                         else:
                             pdf.setDetectionRate(None)
@@ -686,7 +686,7 @@ try:
                                              resetColor + str(actions[action]) + newLine
                             if vulns != None:
                                 for vuln in vulns:
-                                    if vulnsDict.has_key(vuln):
+                                    if vuln in vulnsDict:
                                         vulnName = vulnsDict[vuln][0]
                                         vulnCVEList = vulnsDict[vuln][1]
                                         stats += '\t\t' + beforeStaticLabel + vulnName + ' ('
@@ -698,7 +698,7 @@ try:
                                                  resetColor + str(vulns[vuln]) + newLine
                             if elements != None:
                                 for element in elements:
-                                    if vulnsDict.has_key(element):
+                                    if element in vulnsDict:
                                         vulnName = vulnsDict[element][0]
                                         vulnCVEList = vulnsDict[element][1]
                                         stats += '\t\t' + beforeStaticLabel + vulnName + ' ('
@@ -717,7 +717,7 @@ try:
                                 stats += '\t\t' + url + newLine
                         stats += newLine * 2
                 if fileName != None:
-                    print stats
+                    print(stats)
                 if options.isInteractive:
                     from PDFConsole import PDFConsole
 
@@ -729,7 +729,7 @@ try:
                             sys.exit()
                         except:
                             errorMessage = '*** Error: Exception not handled using the interactive console!! Please, report it to the author!!'
-                            print errorColor + errorMessage + resetColor + newLine
+                            print(errorColor + errorMessage + resetColor + newLine)
                             traceback.print_exc(file=open(errorsFile, 'a'))
 except Exception as e:
     if len(e.args) == 2:
@@ -739,7 +739,7 @@ except Exception as e:
     if excName == None or excName != 'PeepException':
         errorMessage = '*** Error: Exception not handled!!'
         traceback.print_exc(file=open(errorsFile, 'a'))
-    print errorColor + errorMessage + resetColor + newLine
+    print(errorColor + errorMessage + resetColor + newLine)
 finally:
     if os.path.exists(errorsFile):
         message = newLine + 'Please, don\'t forget to report the errors found:' + newLine * 2

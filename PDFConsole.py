@@ -34,12 +34,12 @@ import optparse
 import hashlib
 import jsbeautifier
 import traceback
-from PDFUtils import *
-from PDFCrypto import *
-from JSAnalysis import *
-from PDFCore import *
+from .PDFUtils import *
+from .PDFCrypto import *
+from .JSAnalysis import *
+from .PDFCore import *
 from base64 import b64encode, b64decode
-from PDFFilters import decodeStream, encodeStream
+from .PDFFilters import decodeStream, encodeStream
 from jjdecode import JJDecoder
 
 try:
@@ -66,7 +66,7 @@ try:
 except:
     RL_PROMPT_START_IGNORE = RL_PROMPT_END_IGNORE = ''
 
-# File and variable redirections 
+# File and variable redirections
 FILE_WRITE = 1
 FILE_ADD = 2
 VAR_WRITE = 3
@@ -144,7 +144,7 @@ class PDFConsole(cmd.Cmd):
 
     def postloop(self):
         if self.use_rawinput:
-            print newLine + 'Leaving the Peepdf interactive console...Bye! ;)' + newLine
+            print(newLine + 'Leaving the Peepdf interactive console...Bye! ;)' + newLine)
         self.leaving = True
 
     def do_bytes(self, argv):
@@ -177,8 +177,8 @@ class PDFConsole(cmd.Cmd):
             self.help_bytes()
 
     def help_bytes(self):
-        print newLine + 'Usage: bytes $offset $num_bytes [$file]'
-        print newLine + 'Shows or stores in the specified file $num_bytes of the file beginning from $offset' + newLine
+        print(newLine + 'Usage: bytes $offset $num_bytes [$file]')
+        print(newLine + 'Shows or stores in the specified file $num_bytes of the file beginning from $offset' + newLine)
 
     def do_changelog(self, argv):
         if self.pdfFile is None:
@@ -213,13 +213,13 @@ class PDFConsole(cmd.Cmd):
             return False
         # Getting information about original document
         data = self.pdfFile.getBasicMetadata(0)
-        if data.has_key('author'):
+        if 'author' in data:
             output += '\tAuthor: ' + data['author'] + newLine
-        if data.has_key('creator'):
+        if 'creator' in data:
             output += '\tCreator: ' + data['creator'] + newLine
-        if data.has_key('producer'):
+        if 'producer' in data:
             output += '\tProducer: ' + data['producer'] + newLine
-        if data.has_key('creation'):
+        if 'creation' in data:
             output += '\tCreation date: ' + data['creation'] + newLine
         if output != '':
             output = 'Original document information:' + newLine + output + newLine
@@ -234,13 +234,13 @@ class PDFConsole(cmd.Cmd):
                 output += 'Changes in version ' + str(i + 1) + ':' + newLine
             # Getting modification information
             data = self.pdfFile.getBasicMetadata(i + 1)
-            if data.has_key('author'):
+            if 'author' in data:
                 output += '\tAuthor: ' + data['author'] + newLine
-            if data.has_key('creator'):
+            if 'creator' in data:
                 output += '\tCreator: ' + data['creator'] + newLine
-            if data.has_key('producer'):
+            if 'producer' in data:
                 output += '\tProducer: ' + data['producer'] + newLine
-            if data.has_key('modification'):
+            if 'modification' in data:
                 output += '\tModification date: ' + data['modification'] + newLine
             addedObjects = changelog[0]
             modifiedObjects = changelog[1]
@@ -258,8 +258,8 @@ class PDFConsole(cmd.Cmd):
         self.log_output('changelog ' + argv, output)
 
     def help_changelog(self):
-        print newLine + 'Usage: changelog [$version]'
-        print newLine + 'Shows the changelog of the document or version of the document' + newLine
+        print(newLine + 'Usage: changelog [$version]')
+        print(newLine + 'Shows the changelog of the document or version of the document' + newLine)
 
     def do_create(self, argv):
         message = ''
@@ -299,7 +299,7 @@ class PDFConsole(cmd.Cmd):
                         content = open(jsFile, 'rb').read()
                     else:
                         if self.use_rawinput:
-                            content = raw_input(
+                            content = input(
                                 newLine + 'Please, specify the Javascript code you want to include in the file (if the code includes EOL characters use a js_file instead):' + newLine * 2)
                         else:
                             message = '*** Error: You must specify a Javascript file in batch mode!!'
@@ -340,7 +340,7 @@ class PDFConsole(cmd.Cmd):
                     return False
             warning = 'Warning: stream objects cannot be compressed. If the Catalog object is compressed could lead to corrupted files for Adobe Reader!!'
             if self.use_rawinput:
-                res = raw_input(
+                res = input(
                     warning + newLine + 'Which objects do you want to compress? (Valid respones: all | 1-5 | 1,2,5,7,8) ')
             else:
                 res = 'all'
@@ -348,7 +348,7 @@ class PDFConsole(cmd.Cmd):
                 objects = []
             elif res.count('-') == 1:
                 limits = res.split('-')
-                objects = range(int(limits[0]), int(limits[1]) + 1)
+                objects = list(range(int(limits[0]), int(limits[1]) + 1))
             elif res.find(',') != -1:
                 objects = [int(id) for id in res.split(',')]
             elif res.isdigit():
@@ -378,10 +378,10 @@ class PDFConsole(cmd.Cmd):
             self.log_output('create ' + argv, message)
 
     def help_create(self):
-        print newLine + 'Usage: create pdf simple|(open_action_js [$js_file])'
-        print newLine + 'Creates a new simple PDF file or one with Javascript code to be executed when opening the file. It\'s possible to specify the file where the Javascript code is stored or do it manually.' + newLine * 2
-        print 'Usage: create object_stream [$version]' + newLine
-        print 'Creates an object stream choosing the objects to be compressed.' + newLine
+        print(newLine + 'Usage: create pdf simple|(open_action_js [$js_file])')
+        print(newLine + 'Creates a new simple PDF file or one with Javascript code to be executed when opening the file. It\'s possible to specify the file where the Javascript code is stored or do it manually.' + newLine * 2)
+        print('Usage: create object_stream [$version]' + newLine)
+        print('Creates an object stream choosing the objects to be compressed.' + newLine)
 
     def do_decode(self, argv):
         decodedContent = ''
@@ -423,7 +423,7 @@ class PDFConsole(cmd.Cmd):
                 size = int(args[1])
             for i in range(iniFilterArgs, len(args)):
                 filter = args[i].lower()
-                if filter not in filter2RealFilterDict.keys():
+                if filter not in list(filter2RealFilterDict.keys()):
                     self.help_decode()
                     return False
                 if filter in notImplementedFilters:
@@ -436,7 +436,7 @@ class PDFConsole(cmd.Cmd):
             return False
 
         if type == 'variable':
-            if not self.variables.has_key(src):
+            if src not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('decode ' + argv, message)
                 return False
@@ -481,21 +481,21 @@ class PDFConsole(cmd.Cmd):
         self.log_output('decode ' + argv, decodedContent, [decodedContent], bytesOutput=True)
 
     def help_decode(self):
-        print newLine + 'Usage: decode variable $var_name $filter1 [$filter2 ...]'
-        print 'Usage: decode file $file_name $filter1 [$filter2 ...]'
-        print 'Usage: decode raw $offset $num_bytes $filter1 [$filter2 ...]'
-        print 'Usage: decode string $encoded_string $filter1 [$filter2 ...]' + newLine
-        print 'Decodes the content of the specified variable, file or raw bytes using the following filters or algorithms:'
-        print '\tbase64,b64: Base64'
-        print '\tasciihex,ahx: /ASCIIHexDecode'
-        print '\tascii85,a85: /ASCII85Decode'
-        print '\tlzw: /LZWDecode'
-        print '\tflatedecode,fl: /FlateDecode'
-        print '\trunlength,rl: /RunLengthDecode'
-        print '\tccittfax,ccf: /CCITTFaxDecode'
-        print '\tjbig2: /JBIG2Decode (Not implemented)'
-        print '\tdct: /DCTDecode (Not implemented)'
-        print '\tjpx: /JPXDecode (Not implemented)' + newLine
+        print(newLine + 'Usage: decode variable $var_name $filter1 [$filter2 ...]')
+        print('Usage: decode file $file_name $filter1 [$filter2 ...]')
+        print('Usage: decode raw $offset $num_bytes $filter1 [$filter2 ...]')
+        print('Usage: decode string $encoded_string $filter1 [$filter2 ...]' + newLine)
+        print('Decodes the content of the specified variable, file or raw bytes using the following filters or algorithms:')
+        print('\tbase64,b64: Base64')
+        print('\tasciihex,ahx: /ASCIIHexDecode')
+        print('\tascii85,a85: /ASCII85Decode')
+        print('\tlzw: /LZWDecode')
+        print('\tflatedecode,fl: /FlateDecode')
+        print('\trunlength,rl: /RunLengthDecode')
+        print('\tccittfax,ccf: /CCITTFaxDecode')
+        print('\tjbig2: /JBIG2Decode (Not implemented)')
+        print('\tdct: /DCTDecode (Not implemented)')
+        print('\tjpx: /JPXDecode (Not implemented)' + newLine)
 
     def do_decrypt(self, argv):
         if self.pdfFile is None:
@@ -521,8 +521,8 @@ class PDFConsole(cmd.Cmd):
         self.log_output('decrypt ' + argv, message)
 
     def help_decrypt(self):
-        print newLine + 'Usage: decrypt $password'
-        print newLine + 'Decrypts the file with the specified password' + newLine
+        print(newLine + 'Usage: decrypt $password')
+        print(newLine + 'Decrypts the file with the specified password' + newLine)
 
     def do_embed(self, argv):
         fileType = 'application#2Fpdf'
@@ -783,10 +783,10 @@ class PDFConsole(cmd.Cmd):
         self.log_output('open ' + argv, message)
 
     def help_embed(self):
-        print newLine + 'Usage: embed [-x] $filename [$file_type]'
-        print newLine + 'Embeds the specified file in the actual PDF file. The default type is "application/pdf".' + newLine
-        print 'Options:'
-        print '\t-x: The file is executed when the actual PDF file is opened' + newLine
+        print(newLine + 'Usage: embed [-x] $filename [$file_type]')
+        print(newLine + 'Embeds the specified file in the actual PDF file. The default type is "application/pdf".' + newLine)
+        print('Options:')
+        print('\t-x: The file is executed when the actual PDF file is opened' + newLine)
 
     def do_encode(self, argv):
         encodedContent = ''
@@ -828,7 +828,7 @@ class PDFConsole(cmd.Cmd):
                 size = int(args[1])
             for i in range(iniFilterArgs, len(args)):
                 filter = args[i].lower()
-                if filter not in filter2RealFilterDict.keys():
+                if filter not in list(filter2RealFilterDict.keys()):
                     self.help_encode()
                     return False
                 if filter in notImplementedFilters:
@@ -841,7 +841,7 @@ class PDFConsole(cmd.Cmd):
             return False
 
         if type == 'variable':
-            if not self.variables.has_key(src):
+            if src not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('encode ' + argv, message)
                 return False
@@ -881,21 +881,21 @@ class PDFConsole(cmd.Cmd):
         self.log_output('encode ' + argv, encodedContent, [encodedContent], bytesOutput=True)
 
     def help_encode(self):
-        print newLine + 'Usage: encode variable $var_name $filter1 [$filter2 ...]'
-        print 'Usage: encode file $file_name $filter1 [$filter2 ...]'
-        print 'Usage: encode raw $offset $num_bytes $filter1 [$filter2 ...]'
-        print 'Usage: encode string $my_string $filter1 [$filter2 ...]' + newLine
-        print 'Encodes the content of the specified variable, file or raw bytes using the following filters or algorithms:'
-        print '\tbase64,b64: Base64'
-        print '\tasciihex,ahx: /ASCIIHexDecode'
-        print '\tascii85,a85: /ASCII85Decode (Not implemented)'
-        print '\tlzw: /LZWDecode'
-        print '\tflatedecode,fl: /FlateDecode'
-        print '\trunlength,rl: /RunLengthDecode (Not implemented)'
-        print '\tccittfax,ccf: /CCITTFaxDecode (Not implemented)'
-        print '\tjbig2: /JBIG2Decode (Not implemented)'
-        print '\tdct: /DCTDecode (Not implemented)'
-        print '\tjpx: /JPXDecode (Not implemented)' + newLine
+        print(newLine + 'Usage: encode variable $var_name $filter1 [$filter2 ...]')
+        print('Usage: encode file $file_name $filter1 [$filter2 ...]')
+        print('Usage: encode raw $offset $num_bytes $filter1 [$filter2 ...]')
+        print('Usage: encode string $my_string $filter1 [$filter2 ...]' + newLine)
+        print('Encodes the content of the specified variable, file or raw bytes using the following filters or algorithms:')
+        print('\tbase64,b64: Base64')
+        print('\tasciihex,ahx: /ASCIIHexDecode')
+        print('\tascii85,a85: /ASCII85Decode (Not implemented)')
+        print('\tlzw: /LZWDecode')
+        print('\tflatedecode,fl: /FlateDecode')
+        print('\trunlength,rl: /RunLengthDecode (Not implemented)')
+        print('\tccittfax,ccf: /CCITTFaxDecode (Not implemented)')
+        print('\tjbig2: /JBIG2Decode (Not implemented)')
+        print('\tdct: /DCTDecode (Not implemented)')
+        print('\tjpx: /JPXDecode (Not implemented)' + newLine)
 
     def do_encode_strings(self, argv):
         if self.pdfFile is None:
@@ -975,8 +975,8 @@ class PDFConsole(cmd.Cmd):
         self.log_output('encode_strings ' + argv, message)
 
     def help_encode_strings(self):
-        print newLine + 'Usage: encode_strings [$object_id|trailer [$version]]'
-        print newLine + 'Encodes the strings and names included in the file, object or trailer' + newLine
+        print(newLine + 'Usage: encode_strings [$object_id|trailer [$version]]')
+        print(newLine + 'Encodes the strings and names included in the file, object or trailer' + newLine)
 
     def do_encrypt(self, argv):
         if self.pdfFile is None:
@@ -1004,8 +1004,8 @@ class PDFConsole(cmd.Cmd):
         self.log_output('encrypt ' + argv, message)
 
     def help_encrypt(self):
-        print newLine + 'Usage: encrypt [$password]'
-        print newLine + 'Encrypts the file with the default or specified password' + newLine
+        print(newLine + 'Usage: encrypt [$password]')
+        print(newLine + 'Encrypts the file with the default or specified password' + newLine)
 
     def do_errors(self, argv):
         if self.pdfFile is None:
@@ -1090,15 +1090,15 @@ class PDFConsole(cmd.Cmd):
         self.log_output('errors ' + argv, errors)
 
     def help_errors(self):
-        print newLine + 'Usage: errors [$object_id|xref|trailer [$version]]'
-        print newLine + 'Shows the errors of the file or object (object_id, xref, trailer)' + newLine
+        print(newLine + 'Usage: errors [$object_id|xref|trailer [$version]]')
+        print(newLine + 'Shows the errors of the file or object (object_id, xref, trailer)' + newLine)
 
     def do_exit(self, argv):
         return True
 
     def help_exit(self):
-        print newLine + 'Usage: exit'
-        print newLine + 'Exits from the console' + newLine
+        print(newLine + 'Usage: exit')
+        print(newLine + 'Exits from the console' + newLine)
 
     def do_extract(self, argv):
         validTypes = ['uri', 'js']
@@ -1152,8 +1152,8 @@ class PDFConsole(cmd.Cmd):
         self.log_output('extract ' + argv, output)
 
     def help_extract(self):
-        print newLine + 'Usage: extract uri|js [$version]'
-        print newLine + 'Extracts all the given type elements of the specified version after being decoded and decrypted (if necessary)' + newLine
+        print(newLine + 'Usage: extract uri|js [$version]')
+        print(newLine + 'Extracts all the given type elements of the specified version after being decoded and decrypted (if necessary)' + newLine)
 
 
     def do_filters(self, argv):
@@ -1183,7 +1183,7 @@ class PDFConsole(cmd.Cmd):
                 iniFilterArgs = 2
             else:
                 version = None
-            validFilters = filter2RealFilterDict.keys() + ['none']
+            validFilters = list(filter2RealFilterDict.keys()) + ['none']
             validFilters.remove('b64')
             validFilters.remove('base64')
             for i in range(iniFilterArgs, len(args)):
@@ -1273,18 +1273,18 @@ class PDFConsole(cmd.Cmd):
         self.log_output('filters ' + argv, message + value, [value], bytesOutput=True)
 
     def help_filters(self):
-        print newLine + 'Usage: filters $object_id [$version] [$filter1 [$filter2 ...]]'
-        print newLine + 'Shows the filters found in the stream object or set the filters in the object (first filter is used first). The valid values for filters are the following:'
-        print '\tnone: No filters'
-        print '\tasciihex,ahx: /ASCIIHexDecode'
-        print '\tascii85,a85: /ASCII85Decode (Not implemented)'
-        print '\tlzw: /LZWDecode'
-        print '\tflatedecode,fl: /FlateDecode'
-        print '\trunlength,rl: /RunLengthDecode (Not implemented)'
-        print '\tccittfax,ccf: /CCITTFaxDecode (Not implemented)'
-        print '\tjbig2: /JBIG2Decode (Not implemented)'
-        print '\tdct: /DCTDecode (Not implemented)'
-        print '\tjpx: /JPXDecode (Not implemented)' + newLine
+        print(newLine + 'Usage: filters $object_id [$version] [$filter1 [$filter2 ...]]')
+        print(newLine + 'Shows the filters found in the stream object or set the filters in the object (first filter is used first). The valid values for filters are the following:')
+        print('\tnone: No filters')
+        print('\tasciihex,ahx: /ASCIIHexDecode')
+        print('\tascii85,a85: /ASCII85Decode (Not implemented)')
+        print('\tlzw: /LZWDecode')
+        print('\tflatedecode,fl: /FlateDecode')
+        print('\trunlength,rl: /RunLengthDecode (Not implemented)')
+        print('\tccittfax,ccf: /CCITTFaxDecode (Not implemented)')
+        print('\tjbig2: /JBIG2Decode (Not implemented)')
+        print('\tdct: /DCTDecode (Not implemented)')
+        print('\tjpx: /JPXDecode (Not implemented)' + newLine)
 
     def do_hash(self, argv):
         content = ''
@@ -1323,7 +1323,7 @@ class PDFConsole(cmd.Cmd):
             self.help_hash()
             return False
         if type == 'variable':
-            if not self.variables.has_key(srcName):
+            if srcName not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('hash ' + argv, message)
                 return False
@@ -1392,16 +1392,16 @@ class PDFConsole(cmd.Cmd):
         self.log_output('hash ' + argv, output)
 
     def help_hash(self):
-        print newLine + 'Usage: hash object|rawobject|stream|rawstream $object_id [$version]'
-        print 'Usage: hash raw $offset $num_bytes'
-        print 'Usage: hash file $file_name'
-        print 'Usage: hash variable $var_name'
-        print 'Usage: hash string $my_string'
-        print newLine + 'Generates the hash (MD5/SHA1/SHA256) of the specified source: raw bytes of the file, objects and streams, and the content of files or variables' + newLine
+        print(newLine + 'Usage: hash object|rawobject|stream|rawstream $object_id [$version]')
+        print('Usage: hash raw $offset $num_bytes')
+        print('Usage: hash file $file_name')
+        print('Usage: hash variable $var_name')
+        print('Usage: hash string $my_string')
+        print(newLine + 'Generates the hash (MD5/SHA1/SHA256) of the specified source: raw bytes of the file, objects and streams, and the content of files or variables' + newLine)
 
     def help_help(self):
-        print newLine + 'Usage: help [$command]'
-        print newLine + 'Shows the available commands or the usage of the specified command' + newLine
+        print(newLine + 'Usage: help [$command]')
+        print(newLine + 'Shows the available commands or the usage of the specified command' + newLine)
 
     def do_info(self, argv):
         if self.pdfFile is None:
@@ -1522,7 +1522,7 @@ class PDFConsole(cmd.Cmd):
                                      self.resetColor + str(actions[action]) + newLine
                     if vulns is not None:
                         for vuln in vulns:
-                            if vulnsDict.has_key(vuln):
+                            if vuln in vulnsDict:
                                 vulnName = vulnsDict[vuln][0]
                                 vulnCVEList = vulnsDict[vuln][1]
                                 stats += '\t\t' + beforeStaticLabel + vulnName + ' ('
@@ -1535,7 +1535,7 @@ class PDFConsole(cmd.Cmd):
                                          self.resetColor + str(vulns[vuln]) + newLine
                     if elements is not None:
                         for element in elements:
-                            if vulnsDict.has_key(element):
+                            if element in vulnsDict:
                                 vulnName = vulnsDict[element][0]
                                 vulnCVEList = vulnsDict[element][1]
                                 stats += '\t\t' + beforeStaticLabel + vulnName + ' ('
@@ -1586,7 +1586,7 @@ class PDFConsole(cmd.Cmd):
             if xrefArray[1] is not None:
                 statsStream = xrefArray[1].getStats()
                 for key in statsStream:
-                    if not statsDict.has_key(key):
+                    if key not in statsDict:
                         statsDict[key] = statsStream[key]
             if statsDict['Offset'] is not None:
                 stats += beforeStaticLabel + 'Offset: ' + self.resetColor + statsDict['Offset'] + newLine
@@ -1619,7 +1619,7 @@ class PDFConsole(cmd.Cmd):
             if trailerArray[1] is not None:
                 statsStream = trailerArray[1].getStats()
                 for key in statsStream:
-                    if not statsDict.has_key(key):
+                    if key not in statsDict:
                         statsDict[key] = statsStream[key]
             if statsDict['Offset'] is not None:
                 stats += beforeStaticLabel + 'Offset: ' + self.resetColor + statsDict['Offset'] + newLine
@@ -1710,8 +1710,8 @@ class PDFConsole(cmd.Cmd):
         self.log_output('info ' + argv, stats)
 
     def help_info(self):
-        print newLine + 'Usage: info [$object_id|xref|trailer [$version]]'
-        print newLine + 'Shows information of the file or object ($object_id, xref, trailer)' + newLine
+        print(newLine + 'Usage: info [$object_id|xref|trailer [$version]]')
+        print(newLine + 'Shows information of the file or object ($object_id, xref, trailer)' + newLine)
 
     def do_js_analyse(self, argv):
         content = ''
@@ -1738,7 +1738,7 @@ class PDFConsole(cmd.Cmd):
             self.help_js_analyse()
             return False
         if type == 'variable':
-            if not self.variables.has_key(src):
+            if src not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('js_analyse ' + argv, message)
                 return False
@@ -1746,13 +1746,13 @@ class PDFConsole(cmd.Cmd):
                 content = self.variables[src][0]
                 if not isJavascript(content):
                     if self.use_rawinput:
-                        res = raw_input('The variable may not contain Javascript code, do you want to continue? (y/n) ')
+                        res = input('The variable may not contain Javascript code, do you want to continue? (y/n) ')
                         if res.lower() == 'n':
                             message = '*** Error: The variable does not contain Javascript code!!'
                             self.log_output('js_analyse ' + argv, message)
                             return False
                     else:
-                        print 'Warning: the object may not contain Javascript code...' + newLine
+                        print('Warning: the object may not contain Javascript code...' + newLine)
         elif type == 'file':
             if not os.path.exists(src):
                 message = '*** Error: The file does not exist!!'
@@ -1762,13 +1762,13 @@ class PDFConsole(cmd.Cmd):
                 content = open(src, 'rb').read()
                 if not isJavascript(content):
                     if self.use_rawinput:
-                        res = raw_input('The file may not contain Javascript code, do you want to continue? (y/n) ')
+                        res = input('The file may not contain Javascript code, do you want to continue? (y/n) ')
                         if res.lower() == 'n':
                             message = '*** Error: The file does not contain Javascript code!!'
                             self.log_output('js_analyse ' + argv, message)
                             return False
                     else:
-                        print 'Warning: the object may not contain Javascript code...' + newLine
+                        print('Warning: the object may not contain Javascript code...' + newLine)
         elif type == 'object':
             if self.pdfFile is None:
                 message = '*** Error: You must open a file!!'
@@ -1790,13 +1790,13 @@ class PDFConsole(cmd.Cmd):
                     content = object.getJSCode()[0]
                 else:
                     if self.use_rawinput:
-                        res = raw_input('The object may not contain Javascript code, do you want to continue? (y/n) ')
+                        res = input('The object may not contain Javascript code, do you want to continue? (y/n) ')
                         if res.lower() == 'n':
                             message = '*** Error: The object does not contain Javascript code!!'
                             self.log_output('js_analyse ' + argv, message)
                             return False
                     else:
-                        print 'Warning: the object may not contain Javascript code...' + newLine
+                        print('Warning: the object may not contain Javascript code...' + newLine)
                     objectType = object.getType()
                     if objectType == 'stream':
                         content = object.getStream()
@@ -1852,11 +1852,11 @@ class PDFConsole(cmd.Cmd):
         self.log_output('js_analyse ' + argv, jsanalyseOutput, unescapedBytes)
 
     def help_js_analyse(self):
-        print newLine + 'Usage: js_analyse variable $var_name'
-        print 'Usage: js_analyse file $file_name'
-        print 'Usage: js_analyse object $object_id [$version]'
-        print 'Usage: js_analyse string $javascript_code'
-        print newLine + 'Analyses the Javascript code stored in the specified string, variable, file or object' + newLine
+        print(newLine + 'Usage: js_analyse variable $var_name')
+        print('Usage: js_analyse file $file_name')
+        print('Usage: js_analyse object $object_id [$version]')
+        print('Usage: js_analyse string $javascript_code')
+        print(newLine + 'Analyses the Javascript code stored in the specified string, variable, file or object' + newLine)
 
     def do_js_beautify(self, argv):
         content = ''
@@ -1880,7 +1880,7 @@ class PDFConsole(cmd.Cmd):
             self.help_js_beautify()
             return False
         if type == 'variable':
-            if not self.variables.has_key(src):
+            if src not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('js_beautify ' + argv, message)
                 return False
@@ -1888,13 +1888,13 @@ class PDFConsole(cmd.Cmd):
                 content = self.variables[src][0]
                 if not isJavascript(content):
                     if self.use_rawinput:
-                        res = raw_input('The variable may not contain Javascript code, do you want to continue? (y/n) ')
+                        res = input('The variable may not contain Javascript code, do you want to continue? (y/n) ')
                         if res.lower() == 'n':
                             message = '*** Error: The variable does not contain Javascript code!!'
                             self.log_output('js_beautify ' + argv, message)
                             return False
                     else:
-                        print 'Warning: the object may not contain Javascript code...' + newLine
+                        print('Warning: the object may not contain Javascript code...' + newLine)
         elif type == 'file':
             if not os.path.exists(src):
                 message = '*** Error: The file does not exist!!'
@@ -1904,13 +1904,13 @@ class PDFConsole(cmd.Cmd):
                 content = open(src, 'rb').read()
                 if not isJavascript(content):
                     if self.use_rawinput:
-                        res = raw_input('The file may not contain Javascript code, do you want to continue? (y/n) ')
+                        res = input('The file may not contain Javascript code, do you want to continue? (y/n) ')
                         if res.lower() == 'n':
                             message = '*** Error: The file does not contain Javascript code!!'
                             self.log_output('js_beautify ' + argv, message)
                             return False
                     else:
-                        print 'Warning: the object may not contain Javascript code...' + newLine
+                        print('Warning: the object may not contain Javascript code...' + newLine)
         elif type == 'string':
             content = src
         else:
@@ -1934,13 +1934,13 @@ class PDFConsole(cmd.Cmd):
                     content = object.getJSCode()[0]
                 else:
                     if self.use_rawinput:
-                        res = raw_input('The object may not contain Javascript code, do you want to continue? (y/n) ')
+                        res = input('The object may not contain Javascript code, do you want to continue? (y/n) ')
                         if res.lower() == 'n':
                             message = '*** Error: The object does not contain Javascript code!!'
                             self.log_output('js_beautify ' + argv, message)
                             return False
                     else:
-                        print 'Warning: the object may not contain Javascript code...' + newLine
+                        print('Warning: the object may not contain Javascript code...' + newLine)
                     objectType = object.getType()
                     if objectType == 'stream':
                         content = object.getStream()
@@ -1967,11 +1967,11 @@ class PDFConsole(cmd.Cmd):
         self.log_output('js_beautify ' + argv, beautyContent)
 
     def help_js_beautify(self):
-        print newLine + 'Usage: js_beautify variable $var_name'
-        print 'Usage: js_beautify file $file_name'
-        print 'Usage: js_beautify object $object_id [$version]'
-        print 'Usage: js_beautify string $javascript_code [$version]'
-        print newLine + 'Beautifies the Javascript code stored in the specified variable, file or object' + newLine
+        print(newLine + 'Usage: js_beautify variable $var_name')
+        print('Usage: js_beautify file $file_name')
+        print('Usage: js_beautify object $object_id [$version]')
+        print('Usage: js_beautify string $javascript_code [$version]')
+        print(newLine + 'Beautifies the Javascript code stored in the specified variable, file or object' + newLine)
 
     def do_js_code(self, argv):
         if self.pdfFile is None:
@@ -2011,7 +2011,7 @@ class PDFConsole(cmd.Cmd):
             jsCode = object.getJSCode()
             if len(jsCode) > 1:
                 if self.use_rawinput:
-                    res = raw_input(
+                    res = input(
                         newLine + 'There are more than one Javascript code, do you want to see all (1) or just the last one (2)? ')
                 else:
                     res = '1'
@@ -2034,8 +2034,8 @@ class PDFConsole(cmd.Cmd):
             self.log_output('js_code ' + argv, message)
 
     def help_js_code(self):
-        print newLine + 'Usage: js_code $object_id [$version]'
-        print newLine + 'Shows the Javascript code found in the object' + newLine
+        print(newLine + 'Usage: js_code $object_id [$version]')
+        print(newLine + 'Shows the Javascript code found in the object' + newLine)
 
     def do_js_eval(self, argv):
         error = ''
@@ -2063,7 +2063,7 @@ class PDFConsole(cmd.Cmd):
             self.help_js_eval()
             return False
         if type == 'variable':
-            if not self.variables.has_key(src):
+            if src not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('js_eval ' + argv, message)
                 return False
@@ -2071,13 +2071,13 @@ class PDFConsole(cmd.Cmd):
                 content = self.variables[src][0]
                 if not isJavascript(content):
                     if self.use_rawinput:
-                        res = raw_input('The variable may not contain Javascript code, do you want to continue? (y/n) ')
+                        res = input('The variable may not contain Javascript code, do you want to continue? (y/n) ')
                         if res.lower() == 'n':
                             message = '*** Error: The variable does not contain Javascript code!!'
                             self.log_output('js_eval ' + argv, message)
                             return False
                     else:
-                        print 'Warning: the object may not contain Javascript code...' + newLine
+                        print('Warning: the object may not contain Javascript code...' + newLine)
         elif type == 'file':
             if not os.path.exists(src):
                 message = '*** Error: The file does not exist!!'
@@ -2087,13 +2087,13 @@ class PDFConsole(cmd.Cmd):
                 content = open(src, 'rb').read()
                 if not isJavascript(content):
                     if self.use_rawinput:
-                        res = raw_input('The file may not contain Javascript code, do you want to continue? (y/n) ')
+                        res = input('The file may not contain Javascript code, do you want to continue? (y/n) ')
                         if res.lower() == 'n':
                             message = '*** Error: The file does not contain Javascript code!!'
                             self.log_output('js_eval ' + argv, message)
                             return False
                     else:
-                        print 'Warning: the object may not contain Javascript code...' + newLine
+                        print('Warning: the object may not contain Javascript code...' + newLine)
         elif type == 'object':
             if self.pdfFile is None:
                 message = '*** Error: You must open a file!!'
@@ -2115,13 +2115,13 @@ class PDFConsole(cmd.Cmd):
                     content = object.getJSCode()[0]
                 else:
                     if self.use_rawinput:
-                        res = raw_input('The object may not contain Javascript code, do you want to continue? (y/n) ')
+                        res = input('The object may not contain Javascript code, do you want to continue? (y/n) ')
                         if res.lower() == 'n':
                             message = '*** Error: The object does not contain Javascript code!!'
                             self.log_output('js_eval ' + argv, message)
                             return False
                     else:
-                        print 'Warning: the object may not contain Javascript code...' + newLine
+                        print('Warning: the object may not contain Javascript code...' + newLine)
                     objectType = object.getType()
                     if objectType == 'stream':
                         content = object.getStream()
@@ -2170,11 +2170,11 @@ class PDFConsole(cmd.Cmd):
             self.log_output('js_eval ' + argv, '*** Error: ' + error)
 
     def help_js_eval(self):
-        print newLine + 'Usage: js_eval variable $var_name'
-        print 'Usage: js_eval file $file_name'
-        print 'Usage: js_eval object $object_id [$version]'
-        print 'Usage: js_eval string $javascript_code'
-        print newLine + 'Evaluates the Javascript code stored in the specified variable, file, object or raw code in a global context' + newLine
+        print(newLine + 'Usage: js_eval variable $var_name')
+        print('Usage: js_eval file $file_name')
+        print('Usage: js_eval object $object_id [$version]')
+        print('Usage: js_eval string $javascript_code')
+        print(newLine + 'Evaluates the Javascript code stored in the specified variable, file, object or raw code in a global context' + newLine)
 
     def do_js_jjdecode(self, argv):
         content = ''
@@ -2198,7 +2198,7 @@ class PDFConsole(cmd.Cmd):
             self.help_js_jjdecode()
             return False
         if type == 'variable':
-            if not self.variables.has_key(src):
+            if src not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('js_jjdecode ' + argv, message)
                 return False
@@ -2206,13 +2206,13 @@ class PDFConsole(cmd.Cmd):
                 content = self.variables[src][0]
                 if not isJavascript(content):
                     if self.use_rawinput:
-                        res = raw_input('The variable may not contain Javascript code, do you want to continue? (y/n) ')
+                        res = input('The variable may not contain Javascript code, do you want to continue? (y/n) ')
                         if res.lower() == 'n':
                             message = '*** Error: The variable does not contain Javascript code!!'
                             self.log_output('js_jjdecode ' + argv, message)
                             return False
                     else:
-                        print 'Warning: the object may not contain Javascript code...' + newLine
+                        print('Warning: the object may not contain Javascript code...' + newLine)
         elif type == 'file':
             if not os.path.exists(src):
                 message = '*** Error: The file does not exist!!'
@@ -2222,13 +2222,13 @@ class PDFConsole(cmd.Cmd):
                 content = open(src, 'rb').read()
                 if not isJavascript(content):
                     if self.use_rawinput:
-                        res = raw_input('The file may not contain Javascript code, do you want to continue? (y/n) ')
+                        res = input('The file may not contain Javascript code, do you want to continue? (y/n) ')
                         if res.lower() == 'n':
                             message = '*** Error: The file does not contain Javascript code!!'
                             self.log_output('js_jjdecode ' + argv, message)
                             return False
                     else:
-                        print 'Warning: the object may not contain Javascript code...' + newLine
+                        print('Warning: the object may not contain Javascript code...' + newLine)
         elif type == 'string':
             content = src
         else:
@@ -2252,13 +2252,13 @@ class PDFConsole(cmd.Cmd):
                     content = object.getJSCode()[0]
                 else:
                     if self.use_rawinput:
-                        res = raw_input('The object may not contain Javascript code, do you want to continue? (y/n) ')
+                        res = input('The object may not contain Javascript code, do you want to continue? (y/n) ')
                         if res.lower() == 'n':
                             message = '*** Error: The object does not contain Javascript code!!'
                             self.log_output('js_jjdecode ' + argv, message)
                             return False
                     else:
-                        print 'Warning: the object may not contain Javascript code...' + newLine
+                        print('Warning: the object may not contain Javascript code...' + newLine)
                     objectType = object.getType()
                     if objectType == 'stream':
                         content = object.getStream()
@@ -2304,11 +2304,11 @@ class PDFConsole(cmd.Cmd):
         self.log_output('js_jjdecode ' + argv, decodedContent)
 
     def help_js_jjdecode(self):
-        print newLine + 'Usage: js_jjdecode variable $var_name'
-        print 'Usage: js_jjdecode file $file_name'
-        print 'Usage: js_jjdecode object $object_id [$version]'
-        print 'Usage: js_jjdecode string $encoded_js_code [$version]'
-        print newLine + 'Decodes the Javascript code stored in the specified variable, file or object using the jjencode/decode algorithm by Yosuke Hasegawa (http://utf-8.jp/public/jjencode.html)' + newLine
+        print(newLine + 'Usage: js_jjdecode variable $var_name')
+        print('Usage: js_jjdecode file $file_name')
+        print('Usage: js_jjdecode object $object_id [$version]')
+        print('Usage: js_jjdecode string $encoded_js_code [$version]')
+        print(newLine + 'Decodes the Javascript code stored in the specified variable, file or object using the jjencode/decode algorithm by Yosuke Hasegawa (http://utf-8.jp/public/jjencode.html)' + newLine)
 
     def do_js_join(self, argv):
         content = ''
@@ -2329,7 +2329,7 @@ class PDFConsole(cmd.Cmd):
             self.help_js_join()
             return False
         if type == 'variable':
-            if not self.variables.has_key(src):
+            if src not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('js_join ' + argv, message)
                 return False
@@ -2354,14 +2354,14 @@ class PDFConsole(cmd.Cmd):
         self.log_output('js_join ' + argv, finalString)
 
     def help_js_join(self):
-        print newLine + 'Usage: js_join variable $var_name'
-        print 'Usage: js_join file $file_name'
-        print 'Usage: js_join string $my_string'
-        print newLine + 'Joins some strings separated by quotes and stored in the specified variable or file in a unique one' + newLine
-        print 'Example:' + newLine
-        print 'aux = "%u65"+"54"+"%u74"+"73"' + newLine
-        print '> js_join variable aux' + newLine
-        print '%u6554%u7473' + newLine
+        print(newLine + 'Usage: js_join variable $var_name')
+        print('Usage: js_join file $file_name')
+        print('Usage: js_join string $my_string')
+        print(newLine + 'Joins some strings separated by quotes and stored in the specified variable or file in a unique one' + newLine)
+        print('Example:' + newLine)
+        print('aux = "%u65"+"54"+"%u74"+"73"' + newLine)
+        print('> js_join variable aux' + newLine)
+        print('%u6554%u7473' + newLine)
 
     def do_js_unescape(self, argv):
         content = ''
@@ -2384,7 +2384,7 @@ class PDFConsole(cmd.Cmd):
             self.help_js_unescape()
             return False
         if type == 'variable':
-            if not self.variables.has_key(src):
+            if src not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('js_unescape ' + argv, message)
                 return False
@@ -2425,14 +2425,14 @@ class PDFConsole(cmd.Cmd):
         self.log_output('js_unescape ' + argv, unescapedOutput, [bytes], bytesOutput=True)
 
     def help_js_unescape(self):
-        print newLine + 'Usage: js_unescape variable $var_name'
-        print 'Usage: js_unescape file $file_name'
-        print 'Usage: js_unescape string $escaped_string'
-        print newLine + 'Unescapes the escaped characters stored in the specified variable or file' + newLine
-        print 'Example:' + newLine
-        print 'aux = "%u6554%u7473"' + newLine
-        print '> js_unescape variable aux' + newLine
-        print '54 65 73 74                                       |Test|' + newLine
+        print(newLine + 'Usage: js_unescape variable $var_name')
+        print('Usage: js_unescape file $file_name')
+        print('Usage: js_unescape string $escaped_string')
+        print(newLine + 'Unescapes the escaped characters stored in the specified variable or file' + newLine)
+        print('Example:' + newLine)
+        print('aux = "%u6554%u7473"' + newLine)
+        print('> js_unescape variable aux' + newLine)
+        print('54 65 73 74                                       |Test|' + newLine)
 
     def do_js_vars(self, argv):
         varName = None
@@ -2456,7 +2456,7 @@ class PDFConsole(cmd.Cmd):
             return False
         if len(args) == 1:
             varName = args[0]
-            if varName in context.locals.keys():
+            if varName in list(context.locals.keys()):
                 varContent = context.locals[varName]
                 try:
                     self.log_output('js_vars ' + argv, str(varContent))
@@ -2473,14 +2473,14 @@ class PDFConsole(cmd.Cmd):
         else:
             fixedVars = ['evalOverride', 'hasOwnProperty', 'isPrototypeOf', 'toLocaleString', 'toString', 'unwatch',
                          'valueOf', 'watch']
-            varArray = context.locals.keys()
+            varArray = list(context.locals.keys())
             for fixedVar in fixedVars:
                 varArray.remove(fixedVar)
             self.log_output('js_vars ' + argv, str(varArray))
 
     def help_js_vars(self):
-        print newLine + 'Usage: js_vars [$var_name]'
-        print newLine + 'Shows the Javascript variables defined in the execution context or the content of the specified variable' + newLine
+        print(newLine + 'Usage: js_vars [$var_name]')
+        print(newLine + 'Shows the Javascript variables defined in the execution context or the content of the specified variable' + newLine)
 
     def do_log(self, argv):
         args = self.parseArgs(argv)
@@ -2491,9 +2491,9 @@ class PDFConsole(cmd.Cmd):
         numArgs = len(args)
         if numArgs == 0:
             if self.loggingFile is None:
-                print newLine + 'Not logging now!!' + newLine
+                print(newLine + 'Not logging now!!' + newLine)
             else:
-                print newLine + 'Log file: ' + self.loggingFile + newLine
+                print(newLine + 'Log file: ' + self.loggingFile + newLine)
         elif numArgs == 1:
             param = args[0]
             if param == 'stop':
@@ -2505,12 +2505,12 @@ class PDFConsole(cmd.Cmd):
             return False
 
     def help_log(self):
-        print newLine + 'Usage: log'
-        print newLine + 'Shows the actual state of logging' + newLine
-        print 'Usage: log stop'
-        print newLine + 'Stops logging' + newLine
-        print 'Usage: log $log_file'
-        print newLine + 'Starts logging in the specified file' + newLine
+        print(newLine + 'Usage: log')
+        print(newLine + 'Shows the actual state of logging' + newLine)
+        print('Usage: log stop')
+        print(newLine + 'Stops logging' + newLine)
+        print('Usage: log $log_file')
+        print(newLine + 'Starts logging in the specified file' + newLine)
 
     def do_malformed_output(self, argv):
         malformedOptions = []
@@ -2551,15 +2551,15 @@ class PDFConsole(cmd.Cmd):
         self.log_output('malformed_output ' + argv, message)
 
     def help_malformed_output(self):
-        print newLine + 'Usage: malformed_output [$option1 [$option2 ...] [$header_file]]' + newLine
-        print 'Enables malformed output when saving the file:' + newLine
-        print '\t0: Removes all the malformed options.'
-        print '\t1 [header_file]: Enable all the implemented tricks. Default option.'
-        print '\t2 [header_file]: Puts the default or specified header before the PDF header.'
-        print '\t3: Removes all the "endobj" tags.'
-        print '\t4: Removes all the "endstream" tags.'
-        print '\t5: Removes the "xref" section.'
-        print '\t6: Bad header: %PDF-1' + newLine
+        print(newLine + 'Usage: malformed_output [$option1 [$option2 ...] [$header_file]]' + newLine)
+        print('Enables malformed output when saving the file:' + newLine)
+        print('\t0: Removes all the malformed options.')
+        print('\t1 [header_file]: Enable all the implemented tricks. Default option.')
+        print('\t2 [header_file]: Puts the default or specified header before the PDF header.')
+        print('\t3: Removes all the "endobj" tags.')
+        print('\t4: Removes all the "endstream" tags.')
+        print('\t5: Removes the "xref" section.')
+        print('\t6: Bad header: %PDF-1' + newLine)
 
     def do_metadata(self, argv):
         if self.pdfFile is None:
@@ -2620,8 +2620,8 @@ class PDFConsole(cmd.Cmd):
             return False
 
     def help_metadata(self):
-        print newLine + 'Usage: metadata [$version]'
-        print newLine + 'Shows the metadata of the document or version of the document' + newLine
+        print(newLine + 'Usage: metadata [$version]')
+        print(newLine + 'Shows the metadata of the document or version of the document' + newLine)
 
     def do_modify(self, argv):
         maxDepth = 2
@@ -2695,7 +2695,7 @@ class PDFConsole(cmd.Cmd):
                     streamContent = open(contentFile, 'rb').read()
                 else:
                     if self.use_rawinput:
-                        streamContent = raw_input(
+                        streamContent = input(
                             newLine + 'Please, specify the stream content (if the content includes EOL characters use a file instead):' + newLine * 2)
                     else:
                         message = '*** Error: in batch mode you must specify a file storing the stream content!!'
@@ -2710,8 +2710,8 @@ class PDFConsole(cmd.Cmd):
             self.log_output('modify ' + argv, message)
 
     def help_modify(self):
-        print newLine + 'Usage: modify object|stream $object_id [$version] [$file]' + newLine
-        print 'Modifies the object or stream specified. It\'s possible to use a file to retrieve the stream content (ONLY for stream content).' + newLine
+        print(newLine + 'Usage: modify object|stream $object_id [$version] [$file]' + newLine)
+        print('Modifies the object or stream specified. It\'s possible to use a file to retrieve the stream content (ONLY for stream content).' + newLine)
 
     def do_object(self, argv):
         if self.pdfFile is None:
@@ -2750,8 +2750,8 @@ class PDFConsole(cmd.Cmd):
         self.log_output('object ' + argv, value)
 
     def help_object(self):
-        print newLine + 'Usage: object $object_id [$version]'
-        print newLine + 'Shows the content of the object after being decoded and decrypted.' + newLine
+        print(newLine + 'Usage: object $object_id [$version]')
+        print(newLine + 'Shows the content of the object after being decoded and decrypted.' + newLine)
 
     def do_offsets(self, argv):
         if self.pdfFile is None:
@@ -2786,12 +2786,12 @@ class PDFConsole(cmd.Cmd):
 
         for i in range(len(offsetsArray)):
             offsets = offsetsArray[i]
-            if i == 0 and offsets.has_key('header'):
+            if i == 0 and 'header' in offsets:
                 offset, size = offsets['header']
                 offsetsOutput += '%8d %s%s' % (offset, 'Header', newLine)
             elif version is None:
                 offsetsOutput += newLine + 'Version ' + str(i) + ':' + newLine * 2
-            if offsets.has_key('objects'):
+            if 'objects' in offsets:
                 compressedObjects = offsets['compressed']
                 sortedObjectList = sorted(offsets['objects'], key=lambda x: x[1])
                 for id, offset, size in sortedObjectList:
@@ -2819,8 +2819,8 @@ class PDFConsole(cmd.Cmd):
         self.log_output('offsets ' + argv, offsetsOutput)
 
     def help_offsets(self):
-        print newLine + 'Usage: offsets [$version]'
-        print newLine + 'Shows the physical map of the file or the specified version of the document' + newLine
+        print(newLine + 'Usage: offsets [$version]')
+        print(newLine + 'Shows the physical map of the file or the specified version of the document' + newLine)
 
     def do_open(self, argv):
         forceMode = False
@@ -2864,23 +2864,23 @@ class PDFConsole(cmd.Cmd):
             self.pdfFile = None
         self.log_output('open ' + argv, message)
         if not JS_MODULE:
-            print 'Warning: PyV8 is not installed!!' + newLine
+            print('Warning: PyV8 is not installed!!' + newLine)
         if self.pdfFile is not None:
             self.do_info('')
 
     def help_open(self):
-        print newLine + 'Usage: open [-fl] $file_name' + newLine
-        print 'Opens and parses the specified file' + newLine
-        print 'Options:'
-        print '\t-f: Sets force parsing mode to ignore errors'
-        print '\t-l: Sets loose parsing mode for problematic files' + newLine
+        print(newLine + 'Usage: open [-fl] $file_name' + newLine)
+        print('Opens and parses the specified file' + newLine)
+        print('Options:')
+        print('\t-f: Sets force parsing mode to ignore errors')
+        print('\t-l: Sets loose parsing mode for problematic files' + newLine)
 
     def do_quit(self, argv):
         return True
 
     def help_quit(self):
-        print newLine + 'Usage: quit'
-        print newLine + 'Exits from the console' + newLine
+        print(newLine + 'Usage: quit')
+        print(newLine + 'Exits from the console' + newLine)
 
     def do_rawobject(self, argv):
         if self.pdfFile is None:
@@ -2967,8 +2967,8 @@ class PDFConsole(cmd.Cmd):
         self.log_output('rawobject ' + argv, rawValue)
 
     def help_rawobject(self):
-        print newLine + 'Usage: rawobject [$object_id|xref|trailer [$version]]'
-        print newLine + 'Shows the content of the object without being decoded or decrypted (object_id, xref, trailer)' + newLine
+        print(newLine + 'Usage: rawobject [$object_id|xref|trailer [$version]]')
+        print(newLine + 'Shows the content of the object without being decoded or decrypted (object_id, xref, trailer)' + newLine)
 
     def do_rawstream(self, argv):
         if self.pdfFile is None:
@@ -3011,8 +3011,8 @@ class PDFConsole(cmd.Cmd):
         self.log_output('rawstream ' + argv, value, [value], bytesOutput=True)
 
     def help_rawstream(self):
-        print newLine + 'Usage: rawstream $object_id [$version]'
-        print newLine + 'Shows the stream content of the specified document version before being decoded and decrypted' + newLine
+        print(newLine + 'Usage: rawstream $object_id [$version]')
+        print(newLine + 'Shows the stream content of the specified document version before being decoded and decrypted' + newLine)
 
     def do_references(self, argv):
         if self.pdfFile is None:
@@ -3055,8 +3055,8 @@ class PDFConsole(cmd.Cmd):
         self.log_output('references ' + argv, str(references))
 
     def help_references(self):
-        print newLine + 'Usage: references to|in $object_id [$version]'
-        print newLine + 'Shows the references in the object or to the object in the specified version of the document' + newLine
+        print(newLine + 'Usage: references to|in $object_id [$version]')
+        print(newLine + 'Shows the references in the object or to the object in the specified version of the document' + newLine)
 
     def do_replace(self, argv):
         replaceOutput = ''
@@ -3113,7 +3113,7 @@ class PDFConsole(cmd.Cmd):
                 else:
                     message = 'String not found!!'
             else:
-                if self.variables.has_key(src):
+                if src in self.variables:
                     if self.variables[src][0].find(string1) != -1:
                         replaceOutput = self.variables[src][0].replace(string1, string2)
                         self.variables[src][0] = replaceOutput
@@ -3125,11 +3125,11 @@ class PDFConsole(cmd.Cmd):
         self.log_output('replace ' + argv, message)
 
     def help_replace(self):
-        print newLine + 'Usage: replace all $string1 $string2'
-        print newLine + 'Replaces $string1 with $string2 in the whole PDF file' + newLine
-        print 'Usage: replace variable $var_name $string1 $string2'
-        print 'Usage: replace file $file_name $string1 $string2'
-        print newLine + 'Replaces $string1 with $string2 in the content of the specified variable or file' + newLine
+        print(newLine + 'Usage: replace all $string1 $string2')
+        print(newLine + 'Replaces $string1 with $string2 in the whole PDF file' + newLine)
+        print('Usage: replace variable $var_name $string1 $string2')
+        print('Usage: replace file $file_name $string1 $string2')
+        print(newLine + 'Replaces $string1 with $string2 in the content of the specified variable or file' + newLine)
 
     def do_reset(self, argv):
         args = self.parseArgs(argv)
@@ -3142,7 +3142,7 @@ class PDFConsole(cmd.Cmd):
             clearScreen()
         elif numArgs == 1:
             var = args[0]
-            if self.variables.has_key(var):
+            if var in self.variables:
                 self.variables[var][0] = self.variables[var][1]
                 if var == 'output' and (self.variables[var][0] == 'file' or self.variables[var][0] == 'variable'):
                     message = var + ' = "' + self.output + '" (' + str(self.variables[var][0]) + ')'
@@ -3162,10 +3162,10 @@ class PDFConsole(cmd.Cmd):
             self.help_reset()
 
     def help_reset(self):
-        print newLine + 'Usage: reset'
-        print newLine + 'Cleans the console'
-        print newLine + 'Usage: reset $var_name'
-        print newLine + 'Resets the variable value to the default value if applicable' + newLine
+        print(newLine + 'Usage: reset')
+        print(newLine + 'Cleans the console')
+        print(newLine + 'Usage: reset $var_name')
+        print(newLine + 'Resets the variable value to the default value if applicable' + newLine)
 
     def do_save(self, argv):
         if self.pdfFile is None:
@@ -3194,8 +3194,8 @@ class PDFConsole(cmd.Cmd):
             self.help_save()
 
     def help_save(self):
-        print newLine + 'Usage: save [$file_name]'
-        print newLine + 'Saves the file to disk' + newLine
+        print(newLine + 'Usage: save [$file_name]')
+        print(newLine + 'Saves the file to disk' + newLine)
 
     def do_save_version(self, argv):
         if self.pdfFile is None:
@@ -3230,8 +3230,8 @@ class PDFConsole(cmd.Cmd):
             self.help_save_version()
 
     def help_save_version(self):
-        print newLine + 'Usage: save_version $version $file_name'
-        print newLine + 'Saves the selected file version to disk' + newLine
+        print(newLine + 'Usage: save_version $version $file_name')
+        print(newLine + 'Saves the selected file version to disk' + newLine)
 
     def do_sctest(self, argv):
         if not EMU_MODULE:
@@ -3302,7 +3302,7 @@ class PDFConsole(cmd.Cmd):
                 src = args[1]
 
         if type == 'variable':
-            if not self.variables.has_key(src):
+            if src not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('sctest ' + argv, message)
                 return False
@@ -3344,10 +3344,10 @@ class PDFConsole(cmd.Cmd):
         self.log_output('sctest ' + argv, output)
 
     def help_sctest(self):
-        print newLine + 'Usage: sctest [-v] variable $var_name'
-        print 'Usage: sctest [-v] file $file_name'
-        print 'Usage: sctest [-v] raw $offset $num_bytes'
-        print newLine + 'Wrapper of the sctest tool (libemu) to emulate shellcodes. With -v the output is verbose, be ready for tons of data ;p' + newLine
+        print(newLine + 'Usage: sctest [-v] variable $var_name')
+        print('Usage: sctest [-v] file $file_name')
+        print('Usage: sctest [-v] raw $offset $num_bytes')
+        print(newLine + 'Wrapper of the sctest tool (libemu) to emulate shellcodes. With -v the output is verbose, be ready for tons of data ;p' + newLine)
 
     def do_search(self, argv):
         if self.pdfFile is None:
@@ -3410,9 +3410,9 @@ class PDFConsole(cmd.Cmd):
         self.log_output('search ' + argv, output)
 
     def help_search(self):
-        print newLine + 'Usage: search [hex] $string'
-        print newLine + 'Search the specified string or hexadecimal string in the objects (decoded and encrypted streams included)' + newLine
-        print 'Example: search hex \\x34\\x35' + newLine
+        print(newLine + 'Usage: search [hex] $string')
+        print(newLine + 'Search the specified string or hexadecimal string in the objects (decoded and encrypted streams included)' + newLine)
+        print('Example: search hex \\x34\\x35' + newLine)
 
     def do_set(self, argv):
         consoleOutput = ''
@@ -3426,7 +3426,7 @@ class PDFConsole(cmd.Cmd):
             self.help_set()
             return False
         if numArgs == 0:
-            vars = self.variables.keys()
+            vars = list(self.variables.keys())
             for var in vars:
                 varContent = self.printResult(str(self.variables[var][0]))
                 if varContent == str(self.variables[var][0]):
@@ -3436,7 +3436,7 @@ class PDFConsole(cmd.Cmd):
                         consoleOutput += var + ' = ' + str(varContent) + newLine
                 else:
                     consoleOutput += var + ' = ' + newLine + varContent + newLine
-            print newLine + consoleOutput
+            print(newLine + consoleOutput)
         else:
             varName = args[0]
             value = args[1]
@@ -3451,19 +3451,19 @@ class PDFConsole(cmd.Cmd):
                     return False
                 else:
                     value = int(value)
-            if self.variables.has_key(varName):
+            if varName in self.variables:
                 self.variables[varName][0] = value
             else:
                 self.variables[varName] = [value, value]
 
     def help_set(self):
-        print newLine + 'Usage: set [$var_name $var_value]'
-        print newLine + 'Sets the specified variable value or creates one with this value. Without parameters all the variables are shown.' + newLine
-        print 'Special variables:' + newLine
-        print '\theader_file: READ ONLY. Specifies the file header to be used when \'malformed_options\' are active.' + newLine
-        print '\tmalformed_options: READ ONLY. Variable to store the malformed options used to save the file.' + newLine
-        print '\toutput_limit: variable to specify the maximum number of lines to be shown at once when the output is long (no limit = -1). By default there is no limit.' + newLine
-        print '\tvt_key: VirusTotal Api key.' + newLine
+        print(newLine + 'Usage: set [$var_name $var_value]')
+        print(newLine + 'Sets the specified variable value or creates one with this value. Without parameters all the variables are shown.' + newLine)
+        print('Special variables:' + newLine)
+        print('\theader_file: READ ONLY. Specifies the file header to be used when \'malformed_options\' are active.' + newLine)
+        print('\tmalformed_options: READ ONLY. Variable to store the malformed options used to save the file.' + newLine)
+        print('\toutput_limit: variable to specify the maximum number of lines to be shown at once when the output is long (no limit = -1). By default there is no limit.' + newLine)
+        print('\tvt_key: VirusTotal Api key.' + newLine)
 
     def do_show(self, argv):
         args = self.parseArgs(argv)
@@ -3475,32 +3475,32 @@ class PDFConsole(cmd.Cmd):
             self.help_show()
             return False
         var = args[0]
-        if not self.variables.has_key(var):
-            print newLine + '*** Error: The variable ' + var + ' does not exist!!' + newLine
+        if var not in self.variables:
+            print(newLine + '*** Error: The variable ' + var + ' does not exist!!' + newLine)
             return False
         if var == 'output':
             if self.variables[var][0] == 'stdout':
-                print newLine + 'output = "stdout"' + newLine
+                print(newLine + 'output = "stdout"' + newLine)
             else:
                 if self.variables[var][0] == 'file':
-                    print newLine + 'output = "file"'
-                    print 'fileName = "' + self.output + '"' + newLine
+                    print(newLine + 'output = "file"')
+                    print('fileName = "' + self.output + '"' + newLine)
                 else:
-                    print newLine + 'output = "variable"'
-                    print 'varName = "' + self.output + '"' + newLine
+                    print(newLine + 'output = "variable"')
+                    print('varName = "' + self.output + '"' + newLine)
         else:
             varContent = self.printResult(str(self.variables[var][0]))
-            print newLine + varContent + newLine
+            print(newLine + varContent + newLine)
 
     def help_show(self):
-        print newLine + 'Usage: show $var_name'
-        print newLine + 'Shows the value of the specified variable' + newLine
-        print 'Special variables:' + newLine
-        print '\theader_file'
-        print '\tmalformed_options'
-        print '\toutput'
-        print '\toutput_limit'
-        print '\tvt_key' + newLine
+        print(newLine + 'Usage: show $var_name')
+        print(newLine + 'Shows the value of the specified variable' + newLine)
+        print('Special variables:' + newLine)
+        print('\theader_file')
+        print('\tmalformed_options')
+        print('\toutput')
+        print('\toutput_limit')
+        print('\tvt_key' + newLine)
 
     def do_stream(self, argv):
         if self.pdfFile is None:
@@ -3548,8 +3548,8 @@ class PDFConsole(cmd.Cmd):
         self.log_output('stream ' + argv, value, [value], bytesOutput=True)
 
     def help_stream(self):
-        print newLine + 'Usage: stream $object_id [$version]'
-        print newLine + 'Shows the object stream content of the specified version after being decoded and decrypted (if necessary)' + newLine
+        print(newLine + 'Usage: stream $object_id [$version]')
+        print(newLine + 'Shows the object stream content of the specified version after being decoded and decrypted (if necessary)' + newLine)
 
 
     def do_tree(self, argv):
@@ -3598,8 +3598,8 @@ class PDFConsole(cmd.Cmd):
         self.log_output('tree ' + argv, treeOutput)
 
     def help_tree(self):
-        print newLine + 'Usage: tree [$version]'
-        print newLine + 'Shows the tree graph of the file or specified version' + newLine
+        print(newLine + 'Usage: tree [$version]')
+        print(newLine + 'Shows the tree graph of the file or specified version' + newLine)
 
     def do_vtcheck(self, argv):
         content = ''
@@ -3651,7 +3651,7 @@ class PDFConsole(cmd.Cmd):
                 self.help_vtcheck()
                 return False
             if type == 'variable':
-                if not self.variables.has_key(srcName):
+                if srcName not in self.variables:
                     message = '*** Error: The variable does not exist!!'
                     self.log_output('vtcheck ' + argv, message)
                     return False
@@ -3719,10 +3719,9 @@ class PDFConsole(cmd.Cmd):
             self.log_output('vtcheck ' + argv, message)
             return False
         jsonDict = ret[1]
-        if jsonDict.has_key('response_code'):
+        if 'response_code' in jsonDict:
             if jsonDict['response_code'] == 1:
-                if jsonDict.has_key('scan_date') and jsonDict.has_key('positives') and jsonDict.has_key(
-                        'total') and jsonDict.has_key('scans') and jsonDict.has_key('permalink'):
+                if 'scan_date' in jsonDict and 'positives' in jsonDict and 'total' in jsonDict and 'scans' in jsonDict and 'permalink' in jsonDict:
                     detectionColor = ''
                     if args == []:
                         self.pdfFile.setDetectionRate([jsonDict['positives'], jsonDict['total']])
@@ -3745,8 +3744,7 @@ class PDFConsole(cmd.Cmd):
 
                         for engine in jsonDict['scans']:
                             engineResults = jsonDict['scans'][engine]
-                            if engineResults.has_key('detected') and engineResults.has_key(
-                                    'version') and engineResults.has_key('result') and engineResults.has_key('update'):
+                            if 'detected' in engineResults and 'version' in engineResults and 'result' in engineResults and 'update' in engineResults:
                                 if engineResults['detected']:
                                     output += '%25s\t%18s\t%10s\t%s%s%s%s' % (
                                         engine, engineResults['version'], engineResults['update'], self.alertColor,
@@ -3766,15 +3764,15 @@ class PDFConsole(cmd.Cmd):
         self.log_output('vtcheck ' + argv, output)
 
     def help_vtcheck(self):
-        print newLine + 'Usage: vtcheck'
-        print 'Usage: vtcheck object|rawobject|stream|rawstream $object_id [$version]'
-        print 'Usage: vtcheck raw $offset $num_bytes'
-        print 'Usage: vtcheck file $file_name'
-        print 'Usage: vtcheck variable $var_name'
-        print newLine + 'Checks the hash of the specified source on VirusTotal: raw bytes of the file, objects and streams, and the content of files or variables.'
-        print 'If no parameters are specified then the hash of the PDF document will be checked.' + newLine
-        print '*** NOTE: NO CONTENT IS SENT TO VIRUSTOTAL, JUST HASHES!!' + newLine
-        print '*** NOTE: You need a VirusTotal API key to use this command.' + newLine
+        print(newLine + 'Usage: vtcheck')
+        print('Usage: vtcheck object|rawobject|stream|rawstream $object_id [$version]')
+        print('Usage: vtcheck raw $offset $num_bytes')
+        print('Usage: vtcheck file $file_name')
+        print('Usage: vtcheck variable $var_name')
+        print(newLine + 'Checks the hash of the specified source on VirusTotal: raw bytes of the file, objects and streams, and the content of files or variables.')
+        print('If no parameters are specified then the hash of the PDF document will be checked.' + newLine)
+        print('*** NOTE: NO CONTENT IS SENT TO VIRUSTOTAL, JUST HASHES!!' + newLine)
+        print('*** NOTE: You need a VirusTotal API key to use this command.' + newLine)
 
     def do_xor(self, argv):
         content = ''
@@ -3845,7 +3843,7 @@ class PDFConsole(cmd.Cmd):
                 return False
             key = chr(int(key, 16))
         if type == 'variable':
-            if not self.variables.has_key(srcName):
+            if srcName not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('xor ' + argv, message)
                 return False
@@ -3916,17 +3914,17 @@ class PDFConsole(cmd.Cmd):
         self.log_output('xor ' + argv, output, [output], bytesOutput=True)
 
     def help_xor(self):
-        print newLine + 'Usage: xor stream|rawstream $object_id [$version] [$key]'
-        print 'Usage: xor raw $offset $num_bytes $key'
-        print 'Usage: xor file $file_name $key'
-        print 'Usage: xor variable $var_name $key'
-        print newLine + 'Performs an XOR operation using the specified key with the content of the specified file or variable, raw bytes of the file or stream/rawstream.'
-        print 'If the key is not specified then a bruteforcing XOR is performed.' + newLine
+        print(newLine + 'Usage: xor stream|rawstream $object_id [$version] [$key]')
+        print('Usage: xor raw $offset $num_bytes $key')
+        print('Usage: xor file $file_name $key')
+        print('Usage: xor variable $var_name $key')
+        print(newLine + 'Performs an XOR operation using the specified key with the content of the specified file or variable, raw bytes of the file or stream/rawstream.')
+        print('If the key is not specified then a bruteforcing XOR is performed.' + newLine)
 
     def do_xor_search(self, argv):
         content = ''
         found = False
-        decValues = range(256)
+        decValues = list(range(256))
         successfullKeys = {}
         outputBytes = ''
         caseSensitive = True
@@ -3969,7 +3967,7 @@ class PDFConsole(cmd.Cmd):
             self.help_xor_search()
             return False
         if type == 'variable':
-            if not self.variables.has_key(srcName):
+            if srcName not in self.variables:
                 message = '*** Error: The variable does not exist!!'
                 self.log_output('xor_search ' + argv, message)
                 return False
@@ -4056,7 +4054,7 @@ class PDFConsole(cmd.Cmd):
                 #outputBytes += xored + newLine
                 #outputBytes += '[/' + hex(i) + ']' + newLine*2
         if found:
-            keys = successfullKeys.keys()
+            keys = list(successfullKeys.keys())
             message = 'Pattern found with the following keys: ' + str(keys) + newLine * 2
             for key in keys:
                 message += 'Offsets for key \'' + str(key) + '\': ' + str(successfullKeys[key]) + newLine
@@ -4065,18 +4063,18 @@ class PDFConsole(cmd.Cmd):
         self.log_output('xor_search ' + argv, message)
 
     def help_xor_search(self):
-        print newLine + 'Usage: xor_search [-i] stream|rawstream $object_id [$version] $string_to_search'
-        print 'Usage: xor_search [-i] raw $offset $num_bytes $string_to_search'
-        print 'Usage: xor_search [-i] file $file_name $string_to_search'
-        print 'Usage: xor_search [-i] variable $var_name $string_to_search'
-        print newLine + 'Searches for the specified string in the result of an XOR brute forcing operation with the content of the specified file or variable,'
-        print 'raw bytes of the file or stream/rawstream. The output shows the offset/s where the string is found. It\'s a case sensitive search but'
-        print 'it\'s possible to make it insensitive using -i.' + newLine
+        print(newLine + 'Usage: xor_search [-i] stream|rawstream $object_id [$version] $string_to_search')
+        print('Usage: xor_search [-i] raw $offset $num_bytes $string_to_search')
+        print('Usage: xor_search [-i] file $file_name $string_to_search')
+        print('Usage: xor_search [-i] variable $var_name $string_to_search')
+        print(newLine + 'Searches for the specified string in the result of an XOR brute forcing operation with the content of the specified file or variable,')
+        print('raw bytes of the file or stream/rawstream. The output shows the offset/s where the string is found. It\'s a case sensitive search but')
+        print('it\'s possible to make it insensitive using -i.' + newLine)
 
     def additionRequest(self, dict=False):
         '''
             Method to ask the user if he wants to add more entries to the object or not
-            
+
             @param dict: Boolean to specify if the added object is a dictionary or not. Default value: False.
             @return: The response chosen by the user
         '''
@@ -4084,7 +4082,7 @@ class PDFConsole(cmd.Cmd):
             message = newLine + 'Do you want to add more objects? (y/n) '
         else:
             message = newLine + 'Do you want to add more entries? (y/n) '
-        res = raw_input(message)
+        res = input(message)
         if res.lower() in ['y', 'n']:
             return res.lower()
         else:
@@ -4093,7 +4091,7 @@ class PDFConsole(cmd.Cmd):
     def addObject(self, iteration, maxDepth=10):
         '''
             Method to add a new object to an array or dictionary
-            
+
             @param iteration: Integer which specifies the depth of the recursion in the same object
             @param maxDepth: The maximum depth for nested objects. Default value: 10.
             @return: The new object
@@ -4112,12 +4110,12 @@ class PDFConsole(cmd.Cmd):
                   '\t7 - null' + newLine + \
                   '\t8 - array' + newLine + \
                   '\t9 - dictionary' + newLine
-        res = raw_input(message)
+        res = input(message)
         if not res.isdigit() or int(res) < 1 or int(res) > 9:
             return (-1, 'Object type not valid!!')
         objectType = dictNumType[res]
         if objectType != 'array' and objectType != 'dictionary':
-            content = raw_input(newLine + 'Please, specify the ' + objectType + ' object content:' + newLine * 2)
+            content = input(newLine + 'Please, specify the ' + objectType + ' object content:' + newLine * 2)
             content = self.checkInputContent(objectType, content)
             if content is None:
                 return (-1, '*** Error: Content not valid for the object type!!')
@@ -4140,7 +4138,7 @@ class PDFConsole(cmd.Cmd):
             object = PDFNull(content)
         elif objectType == 'array':
             elements = []
-            print 'Please, now specify the elements of the array:'
+            print('Please, now specify the elements of the array:')
             while True:
                 res = self.additionRequest()
                 if res is None:
@@ -4155,13 +4153,13 @@ class PDFConsole(cmd.Cmd):
             object = PDFArray(elements=elements)
         elif objectType == 'dictionary':
             elements = {}
-            print 'Please, now specify the elements of the dictionary:'
+            print('Please, now specify the elements of the dictionary:')
             while True:
                 res = self.additionRequest(dict=True)
                 if res is None:
                     return (-1, 'Option not valid!!')
                 elif res == 'y':
-                    key = raw_input('Name object: ')
+                    key = input('Name object: ')
                     key = self.checkInputContent('name', key)
                     ret = self.addObject(iteration + 1)
                     if ret[0] == -1:
@@ -4175,7 +4173,7 @@ class PDFConsole(cmd.Cmd):
     def checkInputContent(self, objectType, objectContent):
         '''
             Check if the specified content is valid for the specified object type and modify it\'s possible
-            
+
             @param objectType: The type of object: number, string, hexstring, name, reference, null
             @param objectContent: The object content
             @return: The content of the object or None if any problems occur
@@ -4237,12 +4235,12 @@ class PDFConsole(cmd.Cmd):
     def log_output(self, command, output, bytesToSave=None, printOutput=True, bytesOutput=False):
         '''
             Method to check the commands output and write it to the console and/or files / variables
-            
+
             @param command: The command launched
             @param output: The output of the command
             @param bytesToSave: A list with the raw bytes which will be stored in a file or variable if a redirection has been set (>,>>,$>,$>>).
             @param printOutput: Boolean to specify if the output will be written to the console or not. Default value: True.
-            @param bytesOutput: Boolean to specify if we want to print raw bytes or not. Default value: False. 
+            @param bytesOutput: Boolean to specify if we want to print raw bytes or not. Default value: False.
         '''
         errorIndex = output.find('*** Error')
         if errorIndex != -1:
@@ -4279,7 +4277,7 @@ class PDFConsole(cmd.Cmd):
                     if self.redirect == VAR_WRITE:
                         self.variables[varName] = [bytes, bytes]
                     elif self.redirect == VAR_ADD:
-                        if self.variables.has_key(varName):
+                        if varName in self.variables:
                             self.variables[varName][0] += bytes
                         else:
                             self.variables[varName] = [bytes, bytes]
@@ -4288,7 +4286,7 @@ class PDFConsole(cmd.Cmd):
                 niceOutput = newLine + niceOutput + newLine
                 if self.variables['output_limit'][0] is None or self.variables['output_limit'][
                     0] == -1 or not self.use_rawinput:
-                    print niceOutput
+                    print(niceOutput)
                 else:
                     limit = int(self.variables['output_limit'][0])
                     lines = niceOutput.split(newLine)
@@ -4296,17 +4294,17 @@ class PDFConsole(cmd.Cmd):
                         outputStepLines = lines[:limit]
                         lines = lines[limit:]
                         for line in outputStepLines:
-                            print line
+                            print(line)
                         if len(lines) == 0:
                             break
-                        ch = raw_input('( Press <intro> to continue or <q><intro> to quit )')
+                        ch = input('( Press <intro> to continue or <q><intro> to quit )')
                         if ch == 'q' or ch == 'Q':
                             break
 
     def modifyObject(self, object, iteration=0, contentFile=None, maxDepth=10):
         '''
             Method to modify an existent object
-            
+
             @param object: The object to be modified
             @param iteration: Integer which specifies the depth of the recursion in the same object
             @param contentFile: The content of the file storing the stream
@@ -4322,7 +4320,7 @@ class PDFConsole(cmd.Cmd):
                 content = open(contentFile, 'rb').read()
             else:
                 if objectType == 'string' or objectType == 'hexstring':
-                    res = raw_input(newLine + 'Do you want to enter an ascii (1) or hexadecimal (2) string? (1/2) ')
+                    res = input(newLine + 'Do you want to enter an ascii (1) or hexadecimal (2) string? (1/2) ')
                     if res == '1':
                         newObjectType = 'string'
                     elif res == '2':
@@ -4332,7 +4330,7 @@ class PDFConsole(cmd.Cmd):
                 elif objectType == 'integer' or objectType == 'real':
                     newObjectType = 'number'
                 if iteration == 0:
-                    content = raw_input(
+                    content = input(
                         newLine + 'Please, specify the ' + newObjectType + ' object content (if the content includes EOL characters use a file instead):' + newLine * 2)
                 else:
                     value = object.getValue()
@@ -4341,7 +4339,7 @@ class PDFConsole(cmd.Cmd):
                     if res == 'd':
                         return (0, None)
                     elif res == 'm':
-                        content = raw_input(
+                        content = input(
                             newLine + 'Please, specify the ' + newObjectType + ' object content:' + newLine * 2)
                     else:
                         return (0, object)
@@ -4395,7 +4393,7 @@ class PDFConsole(cmd.Cmd):
                             if contentFile is not None:
                                 streamContent = open(contentFile, 'rb').read()
                             else:
-                                streamContent = raw_input(
+                                streamContent = input(
                                     newLine + 'Please, specify the stream content (if the content includes EOL characters use a file instead):' + newLine * 2)
                             object.setDecodedStream(streamContent)
                     else:
@@ -4419,7 +4417,7 @@ class PDFConsole(cmd.Cmd):
                     if res is None:
                         return (-1, 'Option not valid!!')
                     elif res == 'y':
-                        key = raw_input('Name object: ')
+                        key = input('Name object: ')
                         key = self.checkInputContent('name', key)
                         ret = self.addObject(iteration + 1)
                         if ret[0] == -1:
@@ -4433,7 +4431,7 @@ class PDFConsole(cmd.Cmd):
     def modifyRequest(self, value, rawValue, key=None, stream=False):
         '''
             Method to ask the user what he wants to do with the object: modify, delete or nothing.
-            
+
             @param value: The value of the object.
             @param rawValue: The raw value of the object.
             @param key: The key of a dictionary entry.
@@ -4452,18 +4450,18 @@ class PDFConsole(cmd.Cmd):
         if stream:
             message += ' in the STREAM'
         message += '? (m/d/n) '
-        response = raw_input(message)
+        response = input(message)
         if response.lower() not in ['m', 'd', 'n']:
             return None
         else:
             if stream and response.lower() == 'm':
-                print 'Value: ' + str(value) + newLine
+                print('Value: ' + str(value) + newLine)
             return response.lower()
 
     def parseArgs(self, args):
         '''
             Method to split up the command arguments by quotes: \'\'\', " or \'
-            
+
             @param args: The command arguments
             @return: An array with the separated arguments
         '''
@@ -4582,7 +4580,7 @@ class PDFConsole(cmd.Cmd):
     def printBytes(self, bytes):
         '''
             Given a byte string shows the hexadecimal and ascii output in a nice way
-            
+
             @param bytes: A string
             @return: String with mixed hexadecimal and ascii strings, like the 'hexdump -C' output
         '''
@@ -4616,7 +4614,7 @@ class PDFConsole(cmd.Cmd):
     def printResult(self, result):
         '''
             Given an string returns a mixed hexadecimal-ascci output if there are many non printable characters or the same string in other case
-            
+
             @param result: A string
             @return: A mixed hexadecimal-ascii output if there are many non printable characters or the input string in other case
         '''
@@ -4630,7 +4628,7 @@ class PDFConsole(cmd.Cmd):
     def printTreeNode(self, node, nodesInfo, expandedNodes=[], depth=0, recursive=True):
         '''
             Given a tree prints the whole tree and its dependencies
-            
+
             @param node: Root of the tree
             @param nodesInfo: Information abour the nodes of the tree
             @param expandedNodes: Already expanded nodes
@@ -4639,7 +4637,7 @@ class PDFConsole(cmd.Cmd):
             @return: A tuple (expandedNodes,output), where expandedNodes is a list with the distinct nodes and output is the string representation of the tree
         '''
         output = ''
-        if nodesInfo.has_key(node):
+        if node in nodesInfo:
             if node not in expandedNodes or (node in expandedNodes and depth > 0):
                 output += '\t' * depth + nodesInfo[node][0] + ' (' + str(node) + ')' + newLine
             if node not in expandedNodes:
@@ -4647,7 +4645,7 @@ class PDFConsole(cmd.Cmd):
                 children = nodesInfo[node][1]
                 if children != []:
                     for child in children:
-                        if nodesInfo.has_key(child):
+                        if child in nodesInfo:
                             childType = nodesInfo[child][0]
                         else:
                             childType = 'Unknown'
