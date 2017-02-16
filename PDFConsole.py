@@ -40,7 +40,7 @@ from .JSAnalysis import *
 from .PDFCore import *
 from base64 import b64encode, b64decode
 from .PDFFilters import decodeStream, encodeStream
-from jjdecode import JJDecoder
+from .jjdecode import JJDecoder
 
 try:
     from colorama import init, Fore, Back, Style
