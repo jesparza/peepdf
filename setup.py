@@ -11,12 +11,13 @@ setup(
         "colorama==0.3.7",
         "Pillow==3.2.0",
         "pythonaes==1.0",
-        "lxml==3.6.0",
     ],
     entry_points={
         "console_scripts": [
             "peepdf = peepdf.main:main",
         ],
     },
-    packages=["peepdf"],
+    packages=[
+        "peepdf",
+    ],
 )

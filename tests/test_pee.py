@@ -20,7 +20,10 @@
 #        along with peepdf.    If not, see <http://www.gnu.org/licenses/>.
 #
 
+import mock
 import peepdf
+import peepdf.main
+import pytest
 
 def test_whitespace_after_opening():
     p = peepdf.PDFCore.PDFParser()
@@ -35,3 +38,9 @@ def test_whitespace_after_opening():
             assert obj.object.errors != [
                 "Decoding error: Error decompressing string"
             ]
+
+def test_lxml_missing():
+    with mock.patch.dict(peepdf.main.__dict__, {"etree": None}):
+        with pytest.raises(AssertionError) as e:
+            peepdf.main.getPeepXML(None, None, None)
+        e.match("lxml must be installed")

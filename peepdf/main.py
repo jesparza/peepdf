@@ -71,10 +71,12 @@ except:
 try:
     from lxml import etree
 except:
-    pass
+    etree = None
 
 
 def getPeepXML(statsDict, version, revision):
+    assert etree is not None, "lxml must be installed for --xml"
+
     root = etree.Element('peepdf_analysis', version=version + ' r' + revision, url='http://peepdf.eternal-todo.com',
                          author='Jose Miguel Esparza')
     analysisDate = etree.SubElement(root, 'date')

@@ -6,7 +6,7 @@ install:
   - "set PATH=%PYTHON%;%PYTHON%/Scripts;%PATH%"
 
   - "python.exe setup.py develop"
-  - "pip.exe install pytest pytest-cov"
+  - "pip.exe install pytest pytest-cov mock"
 
 build: false
 
