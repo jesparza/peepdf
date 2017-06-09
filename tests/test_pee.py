@@ -25,6 +25,26 @@ import peepdf
 import peepdf.main
 import pytest
 
+def test_js_detect():
+    p = peepdf.PDFCore.PDFParser()
+    r, f = p.parse(
+        "tests/files/js_in_pdf.js", forceMode=True,
+        looseMode=True, manualAnalysis=False
+    )
+    assert not r
+
+    for version in xrange(f.updates + 1):
+        for obj in f.body[version].objects.values():
+            if isinstance(obj, peepdf.PDFCore.PDFIndirectObject):
+                o = obj.getObject()
+                if isinstance(o, peepdf.PDFCore.PDFStream):
+                    stream = o.decodedStream
+                    isJS = peepdf.JSAnalysis.isJavascript(stream)
+                    if "function docOpened()" in stream:
+                        assert isJS
+                    else:
+                        assert not isJS
+
 def test_whitespace_after_opening():
     p = peepdf.PDFCore.PDFParser()
     r, f = p.parse(
