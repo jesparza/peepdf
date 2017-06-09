@@ -190,13 +190,18 @@ def isJavascript(content):
     results = 0
     length = len(content)
     smallScriptLength = 100
+    badChars = 0
 
     if re.findall(reJSscript, content, re.DOTALL | re.IGNORECASE):
         return True
 
     for char in content:
         if (ord(char) < 32 and char not in ['\n', '\r', '\t', '\f', '\x00']) or ord(char) >= 127:
-            return False
+            badChars += 1
+
+    # More than 20% of the content are bad chars
+    if badChars >= len(content) * 0.2:
+        return False
 
     for string in jsStrings:
         cont = content.count(string)
