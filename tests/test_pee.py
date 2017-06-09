@@ -33,9 +33,6 @@ def test_js_detect():
     )
     assert not r
 
-    ret = []
-    js_found = 0
-
     for version in xrange(f.updates + 1):
         for obj in f.body[version].objects.values():
             if isinstance(obj, peepdf.PDFCore.PDFIndirectObject):
