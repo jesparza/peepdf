@@ -56,6 +56,11 @@ newLine = os.linesep
 reJSscript = '<script[^>]*?contentType\s*?=\s*?[\'"]application/x-javascript[\'"][^>]*?>(.*?)</script>'
 preDefinedCode = 'var app = this;'
 
+# Regex that matches any character that's <32 && >127 and not a whitespace.
+bad_chars_re = "|".join(re.escape(chr(ch)) for ch in (
+    [ch for ch in xrange(32) if chr(ch) not in "\n\r\t\f"] +
+    [ch for ch in xrange(128, 256)]
+))
 
 def analyseJS(code, context=None, manualAnalysis=False):
     '''
@@ -190,17 +195,12 @@ def isJavascript(content):
     results = 0
     length = len(content)
     smallScriptLength = 100
-    badChars = 0
 
     if re.findall(reJSscript, content, re.DOTALL | re.IGNORECASE):
         return True
 
-    for char in content:
-        if (ord(char) < 32 and char not in ['\n', '\r', '\t', '\f', '\x00']) or ord(char) >= 127:
-            badChars += 1
-
-    # More than 20% of the content are bad chars
-    if badChars >= len(content) * 0.2:
+    _, count = re.subn(bad_chars_re, "", content, len(content) / 10)
+    if count == len(content) / 10:
         return False
 
     for string in jsStrings:

@@ -21,9 +21,11 @@
 #
 
 import mock
+import pytest
+import time
+
 import peepdf
 import peepdf.main
-import pytest
 
 def test_js_detect():
     p = peepdf.PDFCore.PDFParser()
@@ -64,3 +66,12 @@ def test_lxml_missing():
         with pytest.raises(AssertionError) as e:
             peepdf.main.getPeepXML(None, None, None)
         e.match("lxml must be installed")
+
+def test_quickish_isjs():
+    t = time.time()
+    peepdf.PDFCore.PDFParser().parse(
+        "tests/files/phishing0.pdf", forceMode=True,
+        looseMode=True, manualAnalysis=False
+    )
+    # Should take no more than 2 seconds (in 0.3.5 this would take >5 seconds).
+    assert time.time() - t < 2
