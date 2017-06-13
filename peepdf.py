@@ -31,7 +31,6 @@ import sys
 import os
 import optparse
 import re
-import urllib2
 import hashlib
 import traceback
 import json
@@ -39,6 +38,10 @@ from datetime import datetime
 from PDFCore import PDFParser, vulnsDict
 from PDFUtils import vtcheck
 
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib2 import urlopen
 
 VT_KEY = 'fc90df3f5ac749a94a94cb8bf87e05a681a2eb001aef34b6a0084b8c22c97a64'
 
@@ -68,7 +71,7 @@ except:
 def getRepPaths(url, path=''):
     paths = []
     try:
-        browsingPage = urllib2.urlopen(url + path).read()
+        browsingPage = urlopen(url + path).read()
     except:
         sys.exit('[x] Connection error while getting browsing page "' + url + path + '"')
     browsingPageObject = json.loads(browsingPage)
@@ -83,14 +86,14 @@ def getRepPaths(url, path=''):
 
 def getLocalFilesInfo(filesList):
     localFilesInfo = {}
-    print '[-] Getting local files information...'
+    print('[-] Getting local files information...')
     for path in filesList:
         absFilePath = os.path.join(absPeepdfRoot, path)
         if os.path.exists(absFilePath):
             content = open(absFilePath, 'rb').read()
             shaHash = hashlib.sha256(content).hexdigest()
             localFilesInfo[path] = [shaHash, absFilePath]
-    print '[+] Done'
+    print('[+] Done')
     return localFilesInfo
 
 
@@ -407,339 +410,341 @@ argsParser.add_option('-C', '--command', action='append', type='string', dest='c
                       help='Specifies a command from the interactive console to be executed.')
 (options, args) = argsParser.parse_args()
 
-try:
-    # Avoid colors in the output
-    if not COLORIZED_OUTPUT or options.avoidColors:
-        warningColor = ''
-        errorColor = ''
-        alertColor = ''
-        staticColor = ''
-        resetColor = ''
+#try:
+# Avoid colors in the output
+if not COLORIZED_OUTPUT or options.avoidColors:
+    warningColor = ''
+    errorColor = ''
+    alertColor = ''
+    staticColor = ''
+    resetColor = ''
+else:
+    warningColor = Fore.YELLOW
+    errorColor = Fore.RED
+    alertColor = Fore.RED
+    staticColor = Fore.BLUE
+    resetColor = Style.RESET_ALL
+if options.version:
+    print(peepdfHeader)
+elif options.update:
+    updated = False
+    newVersion = ''
+    localVersion = 'v' + version + ' r' + revision
+    reVersion = 'version = \'(\d\.\d)\'\s*?revision = \'(\d+)\''
+    repURL = 'https://api.github.com/repos/jesparza/peepdf/contents/'
+    rawRepURL = 'https://raw.githubusercontent.com/jesparza/peepdf/master/'
+    print('[-] Checking if there are new updates...')
+    try:
+        remotePeepContent = urlopen(rawRepURL + 'peepdf.py').read()
+    except:
+        sys.exit('[x] Connection error while trying to connect with the repository')
+    repVer = re.findall(reVersion, remotePeepContent)
+    if repVer:
+        newVersion = 'v' + repVer[0][0] + ' r' + repVer[0][1]
     else:
-        warningColor = Fore.YELLOW
-        errorColor = Fore.RED
-        alertColor = Fore.RED
-        staticColor = Fore.BLUE
-        resetColor = Style.RESET_ALL
-    if options.version:
-        print peepdfHeader
-    elif options.update:
-        updated = False
-        newVersion = ''
-        localVersion = 'v' + version + ' r' + revision
-        reVersion = 'version = \'(\d\.\d)\'\s*?revision = \'(\d+)\''
-        repURL = 'https://api.github.com/repos/jesparza/peepdf/contents/'
-        rawRepURL = 'https://raw.githubusercontent.com/jesparza/peepdf/master/'
-        print '[-] Checking if there are new updates...'
-        try:
-            remotePeepContent = urllib2.urlopen(rawRepURL + 'peepdf.py').read()
-        except:
-            sys.exit('[x] Connection error while trying to connect with the repository')
-        repVer = re.findall(reVersion, remotePeepContent)
-        if repVer:
-            newVersion = 'v' + repVer[0][0] + ' r' + repVer[0][1]
-        else:
-            sys.exit('[x] Error getting the version number from the repository')
-        if localVersion == newVersion:
-            print '[+] No changes! ;)'
-        else:
-            print '[+] There are new updates!!'
-            print '[-] Getting paths from the repository...'
-            pathNames = getRepPaths(repURL, '')
-            print '[+] Done'
-            localFilesInfo = getLocalFilesInfo(pathNames)
-            print '[-] Checking files...'
-            for path in pathNames:
-                try:
-                    fileContent = urllib2.urlopen(rawRepURL + path).read()
-                except:
-                    sys.exit('[x] Connection error while getting file "' + path + '"')
-                if path in localFilesInfo:
-                    # File exists
-                    # Checking hash
-                    shaHash = hashlib.sha256(fileContent).hexdigest()
-                    if shaHash != localFilesInfo[path][0]:
-                        open(localFilesInfo[path][1], 'wb').write(fileContent)
-                        print '[+] File "' + path + '" updated successfully'
-                else:
-                    # File does not exist
-                    index = path.rfind('/')
-                    if index != -1:
-                        dirsPath = path[:index]
-                        absDirsPath = os.path.join(absPeepdfRoot, dirsPath)
-                        if not os.path.exists(absDirsPath):
-                            print '[+] New directory "' + dirsPath + '" created successfully'
-                            os.makedirs(absDirsPath)
-                    open(os.path.join(absPeepdfRoot, path), 'wb').write(fileContent)
-                    print '[+] New file "' + path + '" created successfully'
-            message = '[+] peepdf updated successfully'
-            if newVersion != '':
-                message += ' to ' + newVersion
-            print message
-
+        sys.exit('[x] Error getting the version number from the repository')
+    if localVersion == newVersion:
+        print('[+] No changes! ;)')
     else:
-        if len(args) == 1:
-            fileName = args[0]
-            if not os.path.exists(fileName):
-                sys.exit('Error: The file "' + fileName + '" does not exist!!')
-        elif len(args) > 1 or (len(args) == 0 and not options.isInteractive):
-            sys.exit(argsParser.print_help())
+        print('[+] There are new updates!!')
+        print('[-] Getting paths from the repository...')
+        pathNames = getRepPaths(repURL, '')
+        print('[+] Done')
+        localFilesInfo = getLocalFilesInfo(pathNames)
+        print('[-] Checking files...')
+        for path in pathNames:
+            try:
+                fileContent = urlopen(rawRepURL + path).read()
+            except:
+                sys.exit('[x] Connection error while getting file "' + path + '"')
+            if path in localFilesInfo:
+                # File exists
+                # Checking hash
+                shaHash = hashlib.sha256(fileContent).hexdigest()
+                if shaHash != localFilesInfo[path][0]:
+                    open(localFilesInfo[path][1], 'wb').write(fileContent)
+                    print('[+] File "' + path + '" updated successfully')
+            else:
+                # File does not exist
+                index = path.rfind('/')
+                if index != -1:
+                    dirsPath = path[:index]
+                    absDirsPath = os.path.join(absPeepdfRoot, dirsPath)
+                    if not os.path.exists(absDirsPath):
+                        print('[+] New directory "' + dirsPath + '" created successfully')
+                        os.makedirs(absDirsPath)
+                open(os.path.join(absPeepdfRoot, path), 'wb').write(fileContent)
+                print('[+] New file "' + path + '" created successfully')
+        message = '[+] peepdf updated successfully'
+        if newVersion != '':
+            message += ' to ' + newVersion
+        print(message)
 
-        if options.scriptFile is not None:
-            if not os.path.exists(options.scriptFile):
-                sys.exit('Error: The script file "' + options.scriptFile + '" does not exist!!')
+else:
+    if len(args) == 1:
+        fileName = args[0]
+        if not os.path.exists(fileName):
+            sys.exit('Error: The file "' + fileName + '" does not exist!!')
+    elif len(args) > 1 or (len(args) == 0 and not options.isInteractive):
+        sys.exit(argsParser.print_help())
 
-        if fileName is not None:
-            pdfParser = PDFParser()
-            ret, pdf = pdfParser.parse(fileName, options.isForceMode, options.isLooseMode, options.isManualAnalysis)
-            if options.checkOnVT:
-                # Checks the MD5 on VirusTotal
-                md5Hash = pdf.getMD5()
-                ret = vtcheck(md5Hash, VT_KEY)
-                if ret[0] == -1:
-                    pdf.addError(ret[1])
-                else:
-                    vtJsonDict = ret[1]
-                    if vtJsonDict.has_key('response_code'):
-                        if vtJsonDict['response_code'] == 1:
-                            if vtJsonDict.has_key('positives') and vtJsonDict.has_key('total'):
-                                pdf.setDetectionRate([vtJsonDict['positives'], vtJsonDict['total']])
-                            else:
-                                pdf.addError('Missing elements in the response from VirusTotal!!')
-                            if vtJsonDict.has_key('permalink'):
-                                pdf.setDetectionReport(vtJsonDict['permalink'])
+    if options.scriptFile is not None:
+        if not os.path.exists(options.scriptFile):
+            sys.exit('Error: The script file "' + options.scriptFile + '" does not exist!!')
+
+    if fileName is not None:
+        pdfParser = PDFParser()
+        ret, pdf = pdfParser.parse(fileName, options.isForceMode, options.isLooseMode, options.isManualAnalysis)
+        if options.checkOnVT:
+            # Checks the MD5 on VirusTotal
+            md5Hash = pdf.getMD5()
+            ret = vtcheck(md5Hash, VT_KEY)
+            if ret[0] == -1:
+                pdf.addError(ret[1])
+            else:
+                vtJsonDict = ret[1]
+                if vtJsonDict.has_key('response_code'):
+                    if vtJsonDict['response_code'] == 1:
+                        if vtJsonDict.has_key('positives') and vtJsonDict.has_key('total'):
+                            pdf.setDetectionRate([vtJsonDict['positives'], vtJsonDict['total']])
                         else:
-                            pdf.setDetectionRate(None)
+                            pdf.addError('Missing elements in the response from VirusTotal!!')
+                        if vtJsonDict.has_key('permalink'):
+                            pdf.setDetectionReport(vtJsonDict['permalink'])
                     else:
-                        pdf.addError('Bad response from VirusTotal!!')
-            statsDict = pdf.getStats()
+                        pdf.setDetectionRate(None)
+                else:
+                    pdf.addError('Bad response from VirusTotal!!')
+        statsDict = pdf.getStats()
 
-        if options.xmlOutput:
+    if options.xmlOutput:
+        try:
+            from lxml import etree
+
+            xml = getPeepXML(statsDict, version, revision)
+            sys.stdout.write(xml)
+        except:
+            errorMessage = '*** Error: Exception while generating the XML file!!'
+            traceback.print_exc(file=open(errorsFile, 'a'))
+            raise Exception('PeepException', 'Send me an email ;)')
+    elif options.jsonOutput and not options.commands:
+        try:
+            jsonReport = getPeepJSON(statsDict, version, revision)
+            sys.stdout.write(jsonReport)
+        except:
+            errorMessage = '*** Error: Exception while generating the JSON report!!'
+            traceback.print_exc(file=open(errorsFile, 'a'))
+            raise Exception('PeepException', 'Send me an email ;)')
+    else:
+        if COLORIZED_OUTPUT and not options.avoidColors:
             try:
-                from lxml import etree
-
-                xml = getPeepXML(statsDict, version, revision)
-                sys.stdout.write(xml)
+                init()
             except:
-                errorMessage = '*** Error: Exception while generating the XML file!!'
+                COLORIZED_OUTPUT = False
+        if options.scriptFile is not None:
+            from PDFConsole import PDFConsole
+
+            scriptFileObject = open(options.scriptFile, 'rb')
+            console = PDFConsole(pdf, VT_KEY, options.avoidColors, stdin=scriptFileObject)
+            try:
+                console.cmdloop()
+            except:
+                errorMessage = '*** Error: Exception not handled using the batch mode!!'
+                scriptFileObject.close()
                 traceback.print_exc(file=open(errorsFile, 'a'))
                 raise Exception('PeepException', 'Send me an email ;)')
-        elif options.jsonOutput and not options.commands:
+        elif options.commands is not None:
+            from PDFConsole import PDFConsole
+
+            console = PDFConsole(pdf, VT_KEY, options.avoidColors)
             try:
-                jsonReport = getPeepJSON(statsDict, version, revision)
-                sys.stdout.write(jsonReport)
+                for command in options.commands:
+                    console.onecmd(command)
             except:
-                errorMessage = '*** Error: Exception while generating the JSON report!!'
+                errorMessage = '*** Error: Exception not handled using the batch commands!!'
                 traceback.print_exc(file=open(errorsFile, 'a'))
                 raise Exception('PeepException', 'Send me an email ;)')
         else:
-            if COLORIZED_OUTPUT and not options.avoidColors:
-                try:
-                    init()
-                except:
-                    COLORIZED_OUTPUT = False
-            if options.scriptFile is not None:
-                from PDFConsole import PDFConsole
+            if statsDict is not None:
+                if COLORIZED_OUTPUT and not options.avoidColors:
+                    beforeStaticLabel = staticColor
+                else:
+                    beforeStaticLabel = ''
 
-                scriptFileObject = open(options.scriptFile, 'rb')
-                console = PDFConsole(pdf, VT_KEY, options.avoidColors, stdin=scriptFileObject)
-                try:
-                    console.cmdloop()
-                except:
-                    errorMessage = '*** Error: Exception not handled using the batch mode!!'
-                    scriptFileObject.close()
-                    traceback.print_exc(file=open(errorsFile, 'a'))
-                    raise Exception('PeepException', 'Send me an email ;)')
-            elif options.commands is not None:
+                if not JS_MODULE:
+                    warningMessage = 'Warning: PyV8 is not installed!!'
+                    stats += warningColor + warningMessage + resetColor + newLine
+                if not EMU_MODULE:
+                    warningMessage = 'Warning: pylibemu is not installed!!'
+                    stats += warningColor + warningMessage + resetColor + newLine
+                if not PIL_MODULE:
+                    warningMessage = 'Warning: Python Imaging Library (PIL) is not installed!!'
+                    stats += warningColor + warningMessage + resetColor + newLine
+                errors = statsDict['Errors']
+                for error in errors:
+                    if error.find('Decryption error') != -1:
+                        stats += errorColor + error + resetColor + newLine
+                if stats != '':
+                    stats += newLine
+                statsDict = pdf.getStats()
+
+                stats += beforeStaticLabel + 'File: ' + resetColor + statsDict['File'] + newLine
+                stats += beforeStaticLabel + 'MD5: ' + resetColor + statsDict['MD5'] + newLine
+                stats += beforeStaticLabel + 'SHA1: ' + resetColor + statsDict['SHA1'] + newLine
+                stats += beforeStaticLabel + 'SHA256: ' + resetColor + statsDict['SHA256'] + newLine
+                stats += beforeStaticLabel + 'Size: ' + resetColor + statsDict['Size'] + ' bytes' + newLine
+                if options.checkOnVT:
+                    if statsDict['Detection'] != []:
+                        detectionReportInfo = ''
+                        if statsDict['Detection'] != None:
+                            detectionColor = ''
+                            if COLORIZED_OUTPUT and not options.avoidColors:
+                                detectionLevel = statsDict['Detection'][0] / (statsDict['Detection'][1] / 3)
+                                if detectionLevel == 0:
+                                    detectionColor = alertColor
+                                elif detectionLevel == 1:
+                                    detectionColor = warningColor
+                            detectionRate = '%s%d%s/%d' % (
+                                detectionColor, statsDict['Detection'][0], resetColor, statsDict['Detection'][1])
+                            if statsDict['Detection report'] != '':
+                                detectionReportInfo = beforeStaticLabel + 'Detection report: ' + resetColor + \
+                                                      statsDict['Detection report'] + newLine
+                        else:
+                            detectionRate = 'File not found on VirusTotal'
+                        stats += beforeStaticLabel + 'Detection: ' + resetColor + detectionRate + newLine
+                        stats += detectionReportInfo
+                stats += beforeStaticLabel + 'Version: ' + resetColor + statsDict['Version'].decode() + newLine
+                stats += beforeStaticLabel + 'Binary: ' + resetColor + statsDict['Binary'] + newLine
+                stats += beforeStaticLabel + 'Linearized: ' + resetColor + statsDict['Linearized'] + newLine
+                stats += beforeStaticLabel + 'Encrypted: ' + resetColor + statsDict['Encrypted']
+                if statsDict['Encryption Algorithms'] != []:
+                    stats += ' ('
+                    for algorithmInfo in statsDict['Encryption Algorithms']:
+                        stats += algorithmInfo[0] + ' ' + str(algorithmInfo[1]) + ' bits, '
+                    stats = stats[:-2] + ')'
+                stats += newLine
+                stats += beforeStaticLabel + 'Updates: ' + resetColor + statsDict['Updates'] + newLine
+                stats += beforeStaticLabel + 'Objects: ' + resetColor + statsDict['Objects'] + newLine
+                stats += beforeStaticLabel + 'Streams: ' + resetColor + statsDict['Streams'] + newLine
+                stats += beforeStaticLabel + 'URIs: ' + resetColor + statsDict['URIs'] + newLine
+                stats += beforeStaticLabel + 'Comments: ' + resetColor + statsDict['Comments'] + newLine
+                stats += beforeStaticLabel + 'Errors: ' + resetColor + str(len(statsDict['Errors'])) + newLine * 2
+                for version in range(len(statsDict['Versions'])):
+                    statsVersion = statsDict['Versions'][version]
+                    stats += beforeStaticLabel + 'Version ' + resetColor + str(version) + ':' + newLine
+                    if statsVersion['Catalog'] != None:
+                        stats += beforeStaticLabel + '\tCatalog: ' + resetColor + statsVersion['Catalog'] + newLine
+                    else:
+                        stats += beforeStaticLabel + '\tCatalog: ' + resetColor + 'No' + newLine
+                    if statsVersion['Info'] != None:
+                        stats += beforeStaticLabel + '\tInfo: ' + resetColor + statsVersion['Info'] + newLine
+                    else:
+                        stats += beforeStaticLabel + '\tInfo: ' + resetColor + 'No' + newLine
+                    stats += beforeStaticLabel + '\tObjects (' + statsVersion['Objects'][
+                        0] + '): ' + resetColor + str(statsVersion['Objects'][1]) + newLine
+                    if statsVersion['Compressed Objects'] != None:
+                        stats += beforeStaticLabel + '\tCompressed objects (' + statsVersion['Compressed Objects'][
+                            0] + '): ' + resetColor + str(statsVersion['Compressed Objects'][1]) + newLine
+                    if statsVersion['Errors'] != None:
+                        stats += beforeStaticLabel + '\t\tErrors (' + statsVersion['Errors'][
+                            0] + '): ' + resetColor + str(statsVersion['Errors'][1]) + newLine
+                    stats += beforeStaticLabel + '\tStreams (' + statsVersion['Streams'][
+                        0] + '): ' + resetColor + str(statsVersion['Streams'][1])
+                    if statsVersion['Xref Streams'] != None:
+                        stats += newLine + beforeStaticLabel + '\t\tXref streams (' + statsVersion['Xref Streams'][
+                            0] + '): ' + resetColor + str(statsVersion['Xref Streams'][1])
+                    if statsVersion['Object Streams'] != None:
+                        stats += newLine + beforeStaticLabel + '\t\tObject streams (' + \
+                                 statsVersion['Object Streams'][0] + '): ' + resetColor + str(
+                            statsVersion['Object Streams'][1])
+                    if int(statsVersion['Streams'][0]) > 0:
+                        stats += newLine + beforeStaticLabel + '\t\tEncoded (' + statsVersion['Encoded'][
+                            0] + '): ' + resetColor + str(statsVersion['Encoded'][1])
+                        if statsVersion['Decoding Errors'] != None:
+                            stats += newLine + beforeStaticLabel + '\t\tDecoding errors (' + \
+                                     statsVersion['Decoding Errors'][0] + '): ' + resetColor + str(
+                                statsVersion['Decoding Errors'][1])
+                    if statsVersion['URIs'] is not None:
+                        stats += newLine + beforeStaticLabel + '\tObjects with URIs (' + \
+                                 statsVersion['URIs'][0] + '): ' + resetColor + str(statsVersion['URIs'][1])
+                    if COLORIZED_OUTPUT and not options.avoidColors:
+                        beforeStaticLabel = warningColor
+                    if statsVersion['Objects with JS code'] != None:
+                        stats += newLine + beforeStaticLabel + '\tObjects with JS code (' + \
+                                 statsVersion['Objects with JS code'][0] + '): ' + resetColor + str(
+                            statsVersion['Objects with JS code'][1])
+                    actions = statsVersion['Actions']
+                    events = statsVersion['Events']
+                    vulns = statsVersion['Vulns']
+                    elements = statsVersion['Elements']
+                    if events != None or actions != None or vulns != None or elements != None:
+                        stats += newLine + beforeStaticLabel + '\tSuspicious elements:' + resetColor + newLine
+                        if events != None:
+                            for event in events:
+                                stats += '\t\t' + beforeStaticLabel + event + ' (%d): ' % len(events[event]) + \
+                                         resetColor + str(events[event]) + newLine
+                        if actions != None:
+                            for action in actions:
+                                stats += '\t\t' + beforeStaticLabel + action + ' (%d): ' % len(actions[action]) + \
+                                         resetColor + str(actions[action]) + newLine
+                        if vulns != None:
+                            for vuln in vulns:
+                                if vulnsDict.has_key(vuln):
+                                    vulnName = vulnsDict[vuln][0]
+                                    vulnCVEList = vulnsDict[vuln][1]
+                                    stats += '\t\t' + beforeStaticLabel + vulnName + ' ('
+                                    for vulnCVE in vulnCVEList:
+                                        stats += vulnCVE + ','
+                                    stats = stats[:-1] + ') (%d): ' % len(vulns[vuln]) + resetColor + str(vulns[vuln]) + newLine
+                                else:
+                                    stats += '\t\t' + beforeStaticLabel + vuln + ' (%d): ' % len(vulns[vuln]) + \
+                                             resetColor + str(vulns[vuln]) + newLine
+                        if elements != None:
+                            for element in elements:
+                                if vulnsDict.has_key(element):
+                                    vulnName = vulnsDict[element][0]
+                                    vulnCVEList = vulnsDict[element][1]
+                                    stats += '\t\t' + beforeStaticLabel + vulnName + ' ('
+                                    for vulnCVE in vulnCVEList:
+                                        stats += vulnCVE + ','
+                                    stats = stats[:-1] + '): ' + resetColor + str(elements[element]) + newLine
+                                else:
+                                    stats += '\t\t' + beforeStaticLabel + element + ': ' + resetColor + str(
+                                        elements[element]) + newLine
+                    if COLORIZED_OUTPUT and not options.avoidColors:
+                        beforeStaticLabel = staticColor
+                    urls = statsVersion['URLs']
+                    if urls != None:
+                        stats += newLine + beforeStaticLabel + '\tFound URLs:' + resetColor + newLine
+                        for url in urls:
+                            stats += '\t\t' + url + newLine
+                    stats += newLine * 2
+            if fileName != None:
+                print(stats)
+            if options.isInteractive:
                 from PDFConsole import PDFConsole
 
                 console = PDFConsole(pdf, VT_KEY, options.avoidColors)
-                try:
-                    for command in options.commands:
-                        console.onecmd(command)
-                except:
-                    errorMessage = '*** Error: Exception not handled using the batch commands!!'
-                    traceback.print_exc(file=open(errorsFile, 'a'))
-                    raise Exception('PeepException', 'Send me an email ;)')
-            else:
-                if statsDict is not None:
-                    if COLORIZED_OUTPUT and not options.avoidColors:
-                        beforeStaticLabel = staticColor
-                    else:
-                        beforeStaticLabel = ''
-
-                    if not JS_MODULE:
-                        warningMessage = 'Warning: PyV8 is not installed!!'
-                        stats += warningColor + warningMessage + resetColor + newLine
-                    if not EMU_MODULE:
-                        warningMessage = 'Warning: pylibemu is not installed!!'
-                        stats += warningColor + warningMessage + resetColor + newLine
-                    if not PIL_MODULE:
-                        warningMessage = 'Warning: Python Imaging Library (PIL) is not installed!!'
-                        stats += warningColor + warningMessage + resetColor + newLine
-                    errors = statsDict['Errors']
-                    for error in errors:
-                        if error.find('Decryption error') != -1:
-                            stats += errorColor + error + resetColor + newLine
-                    if stats != '':
-                        stats += newLine
-                    statsDict = pdf.getStats()
-
-                    stats += beforeStaticLabel + 'File: ' + resetColor + statsDict['File'] + newLine
-                    stats += beforeStaticLabel + 'MD5: ' + resetColor + statsDict['MD5'] + newLine
-                    stats += beforeStaticLabel + 'SHA1: ' + resetColor + statsDict['SHA1'] + newLine
-                    stats += beforeStaticLabel + 'SHA256: ' + resetColor + statsDict['SHA256'] + newLine
-                    stats += beforeStaticLabel + 'Size: ' + resetColor + statsDict['Size'] + ' bytes' + newLine
-                    if options.checkOnVT:
-                        if statsDict['Detection'] != []:
-                            detectionReportInfo = ''
-                            if statsDict['Detection'] != None:
-                                detectionColor = ''
-                                if COLORIZED_OUTPUT and not options.avoidColors:
-                                    detectionLevel = statsDict['Detection'][0] / (statsDict['Detection'][1] / 3)
-                                    if detectionLevel == 0:
-                                        detectionColor = alertColor
-                                    elif detectionLevel == 1:
-                                        detectionColor = warningColor
-                                detectionRate = '%s%d%s/%d' % (
-                                    detectionColor, statsDict['Detection'][0], resetColor, statsDict['Detection'][1])
-                                if statsDict['Detection report'] != '':
-                                    detectionReportInfo = beforeStaticLabel + 'Detection report: ' + resetColor + \
-                                                          statsDict['Detection report'] + newLine
-                            else:
-                                detectionRate = 'File not found on VirusTotal'
-                            stats += beforeStaticLabel + 'Detection: ' + resetColor + detectionRate + newLine
-                            stats += detectionReportInfo
-                    stats += beforeStaticLabel + 'Version: ' + resetColor + statsDict['Version'] + newLine
-                    stats += beforeStaticLabel + 'Binary: ' + resetColor + statsDict['Binary'] + newLine
-                    stats += beforeStaticLabel + 'Linearized: ' + resetColor + statsDict['Linearized'] + newLine
-                    stats += beforeStaticLabel + 'Encrypted: ' + resetColor + statsDict['Encrypted']
-                    if statsDict['Encryption Algorithms'] != []:
-                        stats += ' ('
-                        for algorithmInfo in statsDict['Encryption Algorithms']:
-                            stats += algorithmInfo[0] + ' ' + str(algorithmInfo[1]) + ' bits, '
-                        stats = stats[:-2] + ')'
-                    stats += newLine
-                    stats += beforeStaticLabel + 'Updates: ' + resetColor + statsDict['Updates'] + newLine
-                    stats += beforeStaticLabel + 'Objects: ' + resetColor + statsDict['Objects'] + newLine
-                    stats += beforeStaticLabel + 'Streams: ' + resetColor + statsDict['Streams'] + newLine
-                    stats += beforeStaticLabel + 'URIs: ' + resetColor + statsDict['URIs'] + newLine
-                    stats += beforeStaticLabel + 'Comments: ' + resetColor + statsDict['Comments'] + newLine
-                    stats += beforeStaticLabel + 'Errors: ' + resetColor + str(len(statsDict['Errors'])) + newLine * 2
-                    for version in range(len(statsDict['Versions'])):
-                        statsVersion = statsDict['Versions'][version]
-                        stats += beforeStaticLabel + 'Version ' + resetColor + str(version) + ':' + newLine
-                        if statsVersion['Catalog'] != None:
-                            stats += beforeStaticLabel + '\tCatalog: ' + resetColor + statsVersion['Catalog'] + newLine
-                        else:
-                            stats += beforeStaticLabel + '\tCatalog: ' + resetColor + 'No' + newLine
-                        if statsVersion['Info'] != None:
-                            stats += beforeStaticLabel + '\tInfo: ' + resetColor + statsVersion['Info'] + newLine
-                        else:
-                            stats += beforeStaticLabel + '\tInfo: ' + resetColor + 'No' + newLine
-                        stats += beforeStaticLabel + '\tObjects (' + statsVersion['Objects'][
-                            0] + '): ' + resetColor + str(statsVersion['Objects'][1]) + newLine
-                        if statsVersion['Compressed Objects'] != None:
-                            stats += beforeStaticLabel + '\tCompressed objects (' + statsVersion['Compressed Objects'][
-                                0] + '): ' + resetColor + str(statsVersion['Compressed Objects'][1]) + newLine
-                        if statsVersion['Errors'] != None:
-                            stats += beforeStaticLabel + '\t\tErrors (' + statsVersion['Errors'][
-                                0] + '): ' + resetColor + str(statsVersion['Errors'][1]) + newLine
-                        stats += beforeStaticLabel + '\tStreams (' + statsVersion['Streams'][
-                            0] + '): ' + resetColor + str(statsVersion['Streams'][1])
-                        if statsVersion['Xref Streams'] != None:
-                            stats += newLine + beforeStaticLabel + '\t\tXref streams (' + statsVersion['Xref Streams'][
-                                0] + '): ' + resetColor + str(statsVersion['Xref Streams'][1])
-                        if statsVersion['Object Streams'] != None:
-                            stats += newLine + beforeStaticLabel + '\t\tObject streams (' + \
-                                     statsVersion['Object Streams'][0] + '): ' + resetColor + str(
-                                statsVersion['Object Streams'][1])
-                        if int(statsVersion['Streams'][0]) > 0:
-                            stats += newLine + beforeStaticLabel + '\t\tEncoded (' + statsVersion['Encoded'][
-                                0] + '): ' + resetColor + str(statsVersion['Encoded'][1])
-                            if statsVersion['Decoding Errors'] != None:
-                                stats += newLine + beforeStaticLabel + '\t\tDecoding errors (' + \
-                                         statsVersion['Decoding Errors'][0] + '): ' + resetColor + str(
-                                    statsVersion['Decoding Errors'][1])
-                        if statsVersion['URIs'] is not None:
-                            stats += newLine + beforeStaticLabel + '\tObjects with URIs (' + \
-                                     statsVersion['URIs'][0] + '): ' + resetColor + str(statsVersion['URIs'][1])
-                        if COLORIZED_OUTPUT and not options.avoidColors:
-                            beforeStaticLabel = warningColor
-                        if statsVersion['Objects with JS code'] != None:
-                            stats += newLine + beforeStaticLabel + '\tObjects with JS code (' + \
-                                     statsVersion['Objects with JS code'][0] + '): ' + resetColor + str(
-                                statsVersion['Objects with JS code'][1])
-                        actions = statsVersion['Actions']
-                        events = statsVersion['Events']
-                        vulns = statsVersion['Vulns']
-                        elements = statsVersion['Elements']
-                        if events != None or actions != None or vulns != None or elements != None:
-                            stats += newLine + beforeStaticLabel + '\tSuspicious elements:' + resetColor + newLine
-                            if events != None:
-                                for event in events:
-                                    stats += '\t\t' + beforeStaticLabel + event + ' (%d): ' % len(events[event]) + \
-                                             resetColor + str(events[event]) + newLine
-                            if actions != None:
-                                for action in actions:
-                                    stats += '\t\t' + beforeStaticLabel + action + ' (%d): ' % len(actions[action]) + \
-                                             resetColor + str(actions[action]) + newLine
-                            if vulns != None:
-                                for vuln in vulns:
-                                    if vulnsDict.has_key(vuln):
-                                        vulnName = vulnsDict[vuln][0]
-                                        vulnCVEList = vulnsDict[vuln][1]
-                                        stats += '\t\t' + beforeStaticLabel + vulnName + ' ('
-                                        for vulnCVE in vulnCVEList:
-                                            stats += vulnCVE + ','
-                                        stats = stats[:-1] + ') (%d): ' % len(vulns[vuln]) + resetColor + str(vulns[vuln]) + newLine
-                                    else:
-                                        stats += '\t\t' + beforeStaticLabel + vuln + ' (%d): ' % len(vulns[vuln]) + \
-                                                 resetColor + str(vulns[vuln]) + newLine
-                            if elements != None:
-                                for element in elements:
-                                    if vulnsDict.has_key(element):
-                                        vulnName = vulnsDict[element][0]
-                                        vulnCVEList = vulnsDict[element][1]
-                                        stats += '\t\t' + beforeStaticLabel + vulnName + ' ('
-                                        for vulnCVE in vulnCVEList:
-                                            stats += vulnCVE + ','
-                                        stats = stats[:-1] + '): ' + resetColor + str(elements[element]) + newLine
-                                    else:
-                                        stats += '\t\t' + beforeStaticLabel + element + ': ' + resetColor + str(
-                                            elements[element]) + newLine
-                        if COLORIZED_OUTPUT and not options.avoidColors:
-                            beforeStaticLabel = staticColor
-                        urls = statsVersion['URLs']
-                        if urls != None:
-                            stats += newLine + beforeStaticLabel + '\tFound URLs:' + resetColor + newLine
-                            for url in urls:
-                                stats += '\t\t' + url + newLine
-                        stats += newLine * 2
-                if fileName != None:
-                    print stats
-                if options.isInteractive:
-                    from PDFConsole import PDFConsole
-
-                    console = PDFConsole(pdf, VT_KEY, options.avoidColors)
-                    while not console.leaving:
-                        try:
-                            console.cmdloop()
-                        except KeyboardInterrupt as e:
-                            sys.exit()
-                        except:
-                            errorMessage = '*** Error: Exception not handled using the interactive console!! Please, report it to the author!!'
-                            print errorColor + errorMessage + resetColor + newLine
-                            traceback.print_exc(file=open(errorsFile, 'a'))
+                while not console.leaving:
+                    try:
+                        console.cmdloop()
+                    except KeyboardInterrupt as e:
+                        sys.exit()
+                    except:
+                        errorMessage = '*** Error: Exception not handled using the interactive console!! Please, report it to the author!!'
+                        print(errorColor + errorMessage + resetColor + newLine)
+                        traceback.print_exc(file=open(errorsFile, 'a'))
+"""
 except Exception as e:
     if len(e.args) == 2:
         excName, excReason = e.args
     else:
         excName = excReason = None
     if excName == None or excName != 'PeepException':
+        print(e)
         errorMessage = '*** Error: Exception not handled!!'
         traceback.print_exc(file=open(errorsFile, 'a'))
-    print errorColor + errorMessage + resetColor + newLine
+    print(errorColor + errorMessage + resetColor + newLine)
 finally:
     if os.path.exists(errorsFile):
         message = newLine + 'Please, don\'t forget to report the errors found:' + newLine * 2
@@ -748,3 +753,4 @@ finally:
         message += '\t- And/Or creating an issue on the project webpage (https://github.com/jesparza/peepdf/issues)' + newLine
         message = errorColor + message + resetColor
         sys.exit(message)
+"""
