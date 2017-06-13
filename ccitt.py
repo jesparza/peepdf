@@ -36,7 +36,7 @@ class BitWriter(object):
         """
         """
         if not ( length >= 0 and (1 << length) > data ):
-            raise BitWriterException, "Invalid data length"
+            raise BitWriterException("Invalid data length")
 
         if length == 8 and not self._last_byte and self._bit_ptr == 0:
             self._data += chr(data)
@@ -108,7 +108,7 @@ class BitReader(object):
         """
         """
         if bits > self.size:
-            raise BitReaderException, "Pointer position out of data"
+            raise BitReaderException("Pointer position out of data")
 
         pbyte = bits >> 3
         pbit = bits - (pbyte <<3)
@@ -118,9 +118,9 @@ class BitReader(object):
         """
         """
         if length <= 0:
-            raise BitReaderException, "Invalid read length"
+            raise BitReaderException("Invalid read length")
         elif ( self.pos + length ) > self.size:
-            raise BitReaderException, "Insufficient data"
+            raise BitReaderException("Insufficient data")
 
         n = 0
         byte_ptr, bit_ptr = self._byte_ptr, self._bit_ptr
@@ -228,7 +228,7 @@ class CCITTFax(object):
         63  : codeword('00110100')
         }
 
-    WHITE_TERMINAL_DECODE_TABLE = dict( (v, k) for k, v in WHITE_TERMINAL_ENCODE_TABLE.iteritems() )
+    WHITE_TERMINAL_DECODE_TABLE = dict( (v, k) for k, v in WHITE_TERMINAL_ENCODE_TABLE.items() )
 
     BLACK_TERMINAL_ENCODE_TABLE = {
         0   : codeword('0000110111'),
@@ -297,7 +297,7 @@ class CCITTFax(object):
         63  : codeword('000001100111')
         }
 
-    BLACK_TERMINAL_DECODE_TABLE = dict( (v, k) for k, v in BLACK_TERMINAL_ENCODE_TABLE.iteritems() )
+    BLACK_TERMINAL_DECODE_TABLE = dict( (v, k) for k, v in BLACK_TERMINAL_ENCODE_TABLE.items() )
 
     WHITE_CONFIGURATION_ENCODE_TABLE = {
         64    : codeword('11011'),
@@ -343,7 +343,7 @@ class CCITTFax(object):
         2560  : codeword('000000011111')
         }
 
-    WHITE_CONFIGURATION_DECODE_TABLE = dict( (v, k) for k, v in WHITE_CONFIGURATION_ENCODE_TABLE.iteritems() )
+    WHITE_CONFIGURATION_DECODE_TABLE = dict( (v, k) for k, v in WHITE_CONFIGURATION_ENCODE_TABLE.items() )
 
     BLACK_CONFIGURATION_ENCODE_TABLE = {
         64    : codeword('0000001111'),
@@ -389,7 +389,7 @@ class CCITTFax(object):
         2560  : codeword('000000011111')
         }
 
-    BLACK_CONFIGURATION_DECODE_TABLE = dict( (v, k) for k, v in BLACK_CONFIGURATION_ENCODE_TABLE.iteritems() )
+    BLACK_CONFIGURATION_DECODE_TABLE = dict( (v, k) for k, v in BLACK_CONFIGURATION_ENCODE_TABLE.items() )
 
     def __init__(self, ):
         """
@@ -422,7 +422,7 @@ class CCITTFax(object):
 
             if bitr.peek(self.EOL[1]) != self.EOL[0]:
                 if eol:
-                    raise Exception, "No end-of-line pattern found (at bit pos %d/%d)" % (bitr.pos, bitr.size)
+                    raise Exception("No end-of-line pattern found (at bit pos %d/%d)" % (bitr.pos, bitr.size))
             else:
                 bitr.pos += self.EOL[1]
 
@@ -433,11 +433,11 @@ class CCITTFax(object):
                 else:
                     bit_length = self.get_black_bits(bitr)
                 if bit_length == None:
-                    raise Exception, "Unfinished line (at bit pos %d/%d), %s" % (bitr.pos, bitr.size, bitw.data)
+                    raise Exception("Unfinished line (at bit pos %d/%d), %s" % (bitr.pos, bitr.size, bitw.data))
 
                 line_length += bit_length
                 if line_length > columns:
-                    raise Exception, "Line is too long (at bit pos %d/%d)" % (bitr.pos, bitr.size)
+                    raise Exception("Line is too long (at bit pos %d/%d)" % (bitr.pos, bitr.size))
 
                 bitw.write( (current_color << bit_length) - current_color, bit_length )
 

@@ -25,7 +25,14 @@
     Module with some misc functions
 '''
 
-import os, re, htmlentitydefs, json, urllib, urllib2
+import os, re, json, urllib
+
+try:
+    from html.entities import name2codepoint
+    from urllib.request import urlopen, Request
+except ImportError:
+    from htmlentitydefs import name2codepoint
+    from urllib2 import urlopen, Request
 
 def clearScreen():
 	'''
@@ -325,7 +332,7 @@ def numToHex(num, numBytes):
 	        hexString += chr(int(hexNumber[i]+hexNumber[i+1],16))
 	    hexString = '\0'*(numBytes-len(hexString))+hexString
     except:
-		return (-1,'Error in hexadecimal conversion')
+        return (-1,'Error in hexadecimal conversion')
     return (0,hexString)
                   		
 def numToString(num, numDigits):
@@ -369,7 +376,7 @@ def unescapeHTMLEntities(text):
         else:
             # named entity
             try:
-                text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
+                text = unichr(name2codepoint[text[1:-1]])
             except KeyError:
                 pass
         return text # leave as is
@@ -427,8 +434,8 @@ def vtcheck(md5, vtKey):
     parameters = {'resource':md5,'apikey':vtKey}
     try:
         data = urllib.urlencode(parameters)
-        req = urllib2.Request(vtUrl, data)
-        response = urllib2.urlopen(req)
+        req = Request(vtUrl, data)
+        response = urlopen(req)
         jsonResponse = response.read()
     except:
         return (-1, 'The request to VirusTotal has not been successful')

@@ -6860,11 +6860,11 @@ class PDFParser :
         file = open(fileName,'rb')
         for line in file:
             if versionLine == '':
-                pdfHeaderIndex = line.find('%PDF-')
-                psHeaderIndex = line.find('%!PS-Adobe-')
+                pdfHeaderIndex = line.find(b'%PDF-')
+                psHeaderIndex = line.find(b'%!PS-Adobe-')
                 if pdfHeaderIndex != -1 or psHeaderIndex != -1:
-                    index = line.find('\r')
-                    if index != -1 and index+1 < len(line) and line[index+1] != '\n':
+                    index = line.find(b'\r')
+                    if index != -1 and index+1 < len(line) and line[index+1] != b'\n':
                         index += 1
                         versionLine = line[:index]
                         binaryLine = line[index:]
@@ -6885,9 +6885,9 @@ class PDFParser :
         file.close()
         
         # Getting the specification version
-        versionLine = versionLine.replace('\r','')
-        versionLine = versionLine.replace('\n','')
-        matchVersion = re.findall('%(PDF-|!PS-Adobe-\d{1,2}\.\d{1,2}\sPDF-)(\d{1,2}\.\d{1,2})',versionLine)
+        versionLine = versionLine.replace(b'\r',b'')
+        versionLine = versionLine.replace(b'\n',b'')
+        matchVersion = re.findall(b'%(PDF-|!PS-Adobe-\d{1,2}\.\d{1,2}\sPDF-)(\d{1,2}\.\d{1,2})',versionLine)
         if matchVersion == []:
             if forceMode:
                 pdfFile.setVersion(versionLine)
@@ -6902,15 +6902,15 @@ class PDFParser :
             
         # Getting the end of line
         if len(binaryLine) > 3:
-            if binaryLine[-2:] == '\r\n':
-                pdfFile.setEndLine('\r\n')
+            if binaryLine[-2:] == b'\r\n':
+                pdfFile.setEndLine(b'\r\n')
             else:
-                if binaryLine[-1] == '\r':
-                    pdfFile.setEndLine('\r')
-                elif binaryLine[-1] == '\n':
-                    pdfFile.setEndLine('\n')
+                if binaryLine[-1] == b'\r':
+                    pdfFile.setEndLine(b'\r')
+                elif binaryLine[-1] == b'\n':
+                    pdfFile.setEndLine(b'\n')
                 else:
-                    pdfFile.setEndLine('\n')
+                    pdfFile.setEndLine(b'\n')
         
             # Does it contain binary characters??
             if binaryLine[0] == '%' and ord(binaryLine[1]) >= 128 and ord(binaryLine[2]) >= 128 and ord(binaryLine[3]) >= 128 and ord(binaryLine[4]) >= 128:
@@ -6927,15 +6927,15 @@ class PDFParser :
         pdfFile.setSHA256(hashlib.sha256(fileContent).hexdigest())
         
         # Getting the number of updates in the file
-        while fileContent.find('%%EOF') != -1:
-            self.readUntilSymbol(fileContent, '%%EOF')
+        while fileContent.find(b'%%EOF') != -1:
+            self.readUntilSymbol(fileContent, b'%%EOF')
             self.readUntilEndOfLine(fileContent)
             self.fileParts.append(fileContent[:self.charCounter])
             fileContent = fileContent[self.charCounter:]
             self.charCounter = 0
         else:
             if self.fileParts == []:
-                errorMessage = '%%EOF not found'
+                errorMessage = b'%%EOF not found'
                 if forceMode:
                     pdfFile.addError(errorMessage)
                     self.fileParts.append(fileContent)
@@ -6974,17 +6974,17 @@ class PDFParser :
             if xrefContent != None:    
                 xrefOffset = bodyOffset + len(bodyContent)
                 trailerOffset = xrefOffset + len(xrefContent)
-                bodyContent = bodyContent.strip('\r\n')
-                xrefContent = xrefContent.strip('\r\n')
-                trailerContent = trailerContent.strip('\r\n')
+                bodyContent = bodyContent.strip(b'\r\n')
+                xrefContent = xrefContent.strip(b'\r\n')
+                trailerContent = trailerContent.strip(b'\r\n')
                 trailerFound = True
                 xrefFound = True
             else:
                 if trailerContent != None:
                     xrefOffset = -1
                     trailerOffset = bodyOffset + len(bodyContent)
-                    bodyContent = bodyContent.strip('\r\n')
-                    trailerContent = trailerContent.strip('\r\n')    
+                    bodyContent = bodyContent.strip(b'\r\n')
+                    trailerContent = trailerContent.strip(b'\r\n')    
                 else:
                     errorMessage = 'PDF sections not found'
                     if forceMode:
@@ -7150,16 +7150,16 @@ class PDFParser :
         trailerContent = None
         
         global pdfFile
-        indexTrailer = content.find('trailer')
+        indexTrailer = content.find(b'trailer')
         if indexTrailer != -1:
             restContent = content[:indexTrailer]
             auxTrailer = content[indexTrailer:]
-            indexEOF = auxTrailer.find('%%EOF')
+            indexEOF = auxTrailer.find(b'%%EOF')
             if indexEOF == -1:
                 trailerContent = auxTrailer
             else:
                 trailerContent = auxTrailer[:indexEOF+5]
-            indexXref = restContent.find('xref')
+            indexXref = restContent.find(b'xref')
             if indexXref != -1:
                 bodyContent = restContent[:indexXref]
                 xrefContent = restContent[indexXref:]
@@ -7169,11 +7169,11 @@ class PDFParser :
                     pdfFile.addError('Xref section not found')
             return [bodyContent,xrefContent,trailerContent]                
                 
-        indexTrailer = content.find('startxref')
+        indexTrailer = content.find(b'startxref')
         if indexTrailer != -1:
             restContent = content[:indexTrailer]
             auxTrailer = content[indexTrailer:]
-            indexEOF = auxTrailer.find('%%EOF')
+            indexEOF = auxTrailer.find(b'%%EOF')
             if indexEOF == -1:
                 trailerContent = auxTrailer
             else:
@@ -8053,13 +8053,13 @@ class PDFParser :
             @return A tuple (status,statusContent), where statusContent is the characters read in case status = 0 or an error in case status = -1
         '''
         global pdfFile
-        if not isinstance(content,str):
+        if not isinstance(content, bytes):
             return (-1,'Bad string')
         errorMessage = []
         oldCharCounter = self.charCounter
         tmpContent = content[self.charCounter:]
         for char in tmpContent:
-            if char == '\r' or char == '\n':
+            if char == b'\r' or char == b'\n':
                 return (0,content[oldCharCounter:self.charCounter])
             self.charCounter += 1
         else:
