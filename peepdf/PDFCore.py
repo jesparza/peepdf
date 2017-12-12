@@ -7772,7 +7772,7 @@ class PDFParser:
             This function returns an array of raw indirect objects of the PDF file given the raw body.
             @param content: string with the raw content of the PDF body.
             @param looseMode: boolean specifies if the parsing process should search for the endobj tag or not.
-            @return matchingObjects: array of tuples (object_content,object_header).
+            @return matchingObjects: array of tuples (object_header+object_content,object_header).
         '''
         global pdfFile
         matchingObjects = []
@@ -7782,20 +7782,19 @@ class PDFParser:
             regExp = re.compile('((\d{1,10}\s\d{1,10}\sobj).*?endobj)', re.DOTALL)
             matchingObjects = regExp.findall(content)
         else:
-            regExp = re.compile('((\d{1,10}\s\d{1,10}\sobj).*?)\s\d{1,10}\s\d{1,10}\sobj', re.DOTALL)
-            matchingObjectsAux = regExp.findall(content)
-            while matchingObjectsAux != []:
-                if matchingObjectsAux[0] != []:
-                    objectBody = matchingObjectsAux[0][0]
-                    matchingObjects.append(matchingObjectsAux[0])
-                    content = content[content.find(objectBody)+len(objectBody):]
-                    matchingObjectsAux = regExp.findall(content)
-                else:
-                    matchingObjectsAux = []
-            lastObject = re.findall('(\d{1,5}\s\d{1,5}\sobj)', content, re.DOTALL)
-            if lastObject != []:
-                content = content[content.find(lastObject[0]):]
-                matchingObjects.append((content, lastObject[0]))
+            regExp = re.compile('\d{1,10}\s\d{1,10}\sobj')
+            match = regExp.search(content)
+            lastidx, lastobjbody, lasthead = 0, None, None
+            while match:
+                if lastobjbody:
+                    matchingObjects.append((lasthead + lastobjbody, lasthead))
+                lasthead = match.group(0)
+                lastidx += match.end()
+                match = regExp.search(content[lastidx:])
+                if match:
+                    lastobjbody = content[lastidx:lastidx+match.start()]
+            if lasthead:
+                matchingObjects.append((lasthead + content[lastidx:], lasthead))
         return matchingObjects
 
     def getLines(self, content):
