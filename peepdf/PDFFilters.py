@@ -469,7 +469,7 @@ def pre_prediction(stream, predictor, columns, colors, bits):
     # PNG prediction
     if predictor >= 10 and predictor <= 15:
         # PNG prediction can vary from row to row
-        for row in xrange(len(stream) / columns):
+        for row in range(len(stream) / columns):
             rowdata = [ord(x) for x in stream[(row * columns):((row + 1) * columns)]]
             filterByte = predictor - 10
             rowdata = [filterByte] + rowdata
@@ -537,7 +537,7 @@ def post_prediction(decodedStream, predictor, columns, colors, bits):
         numSamplesPerRow = columns + 1
         bytesPerSample = (colors * bits + 7) / 8
         upRowdata = (0,) * numSamplesPerRow
-        for row in xrange(numRows):
+        for row in range(numRows):
             rowdata = [ord(x) for x in decodedStream[(row * bytesPerRow):((row + 1) * bytesPerRow)]]
             # PNG prediction can vary from row to row
             filterByte = rowdata[0]
@@ -787,12 +787,12 @@ def dctDecode(stream, parameters):
     decodedStream = ''
     try:
         from PIL import Image
-        import StringIO
+        import io
     except:
         return (-1, 'Python Imaging Library (PIL) not installed')
     # Quick implementation, assuming the library can detect the parameters
     try:
-        im = Image.open(StringIO.StringIO(stream))
+        im = Image.open(io.StringIO(stream))
         decodedStream = im.tostring()
         return (0, decodedStream)
     except:

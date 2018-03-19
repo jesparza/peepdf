@@ -30,6 +30,8 @@ import os
 import random
 import re
 import sys
+import six
+
 
 import peepdf.aes as AES
 from peepdf.PDFUtils import (
@@ -1266,8 +1268,8 @@ class PDFDictionary(PDFObject):
         self.value = '<< '
         self.rawValue = '<< '
         self.encryptedValue = '<< '
-        keys = self.elements.keys()
-        values = self.elements.values()
+        keys = list(self.elements.keys())
+        values = list(self.elements.values())
         for i in range(len(keys)):
             if values[i] is None:
                 errorMessage = 'Non-existing value for key "'+str(keys[i])+'"'
@@ -1435,7 +1437,7 @@ class PDFDictionary(PDFObject):
             else:
                 return self.elements[name]
         if recursive:
-            for element in self.elements.values():
+            for element in list(self.elements.values()):
                 if element is not None and (element.getType() == 'dictionary' or element.getType() == 'array'):
                     retElements += element.getElementByName(name)
         return retElements
@@ -1688,8 +1690,8 @@ class PDFStream (PDFDictionary):
         self.value = '<< '
         self.rawValue = '<< '
         self.encryptedValue = '<< '
-        keys = self.elements.keys()
-        values = self.elements.values()
+        keys = list(self.elements.keys())
+        values = list(self.elements.values())
         if not onlyElements:
             self.references = []
             self.errors = []
@@ -2645,7 +2647,7 @@ class PDFStream (PDFDictionary):
         return (0, '')
 
     def setElements(self, newElements):
-        oldElements = self.elements.keys()
+        oldElements = list(self.elements.keys())
         for oldElement in oldElements:
             if oldElement not in newElements:
                 if oldElement in ['/Filter', '/FFilter']:
@@ -2746,8 +2748,8 @@ class PDFObjectStream (PDFStream):
         self.value = '<< '
         self.rawValue = '<< '
         self.encryptedValue = '<< '
-        keys = self.elements.keys()
-        values = self.elements.values()
+        keys = list(self.elements.keys())
+        values = list(self.elements.values())
         if not onlyElements:
             self.errors = []
             self.references = []
@@ -3616,7 +3618,7 @@ class PDFCrossRefSubSection:
         return ids
 
     def getIndex(self, objectId):
-        objectIds = range(self.firstObject, self.firstObject+self.numObjects)
+        objectIds = list(range(self.firstObject, self.firstObject+self.numObjects))
         if objectId in objectIds:
             return objectIds.index(objectId)
         else:
@@ -4091,7 +4093,7 @@ class PDFBody:
 
     def getObjectsByString(self, toSearch):
         matchedObjects = []
-        for indirectObject in self.objects.values():
+        for indirectObject in list(self.objects.values()):
             if indirectObject.contains(toSearch):
                 matchedObjects.append(indirectObject.getId())
         return matchedObjects
@@ -4099,7 +4101,7 @@ class PDFBody:
     def getObjectsIds(self):
         sortedIdsOffsets = []
         sortedIds = []
-        for indirectObject in self.objects.values():
+        for indirectObject in list(self.objects.values()):
             sortedIdsOffsets.append([indirectObject.getId(), indirectObject.getOffset()])
         sortedIdsOffsets = sorted(sortedIdsOffsets, key=lambda x: x[1])
         for i in range(len(sortedIdsOffsets)):
@@ -4260,7 +4262,7 @@ class PDFBody:
                 else:
                     return (-1, errorMessage)
             elementsToUpdate = object.getReferencesInElements()
-            keys = elementsToUpdate.keys()
+            keys = list(elementsToUpdate.keys())
             for key in keys:
                 ref = elementsToUpdate[key]
                 refId = ref[0]
@@ -5783,7 +5785,7 @@ class PDFFile:
         if version is None:
             catalogObjects = []
             catalogIds = self.getCatalogObjectId()
-            for i in xrange(len(catalogIds)):
+            for i in range(len(catalogIds)):
                 id = catalogIds[i]
                 if id is not None:
                     catalogObject = self.getObject(id, i, indirect)
@@ -5909,7 +5911,7 @@ class PDFFile:
         if version is None:
             infoObjects = []
             infoIds = self.getInfoObjectId()
-            for i in xrange(len(infoIds)):
+            for i in range(len(infoIds)):
                 id = infoIds[i]
                 if id is not None:
                     infoObject = self.getObject(id, i, indirect)
@@ -6035,7 +6037,7 @@ class PDFFile:
         offsetsArray = []
 
         if version is None:
-            versions = range(self.updates+1)
+            versions = list(range(self.updates+1))
         else:
             versions = [version]
 
@@ -6137,7 +6139,7 @@ class PDFFile:
         if version is None:
             for i in range(self.updates + 1):
                 indirectObjectsDict = self.body[i].getObjects()
-                for indirectObject in indirectObjectsDict.values():
+                for indirectObject in list(indirectObjectsDict.values()):
                     if indirectObject is not None:
                         object = indirectObject.getObject()
                         if object is not None:
@@ -6148,7 +6150,7 @@ class PDFFile:
             if version > self.updates or version < 0:
                 return None
             indirectObjectsDict = self.body[version].getObjects()
-            for indirectObject in indirectObjectsDict.values():
+            for indirectObject in list(indirectObjectsDict.values()):
                 if indirectObject is not None:
                     object = indirectObject.getObject()
                     if object is not None:
@@ -6309,7 +6311,7 @@ class PDFFile:
         tree = []
 
         if version is None:
-            versions = range(self.updates+1)
+            versions = list(range(self.updates+1))
         else:
             versions = [version]
 
@@ -6346,7 +6348,7 @@ class PDFFile:
                                 type = dictType
                             else:
                                 if type == 'dictionary' and len(elements) == 1:
-                                    type = elements.keys()[0]
+                                    type = list(elements.keys())[0]
                     references = self.getReferencesIn(id, version)
                     for i in range(len(references)):
                         referencesIds.append(int(references[i].split()[0]))
@@ -6901,10 +6903,10 @@ class PDFParser:
         file = open(fileName, 'rb')
         for line in file:
             if versionLine == '':
-                pdfHeaderIndex = line.find('%PDF-')
-                psHeaderIndex = line.find('%!PS-Adobe-')
+                pdfHeaderIndex = line.find(b'%PDF-')
+                psHeaderIndex = line.find(b'%!PS-Adobe-')
                 if pdfHeaderIndex != -1 or psHeaderIndex != -1:
-                    index = line.find('\r')
+                    index = line.find(b'\r')
                     if index != -1 and index+1 < len(line) and line[index+1] != '\n':
                         index += 1
                         versionLine = line[:index]
@@ -6926,9 +6928,9 @@ class PDFParser:
         file.close()
 
         # Getting the specification version
-        versionLine = versionLine.replace('\r', '')
-        versionLine = versionLine.replace('\n', '')
-        matchVersion = re.findall('%(PDF-|!PS-Adobe-\d{1,2}\.\d{1,2}\sPDF-)(\d{1,2}\.\d{1,2})', versionLine)
+        versionLine = versionLine.replace(b'\r', b'')
+        versionLine = versionLine.replace(b'\n', b'')
+        matchVersion = re.findall(b'%(PDF-|!PS-Adobe-\d{1,2}\.\d{1,2}\sPDF-)(\d{1,2}\.\d{1,2})', versionLine)
         if matchVersion == []:
             if forceMode:
                 pdfFile.setVersion(versionLine)
@@ -6968,22 +6970,27 @@ class PDFParser:
         pdfFile.setSHA256(hashlib.sha256(fileContent).hexdigest())
 
         # Getting the number of updates in the file
-        while fileContent.find('%%EOF') != -1:
-            self.readUntilSymbol(fileContent, '%%EOF')
-            self.readUntilEndOfLine(fileContent)
-            self.fileParts.append(fileContent[:self.charCounter])
-            fileContent = fileContent[self.charCounter:]
+        while fileContent.find(b'%%EOF') != -1:
             self.charCounter = 0
+            self.readUntilSymbol(fileContent, b'%%EOF')
+
+            self.readUntilEndOfLine(fileContent)
+
+            self.fileParts.append(fileContent[:self.charCounter])
+            if six.PY3:
+                fileContent = fileContent[self.charCounter + len(b'%%EOF'):]
+            else:
+                fileContent = fileContent[self.charCounter:]
         else:
             if self.fileParts == []:
-                errorMessage = '%%EOF not found'
+                errorMessage = b'%%EOF not found'
                 if forceMode:
                     pdfFile.addError(errorMessage)
                     self.fileParts.append(fileContent)
                 else:
                     sys.exit(errorMessage)
         pdfFile.setUpdates(len(self.fileParts) - 1)
-
+        #raise Exception(ccc)
         # Getting the body, cross reference table and trailer of each part of the file
         for i in range(len(self.fileParts)):
             bodyOffset = 0
@@ -7012,15 +7019,15 @@ class PDFParser:
             if xrefContent is not None:
                 xrefOffset = bodyOffset + len(bodyContent)
                 trailerOffset = xrefOffset + len(xrefContent)
-                bodyContent = bodyContent.strip('\r\n')
-                xrefContent = xrefContent.strip('\r\n')
-                trailerContent = trailerContent.strip('\r\n')
+                bodyContent = bodyContent.strip(b'\r\n')
+                xrefContent = xrefContent.strip(b'\r\n')
+                trailerContent = trailerContent.strip(b'\r\n')
             else:
                 if trailerContent is not None:
                     xrefOffset = -1
                     trailerOffset = bodyOffset + len(bodyContent)
-                    bodyContent = bodyContent.strip('\r\n')
-                    trailerContent = trailerContent.strip('\r\n')
+                    bodyContent = bodyContent.strip(b'\r\n')
+                    trailerContent = trailerContent.strip(b'\r\n')
                 else:
                     errorMessage = 'PDF sections not found'
                     if forceMode:
@@ -7183,16 +7190,16 @@ class PDFParser:
         xrefContent = None
         trailerContent = None
 
-        indexTrailer = content.find('trailer')
+        indexTrailer = content.find(b'trailer')
         if indexTrailer != -1:
             restContent = content[:indexTrailer]
             auxTrailer = content[indexTrailer:]
-            indexEOF = auxTrailer.find('%%EOF')
+            indexEOF = auxTrailer.find(b'%%EOF')
             if indexEOF == -1:
                 trailerContent = auxTrailer
             else:
                 trailerContent = auxTrailer[:indexEOF+5]
-            indexXref = restContent.find('xref')
+            indexXref = restContent.find(b'xref')
             if indexXref != -1:
                 bodyContent = restContent[:indexXref]
                 xrefContent = restContent[indexXref:]
@@ -7202,11 +7209,11 @@ class PDFParser:
                     pdfFile.addError('Xref section not found')
             return [bodyContent, xrefContent, trailerContent]
 
-        indexTrailer = content.find('startxref')
+        indexTrailer = content.find(b'startxref')
         if indexTrailer != -1:
             restContent = content[:indexTrailer]
             auxTrailer = content[indexTrailer:]
-            indexEOF = auxTrailer.find('%%EOF')
+            indexEOF = auxTrailer.find(b'%%EOF')
             if indexEOF == -1:
                 trailerContent = auxTrailer
             else:
@@ -8130,9 +8137,13 @@ class PDFParser:
             @param symbol
             @return A tuple (status,statusContent), where statusContent is the characters read in case status = 0 or an error in case status = -1
         '''
-        if not isinstance(string, str):
+
+        if not isinstance(string, bytes):
             return (-1, 'Bad string')
+
         newString = string[self.charCounter:]
+
+        self.charCounter = 0
         index = newString.find(symbol)
         if index == -1:
             errorMessage = 'Symbol "'+symbol+'" not found'

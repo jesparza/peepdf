@@ -391,7 +391,7 @@ def main():
             resetColor = Style.RESET_ALL
 
         if options.version:
-            print peepdfHeader
+            print(peepdfHeader)
         else:
             if len(args) == 1:
                 fileName = args[0]
@@ -464,7 +464,7 @@ def main():
                         traceback.print_exc(file=open(errorsFile, 'a'))
                         raise Exception('PeepException', 'Send me an email ;)')
                 elif options.commands is not None:
-                    from PDFConsole import PDFConsole
+                    from .PDFConsole import PDFConsole
 
                     console = PDFConsole(pdf, VT_KEY, options.avoidColors)
                     try:
@@ -649,7 +649,7 @@ def main():
                                     stats += '\t\t' + url + newLine
                             stats += newLine * 2
                     if fileName is not None:
-                        print stats
+                        print(stats)
                     if options.isInteractive:
                         from peepdf.PDFConsole import PDFConsole
 
@@ -661,7 +661,7 @@ def main():
                                 sys.exit()
                             except:
                                 errorMessage = '*** Error: Exception not handled using the interactive console!! Please, report it to the author!!'
-                                print errorColor + errorMessage + resetColor + newLine
+                                print(errorColor + errorMessage + resetColor + newLine)
                                 traceback.print_exc(file=open(errorsFile, 'a'))
     except Exception as e:
         if len(e.args) == 2:
@@ -671,7 +671,7 @@ def main():
         if excName is None or excName != 'PeepException':
             errorMessage = '*** Error: Exception not handled!!'
             traceback.print_exc(file=open(errorsFile, 'a'))
-        print errorColor + errorMessage + resetColor + newLine
+        print(errorColor + errorMessage + resetColor + newLine)
     finally:
         if os.path.exists(errorsFile):
             message = newLine + 'Please, don\'t forget to report errors if found:' + newLine * 2

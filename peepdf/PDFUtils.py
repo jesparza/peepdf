@@ -27,10 +27,10 @@
 
 import os
 import re
-import htmlentitydefs
-import json
-import urllib
-import urllib2
+import html.entities
+#from urllib.request import urlopen, request
+#import urllib2.request, urllib2.parse, urllib2.error
+#import urllib2.request, urllib2.error, urllib2.parse
 
 def clearScreen():
     '''
@@ -366,15 +366,15 @@ def unescapeHTMLEntities(text):
             # character reference
             try:
                 if text[:3] == "&#x":
-                    return unichr(int(text[3:-1], 16))
+                    return chr(int(text[3:-1], 16))
                 else:
-                    return unichr(int(text[2:-1]))
+                    return chr(int(text[2:-1]))
             except ValueError:
                 pass
         else:
             # named entity
             try:
-                text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
+                text = chr(html.entities.name2codepoint[text[1:-1]])
             except KeyError:
                 pass
         return text  # leave as is
@@ -431,9 +431,9 @@ def vtcheck(md5, vtKey):
     vtUrl = 'https://www.virustotal.com/vtapi/v2/file/report'
     parameters = {'resource': md5, 'apikey': vtKey}
     try:
-        data = urllib.urlencode(parameters)
-        req = urllib2.Request(vtUrl, data)
-        response = urllib2.urlopen(req)
+        data = urllib.parse.urlencode(parameters)
+        req = urllib.request.Request(vtUrl, data)
+        response = urllib.request.urlopen(req)
         jsonResponse = response.read()
     except:
         return (-1, 'The request to VirusTotal has not been successful')
