@@ -263,8 +263,13 @@ def flateDecode(stream, parameters):
     '''
     decodedStream = ''
     try:
-        decodedStream = zlib.decompress(stream)
-    except:
+        if six.PY3:
+            decodedStream = zlib.decompress(stream.encode('latin-1'))
+            decodedStream = decodedStream.decode('latin-1')
+
+        else:
+            decodedStream = zlib.decompress(stream)
+    except Exception as a:
         return (-1, 'Error decompressing string')
 
     if parameters is None or parameters == {}:
