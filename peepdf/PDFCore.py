@@ -6902,11 +6902,12 @@ class PDFParser:
         # Reading the file header
         file = open(fileName, 'rb')
         for line in file:
+            line = line.decode('latin-1')
             if versionLine == '':
-                pdfHeaderIndex = line.find(b'%PDF-')
-                psHeaderIndex = line.find(b'%!PS-Adobe-')
+                pdfHeaderIndex = line.find('%PDF-')
+                psHeaderIndex = line.find('%!PS-Adobe-')
                 if pdfHeaderIndex != -1 or psHeaderIndex != -1:
-                    index = line.find(b'\r')
+                    index = line.find('\r')
                     if index != -1 and index+1 < len(line) and line[index+1] != '\n':
                         index += 1
                         versionLine = line[:index]
@@ -6928,9 +6929,9 @@ class PDFParser:
         file.close()
 
         # Getting the specification version
-        versionLine = versionLine.replace(b'\r', b'')
-        versionLine = versionLine.replace(b'\n', b'')
-        matchVersion = re.findall(b'%(PDF-|!PS-Adobe-\d{1,2}\.\d{1,2}\sPDF-)(\d{1,2}\.\d{1,2})', versionLine)
+        versionLine = versionLine.replace('\r', '')
+        versionLine = versionLine.replace('\n', '')
+        matchVersion = re.findall('%(PDF-|!PS-Adobe-\d{1,2}\.\d{1,2}\sPDF-)(\d{1,2}\.\d{1,2})', versionLine)
         if matchVersion == []:
             if forceMode:
                 pdfFile.setVersion(versionLine)
@@ -6973,22 +6974,26 @@ class PDFParser:
         while fileContent.find(b'%%EOF') != -1:
             self.charCounter = 0
             self.readUntilSymbol(fileContent, b'%%EOF')
-
-            self.readUntilEndOfLine(fileContent)
-
-            self.fileParts.append(fileContent[:self.charCounter])
             if six.PY3:
-                fileContent = fileContent[self.charCounter + len(b'%%EOF'):]
+                self.readUntilEndOfLine(fileContent.decode('latin-1'))
+                self.fileParts.append(fileContent[:self.charCounter].decode('latin-1'))
+                fileContent = fileContent[self.charCounter:]
             else:
+                self.readUntilEndOfLine(fileContent)
+                self.fileParts.append(fileContent[:self.charCounter])
                 fileContent = fileContent[self.charCounter:]
         else:
             if self.fileParts == []:
-                errorMessage = b'%%EOF not found'
+                errorMessage = '%%EOF not found'
                 if forceMode:
                     pdfFile.addError(errorMessage)
                     self.fileParts.append(fileContent)
                 else:
                     sys.exit(errorMessage)
+     
+        if six.PY3:
+            fileContent = fileContent.decode('latin-1')
+            
         pdfFile.setUpdates(len(self.fileParts) - 1)
         #raise Exception(ccc)
         # Getting the body, cross reference table and trailer of each part of the file
@@ -7019,15 +7024,15 @@ class PDFParser:
             if xrefContent is not None:
                 xrefOffset = bodyOffset + len(bodyContent)
                 trailerOffset = xrefOffset + len(xrefContent)
-                bodyContent = bodyContent.strip(b'\r\n')
-                xrefContent = xrefContent.strip(b'\r\n')
-                trailerContent = trailerContent.strip(b'\r\n')
+                bodyContent = bodyContent.strip('\r\n')
+                xrefContent = xrefContent.strip('\r\n')
+                trailerContent = trailerContent.strip('\r\n')
             else:
                 if trailerContent is not None:
                     xrefOffset = -1
                     trailerOffset = bodyOffset + len(bodyContent)
-                    bodyContent = bodyContent.strip(b'\r\n')
-                    trailerContent = trailerContent.strip(b'\r\n')
+                    bodyContent = bodyContent.strip('\r\n')
+                    trailerContent = trailerContent.strip('\r\n')
                 else:
                     errorMessage = 'PDF sections not found'
                     if forceMode:
@@ -7041,7 +7046,8 @@ class PDFParser:
             if rawIndirectObjects != []:
                 for j in range(len(rawIndirectObjects)):
                     relativeOffset = 0
-                    auxContent = str(bodyContent)
+                   
+                    auxContent = bodyContent
                     rawObject = rawIndirectObjects[j][0]
                     objectHeader = rawIndirectObjects[j][1]
                     while True:
@@ -7190,16 +7196,16 @@ class PDFParser:
         xrefContent = None
         trailerContent = None
 
-        indexTrailer = content.find(b'trailer')
+        indexTrailer = content.find('trailer')
         if indexTrailer != -1:
             restContent = content[:indexTrailer]
             auxTrailer = content[indexTrailer:]
-            indexEOF = auxTrailer.find(b'%%EOF')
+            indexEOF = auxTrailer.find('%%EOF')
             if indexEOF == -1:
                 trailerContent = auxTrailer
             else:
                 trailerContent = auxTrailer[:indexEOF+5]
-            indexXref = restContent.find(b'xref')
+            indexXref = restContent.find('xref')
             if indexXref != -1:
                 bodyContent = restContent[:indexXref]
                 xrefContent = restContent[indexXref:]
@@ -7209,11 +7215,11 @@ class PDFParser:
                     pdfFile.addError('Xref section not found')
             return [bodyContent, xrefContent, trailerContent]
 
-        indexTrailer = content.find(b'startxref')
+        indexTrailer = content.find('startxref')
         if indexTrailer != -1:
             restContent = content[:indexTrailer]
             auxTrailer = content[indexTrailer:]
-            indexEOF = auxTrailer.find(b'%%EOF')
+            indexEOF = auxTrailer.find('%%EOF')
             if indexEOF == -1:
                 trailerContent = auxTrailer
             else:
@@ -8137,8 +8143,8 @@ class PDFParser:
             @param symbol
             @return A tuple (status,statusContent), where statusContent is the characters read in case status = 0 or an error in case status = -1
         '''
-
-        if not isinstance(string, bytes):
+        PDFTrailer.uuu += 1
+        if not ((isinstance(string, bytes) and isinstance(symbol, bytes)) or (isinstance(string, str) and isinstance(symbol, str))):
             return (-1, 'Bad string')
 
         newString = string[self.charCounter:]
