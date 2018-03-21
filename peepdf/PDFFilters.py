@@ -58,7 +58,7 @@
 
 import zlib
 import struct
-
+import six
 import peepdf.lzw
 from peepdf.PDFUtils import getNumsFromBytes, getBytesFromBits, getBitsFromNum
 from peepdf.ccitt import CCITTFax

@@ -200,7 +200,7 @@ def isJavascript(content):
         return True
 
     _, count = re.subn(bad_chars_re, "", content, int(len(content) / 10))
-    if count == len(content) / 10:
+    if int(count) == int(len(content) / 10):
         return False
 
     for string in jsStrings:

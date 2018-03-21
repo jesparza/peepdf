@@ -31,7 +31,7 @@ import random
 import re
 import sys
 import six
-
+import codecs
 if six.PY3:
     import builtins
 else:
@@ -784,10 +784,12 @@ class PDFHexString(PDFObject):
                     tmpValue = self.rawValue
                     if len(tmpValue) % 2 != 0:
                         tmpValue += '0'
-                    self.value = tmpValue.decode('hex')
+                    self.value = codecs.decode(tmpValue, 'hex')
+                    if six.PY3:
+                        self.value = self.value.decode('latin-1')
                 else:
                     # New decoded value
-                    self.rawValue = self.value.encode('hex')
+                    self.rawValue = codecs.encode(self.value, 'hex')
                 self.encryptedValue = self.value
             except:
                 errorMessage = 'Error in hexadecimal conversion'
@@ -5433,6 +5435,10 @@ class PDFFile:
                     return (-1, errorMessage)
         else:
             encryptMetadata = True
+        if six.PY3 and type(password) == str:
+            password = password.encode('latin-1')
+            dictO = dictO.encode('latin-1')
+            fileId = fileId.encode('latin-1')
         if not fatalError:
             # Checking user password
             if revision != 5:
@@ -6999,7 +7005,6 @@ class PDFParser:
             fileContent = fileContent.decode('latin-1')
             
         pdfFile.setUpdates(len(self.fileParts) - 1)
-        #raise Exception(ccc)
         # Getting the body, cross reference table and trailer of each part of the file
         for i in range(len(self.fileParts)):
             bodyOffset = 0
@@ -7644,7 +7649,7 @@ class PDFParser:
                         else:
                             return (-1, errorMessage)
                     entries.append(pdfCrossRefEntry)
-                for i in range(numSubsections):
+                for i in range(int(numSubsections)):
                     firstObject = subsectionIndexes[index]
                     numObjectsInSubsection = subsectionIndexes[index+1]
                     try:
@@ -8149,7 +8154,6 @@ class PDFParser:
             @param symbol
             @return A tuple (status,statusContent), where statusContent is the characters read in case status = 0 or an error in case status = -1
         '''
-        PDFTrailer.uuu += 1
         if not ((isinstance(string, bytes) and isinstance(symbol, bytes)) or (isinstance(string, str) and isinstance(symbol, str))):
             return (-1, 'Bad string')
 

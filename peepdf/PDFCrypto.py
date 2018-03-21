@@ -31,10 +31,11 @@ import random
 import warnings
 import sys
 import peepdf.aes
+import six
 from itertools import cycle
 warnings.filterwarnings("ignore")
 
-paddingString = '\x28\xBF\x4E\x5E\x4E\x75\x8A\x41\x64\x00\x4E\x56\xFF\xFA\x01\x08\x2E\x2E\x00\xB6\xD0\x68\x3E\x80\x2F\x0C\xA9\xFE\x64\x53\x69\x7A'
+paddingString = b'\x28\xBF\x4E\x5E\x4E\x75\x8A\x41\x64\x00\x4E\x56\xFF\xFA\x01\x08\x2E\x2E\x00\xB6\xD0\x68\x3E\x80\x2F\x0C\xA9\xFE\x64\x53\x69\x7A'
 
 
 def computeEncryptionKey(password, dictOwnerPass, dictUserPass, dictOE, dictUE, fileID, pElement, dictKeyLength=128, revision=3, encryptMetadata=False, passwordType=None):
@@ -62,7 +63,7 @@ def computeEncryptionKey(password, dictOwnerPass, dictUserPass, dictOE, dictUE, 
                 password = password[:32]
             elif lenPass < 32:
                 password += paddingString[:32-lenPass]
-            md5input = password + dictOwnerPass + struct.pack('<i', int(pElement)) + fileID
+            md5input = password + dictOwnerPass + struct.pack(b'<i', int(pElement)) + fileID
             if revision > 3 and not encryptMetadata:
                 md5input += '\xFF'*4
             key = hashlib.md5(md5input).digest()
@@ -305,7 +306,10 @@ def RC4(data, key):
 
     # Initialization
     for x in range(256):
-        hash[x] = ord(key[x % keyLength])
+        if six.PY3:
+            hash[x] = ord(chr(key[x % keyLength]))
+        else:
+            hash[x] = ord(key[x % keyLength])
         box[x] = x
     for x in range(256):
         y = (y + int(box[x]) + int(hash[x])) % 256
@@ -321,7 +325,10 @@ def RC4(data, key):
         box[z] = box[y]
         box[y] = tmp
         k = box[((box[z] + box[y]) % 256)]
-        ret += chr(ord(data[x]) ^ k)
+        if six.PY3:
+            ret += chr(data[x] ^ k)
+        else:
+            ret += chr(ord(data[x]) ^ k)
     return ret
 
 
