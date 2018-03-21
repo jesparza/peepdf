@@ -32,6 +32,10 @@ import re
 import sys
 import six
 
+if six.PY3:
+    import builtins
+else:
+    import __builtin__ as builtins
 
 import peepdf.aes as AES
 from peepdf.PDFUtils import (
@@ -7020,6 +7024,8 @@ class PDFParser:
                 bodyOffset = len(self.fileParts[i-1])
 
             # Getting the content for each section
+            if six.PY3 and builtins.type(content) == bytes:
+                content = content.decode('latin-1')
             bodyContent, xrefContent, trailerContent = self.parsePDFSections(content, forceMode, looseMode)
             if xrefContent is not None:
                 xrefOffset = bodyOffset + len(bodyContent)
