@@ -28,9 +28,6 @@
 import os
 import re
 import html.entities
-#from urllib.request import urlopen, request
-#import urllib2.request, urllib2.parse, urllib2.error
-#import urllib2.request, urllib2.error, urllib2.parse
 
 def clearScreen():
     '''

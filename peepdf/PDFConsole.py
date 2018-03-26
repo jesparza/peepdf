@@ -33,6 +33,9 @@ import hashlib
 import traceback
 import jsbeautifier
 
+# Return a string on Py2 & Py3.
+from builtins import input
+
 from peepdf.PDFUtils import (
     getBytesFromFile, countArrayElements, clearScreen, hexToString,
     escapeRegExpString, vtcheck, countNonPrintableChars

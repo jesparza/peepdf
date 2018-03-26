@@ -36,7 +36,7 @@ def test_js_detect():
     assert not r
 
     for version in range(f.updates + 1):
-        for obj in list(f.body[version].objects.values()):
+        for obj in f.body[version].objects.values():
             if isinstance(obj, peepdf.PDFCore.PDFIndirectObject):
                 o = obj.getObject()
                 if isinstance(o, peepdf.PDFCore.PDFStream):
@@ -55,7 +55,7 @@ def test_whitespace_after_opening():
     )
     assert not r
 
-    for obj in list(f.body[1].objects.values()):
+    for obj in f.body[1].objects.values():
         if obj.object.type == "stream":
             assert obj.object.errors != [
                 "Decoding error: Error decompressing string"

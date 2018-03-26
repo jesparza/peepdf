@@ -188,10 +188,10 @@ class ByteDecoder(object):
        iterator over the uncompressed bytes. Dual of
        L{ByteEncoder.encodetobytes}. See L{ByteEncoder} for an
        example of use.
-       """        
+       """
        codepoints = self._unpacker.unpack(bytesource)
        clearbytes = self._decoder.decode(codepoints)
-       
+
        return clearbytes
 
 
@@ -262,7 +262,7 @@ class BitPacker(object):
             if pt == END_OF_INFO_CODE:
                while len(tailbits) % 8:
                   tailbits.append(0)
-                  
+
             if pt in [ CLEAR_CODE, END_OF_INFO_CODE ]:
                 nextwidth = minwidth
                 codesize = self._initial_code_size
@@ -277,13 +277,13 @@ class BitPacker(object):
 
                 tailbits = tailbits[8:]
 
-                       
+
         if tailbits:
             tail = bitstobytes(tailbits)
             for bt in tail:
                 yield struct.pack("B", bt)
 
-                
+
 
 
 class BitUnpacker(object):
@@ -325,7 +325,7 @@ class BitUnpacker(object):
         bits = []
         offset = 0
         ignore = 0
-        
+
         codesize = self._initial_code_size
         minwidth = 8
         while (1 << minwidth) < codesize:
@@ -484,7 +484,7 @@ class Encoder(object):
 
         self._max_code_size = max_code_size
         self._buffer = ''
-        self._clear_codes()            
+        self._clear_codes()
 
         if max_code_size < self.code_size():
             raise ValueError("Max code size too small, (must be at least {0})".format(self.code_size()))
@@ -509,12 +509,12 @@ class Encoder(object):
 
         if self._buffer:
             yield self._prefixes[ self._buffer ]
-            self._buffer = ''            
+            self._buffer = ''
 
         yield CLEAR_CODE
         self._clear_codes()
 
-            
+
 
 
     def encode(self, bytesource):
@@ -527,7 +527,7 @@ class Encoder(object):
         >>> enc = lzw.Encoder()
         >>> [ cp for cp in enc.encode("gabba gabba yo gabba") ]
         [103, 97, 98, 98, 97, 32, 258, 260, 262, 121, 111, 263, 259, 261, 256]
-        
+
         Modified by Jose Miguel Esparza to add support for PDF files encoding
         """
         yield CLEAR_CODE
@@ -551,7 +551,7 @@ class Encoder(object):
         # want to call this.
 
         new_prefix = self._buffer
-        
+
         if new_prefix + byte in self._prefixes:
             new_prefix = new_prefix + byte
         elif new_prefix:
@@ -560,7 +560,7 @@ class Encoder(object):
             new_prefix = byte
 
             yield encoded
-        
+
         self._buffer = new_prefix
 
 
@@ -604,7 +604,7 @@ class PagingEncoder(object):
 
         >>> import peepdf.lzw
         >>> enc = lzw.PagingEncoder(257, 2**12)
-        >>> coded = enc.encodepages([ "say hammer yo hammer mc hammer go hammer", 
+        >>> coded = enc.encodepages([ "say hammer yo hammer mc hammer go hammer",
         ...                           "and the rest can go and play",
         ...                           "can't touch this" ])
         ...
@@ -622,11 +622,11 @@ class PagingEncoder(object):
             packer = BitPacker(initial_code_size=encoder.code_size())
             packed = packer.pack(codes_and_eoi)
 
-            for byte in packed: 
+            for byte in packed:
                 yield byte
 
 
-            
+
 
 class PagingDecoder(object):
     """
@@ -655,7 +655,7 @@ class PagingDecoder(object):
 
         except StopIteration:
             pass
-        
+
 
     def decodepages(self, bytesource):
         """
@@ -734,7 +734,7 @@ def filebytes(fileobj, buffersize=1024):
         for byte in buff: yield byte
         buff = fileobj.read(buffersize)
 
-    
+
 def readbytes(filename, buffersize=1024):
     """
     Opens a file named by filename and iterates over the L{filebytes}
@@ -791,7 +791,7 @@ def intfrombits(bits):
     Given a list of boolean values, interprets them as a binary
     encoded, MSB-first unsigned integer (with True == 1 and False
     == 0) and returns the result.
-    
+
     >>> import peepdf.lzw
     >>> lzw.intfrombits([ 1, 0, 0, 1, 1, 0, 0, 0, 0 ])
     304
@@ -799,7 +799,7 @@ def intfrombits(bits):
     ret = 0
     lsb_first = [ b for b in bits ]
     lsb_first.reverse()
-    
+
     for bit_index in range(len(lsb_first)):
         if lsb_first[ bit_index ]:
             ret = ret | (1 << bit_index)
@@ -811,7 +811,7 @@ def bytestobits(bytesource):
     """
     Breaks a given iterable of bytes into an iterable of boolean
     values representing those bytes as unsigned integers.
-    
+
     >>> import peepdf.lzw
     >>> [ x for x in lzw.bytestobits(b"\\x01\\x30") ]
     [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0]
@@ -858,7 +858,7 @@ def bitstobytes(bits):
 
     if nextbit < 7: ret.append(nextbyte)
     return ret
-        
+
 
 
 
@@ -871,15 +871,12 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 
 import sys
-try:
-    from io import StringIO
-except ImportError:
-    from io import StringIO
 
+from io import StringIO
 
 ##  LZWDecoder
 ##

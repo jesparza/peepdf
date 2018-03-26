@@ -32,6 +32,7 @@ import re
 import sys
 import six
 import codecs
+
 if six.PY3:
     import builtins
 else:
@@ -7000,10 +7001,10 @@ class PDFParser:
                     self.fileParts.append(fileContent)
                 else:
                     sys.exit(errorMessage)
-     
+
         if six.PY3:
             fileContent = fileContent.decode('latin-1')
-            
+
         pdfFile.setUpdates(len(self.fileParts) - 1)
         # Getting the body, cross reference table and trailer of each part of the file
         for i in range(len(self.fileParts)):
@@ -7057,7 +7058,7 @@ class PDFParser:
             if rawIndirectObjects != []:
                 for j in range(len(rawIndirectObjects)):
                     relativeOffset = 0
-                   
+
                     auxContent = bodyContent
                     rawObject = rawIndirectObjects[j][0]
                     objectHeader = rawIndirectObjects[j][1]
