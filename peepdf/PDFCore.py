@@ -33,11 +33,6 @@ import sys
 import six
 import codecs
 
-if six.PY3:
-    import builtins
-else:
-    import __builtin__ as builtins
-
 import peepdf.aes as AES
 from peepdf.PDFUtils import (
     encodeName, unescapeString, encodeString, escapeString, numToHex,
@@ -5436,7 +5431,7 @@ class PDFFile:
                     return (-1, errorMessage)
         else:
             encryptMetadata = True
-        if six.PY3 and type(password) == str:
+        if six.PY3 and isinstance(password, str):
             password = password.encode('latin-1')
             dictO = dictO.encode('latin-1')
             fileId = fileId.encode('latin-1')
@@ -7030,7 +7025,7 @@ class PDFParser:
                 bodyOffset = len(self.fileParts[i-1])
 
             # Getting the content for each section
-            if six.PY3 and builtins.type(content) == bytes:
+            if six.PY3 and isinstance(content, bytes):
                 content = content.decode('latin-1')
             bodyContent, xrefContent, trailerContent = self.parsePDFSections(content, forceMode, looseMode)
             if xrefContent is not None:

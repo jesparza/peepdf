@@ -199,8 +199,8 @@ def isJavascript(content):
     if re.findall(reJSscript, content, re.DOTALL | re.IGNORECASE):
         return True
 
-    _, count = re.subn(bad_chars_re, "", content, int(len(content) / 10))
-    if int(count) == int(len(content) / 10):
+    _, count = re.subn(bad_chars_re, "", content, len(content) // 10)
+    if int(count) == len(content) // 10:
         return False
 
     for string in jsStrings:
