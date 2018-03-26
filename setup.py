@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="peepdf",
-    version="0.3.7",
+    version="0.4.0",
     author="Jose Miguel Esparza",
     license="GNU GPLv3",
     url="http://eternal-todo.com",
