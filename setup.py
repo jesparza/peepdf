@@ -9,6 +9,7 @@ setup(
     install_requires=[
         "jsbeautifier==1.6.2",
         "colorama==0.3.7",
+        "future",
         "Pillow==3.2.0",
         "pythonaes==1.0",
     ],
