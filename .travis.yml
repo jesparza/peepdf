@@ -1,19 +1,35 @@
 language: python
 
-python:
-    - 2.7
+matrix:
+  fast_finish: true
+  include:
+    - python: 2.7
+    - python: 3.5
+    - python: 3.6
+    - os: osx
+      language: generic
 
 before_install:
-    - sudo apt-get update -qq
-    - sudo apt-get install python-dev libffi-dev libxml2-dev libxslt1-dev
-    - sudo apt-get install libjpeg-dev
+  - |
+    if [[ $TRAVIS_OS_NAME == "osx" ]]; then
+      # The following wasn't required in the past and therefore may become
+      # obsolete once again in the future. Let's wait and see.
+      wget https://bootstrap.pypa.io/get-pip.py
+      sudo python get-pip.py
+      sudo pip install virtualenv
+      virtualenv $HOME
+      source $HOME/bin/activate
+    fi
+  - '[[ $TRAVIS_OS_NAME == "linux" ]] && sudo apt-get update -qq || true'
+  - '[[ $TRAVIS_OS_NAME == "linux" ]] && sudo apt-get install python-dev libffi-dev libxml2-dev libxslt1-dev libjpeg-dev || true'
 
 install:
-    - python setup.py develop
-    - pip install pytest pytest-cov mock coveralls
+  - pip install -e .
+  - pip install pytest pytest-cov mock coveralls
 
 script:
-    - py.test --cov=peepdf
+  - py.test --cov=peepdf
 
 after_success:
-    - coveralls
+  - codecov
+  - coveralls
