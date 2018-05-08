@@ -609,6 +609,12 @@ class PDFString (PDFObject) :
         self.value = self.value.replace('\\\r','')
         self.value = self.value.replace('\\\n','')
         '''
+        smbAddr = []
+        pos = 1
+        for match in re.findall(r'\\\\((?:(?:25[0-5]\.)|(?:2[0-4][0-9]\.)|(?:[01]?[0-9]?[0-9]\.)|(?:[0-9]\.)){3}(?:(?:25[0-5])|(?:2[0-4][0-9])|(?:[01]?[0-9][0-9]?)|(?:[0-9])))', self.value):
+            smbAddr.append({'content': match, 'position': pos})
+            self.value = self.value.replace(match, '{{' + str(pos) + '}}')
+            pos += 1
         octalNumbers = re.findall('\\\\([0-7]{1,3})', self.value, re.DOTALL)
         try:
             for octal in octalNumbers:
@@ -618,6 +624,8 @@ class PDFString (PDFObject) :
             errorMessage = 'Error in octal conversion'
             self.addError(errorMessage)
             return (-1,errorMessage)
+        for match in smbAddr:
+            self.value = self.value.replace('{{' + str(match['position']) + '}}', match['content'])
         if isJavascript(self.value) or self.referencedJSObject:
             self.containsJScode = True
             self.JSCode, self.unescapedBytes, self.urlsFound, jsErrors, jsContexts['global'] = analyseJS(self.value, jsContexts['global'], isManualAnalysis)

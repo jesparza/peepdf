@@ -4196,7 +4196,7 @@ class PDFConsole(cmd.Cmd):
             except:
                 return None
         elif objectType == 'string':
-            octalNumbers = re.findall('\\\\(\d{1,3})', objectContent, re.DOTALL)
+            octalNumbers = re.findall('\\\\([0-7]{1,3})', objectContent, re.DOTALL)
             for octal in octalNumbers:
                 try:
                     chr(int(octal, 8))
