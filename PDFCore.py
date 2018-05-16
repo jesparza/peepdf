@@ -4316,7 +4316,7 @@ class PDFBody :
                             del(compressedObjectsDict)
         for id in self.referencedJSObjects:
             if id not in self.containingJS:
-                object = none
+                object = None
                 if id in self.objects:
                     object = self.objects[id].getObject()
                 if object == None:
