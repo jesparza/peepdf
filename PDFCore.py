@@ -4318,7 +4318,7 @@ class PDFBody :
             if id not in self.containingJS:
                 object = none
                 if id in self.objects:
-                    self.objects[id].getObject()
+                    object = self.objects[id].getObject()
                 if object == None:
                     errorMessage = 'Object is None'
                     if isForceMode:
