@@ -3,7 +3,7 @@
 #    http://peepdf.eternal-todo.com
 #    By Jose Miguel Esparza <jesparza AT eternal-todo.com>
 #
-#    Copyright (C) 2011-2017 Jose Miguel Esparza
+#    Copyright (C) 2011-2018 Jose Miguel Esparza
 #
 #    This file is part of peepdf.
 #
@@ -195,6 +195,9 @@ def isJavascript(content):
     results = 0
     length = len(content)
     smallScriptLength = 100
+
+    if content.startswith("/GS1 gs"):
+        return False
 
     if re.findall(reJSscript, content, re.DOTALL | re.IGNORECASE):
         return True

@@ -75,3 +75,12 @@ def test_quickish_isjs():
     )
     # Should take no more than 2 seconds (in 0.3.5 this would take >5 seconds).
     assert time.time() - t < 2
+
+def test_ignore_ghostscript():
+    t = time.time()
+    peepdf.PDFCore.PDFParser().parse(
+        "tests/files/worldreport.pdf", forceMode=True,
+        looseMode=True, manualAnalysis=False
+    )
+    # Should take less than 20 seconds (in 0.4.1 this would take >1 minute).
+    assert time.time() - t < 20
