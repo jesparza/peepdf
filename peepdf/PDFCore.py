@@ -4322,7 +4322,7 @@ class PDFBody:
                                 self.setObject(compressedId, compressedObject, offset)
                             del(compressedObjectsDict)
         for id in self.referencedJSObjects:
-            if id not in self.containingJS:
+            if id not in self.containingJS and id in self.objects:
                 object = self.objects[id].getObject()
                 if object is None:
                     errorMessage = 'Object is None'
