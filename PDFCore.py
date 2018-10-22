@@ -6210,6 +6210,7 @@ class PDFFile :
             containingURIs = self.body[version].getContainingURIs()
             if len(containingURIs) > 0:
                 statsVersion['URIs'] = [str(len(containingURIs)), containingURIs]
+                statsVersion['URIDisplay'] = set(self.getURIs(version=version)[0]) #only get unique URIs
             else:
                 statsVersion['URIs'] = None
             containingJS = self.body[version].getContainingJS()
@@ -6840,6 +6841,7 @@ class PDFParser :
             @param fileName The name of the file to be parsed
             @param forceMode Boolean to specify if ignore errors or not. Default value: False.
             @param looseMode Boolean to set the loose mode when parsing objects. Default value: False.
+            @param manualAnalysis Boolean to specify whether JS analysis is performed. Default value: False.
             @return A PDFFile instance
         '''
         global isForceMode, pdfFile, isManualAnalysis
@@ -6928,6 +6930,7 @@ class PDFParser :
         
         # Getting the number of updates in the file
         while fileContent.find('%%EOF') != -1:
+
             self.readUntilSymbol(fileContent, '%%EOF')
             self.readUntilEndOfLine(fileContent)
             self.fileParts.append(fileContent[:self.charCounter])
@@ -7014,6 +7017,7 @@ class PDFParser :
                         else:
                             auxContent = auxContent[index+len(objectHeader):]
                             relativeOffset += len(objectHeader)
+                    #find object in rawObject
                     ret = self.createPDFIndirectObject(rawObject, forceMode, looseMode)
                     if ret[0] != -1:
                         pdfIndirectObject = ret[1]
