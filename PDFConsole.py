@@ -79,7 +79,20 @@ filter2RealFilterDict = {'b64': 'base64', 'base64': 'base64', 'asciihex': '/ASCI
                          'rl': '/RunLengthDecode', 'ccittfax': '/CCITTFaxDecode', 'ccf': '/CCITTFaxDecode',
                          'jbig2': '/JBIG2Decode', 'dct': '/DCTDecode', 'jpx': '/JPXDecode'}
 
-
+monitorizedEvents = ['/OpenAction','/AA','/Names','/AcroForm', '/XFA']
+monitorizedActions = ['/JS','/JavaScript','/Launch','/SubmitForm','/ImportData']
+monitorizedElements = ['/EmbeddedFiles',
+                       '/EmbeddedFile',
+                       '/JBIG2Decode',
+                       'getPageNthWord',
+                       'arguments.callee',
+                       '/U3D',
+                       '/PRC',
+                       '/RichMedia',
+                       '/Flash',
+                       '.rawValue',
+                       'keep.previous']
+monitoring=monitorizedActions + monitorizedElements + monitorizedEvents
 class PDFConsole(cmd.Cmd):
     '''
         Class of the peepdf interactive console. To see details about commands: http://code.google.com/p/peepdf/wiki/Commands
@@ -3588,7 +3601,7 @@ class PDFConsole(cmd.Cmd):
             root = tree[i][0]
             objectsInfo = tree[i][1]
             if i != 0:
-                treeOutput += newLine + 'Version ' + str(i) + ':' + newLine * 2
+                treeOutput += newLine + self.staticColor + 'Version ' + str(i) + self.resetColor + ':' + newLine * 2
             if root is not None:
                 nodesPrinted, nodeOutput = self.printTreeNode(root, objectsInfo, nodesPrinted)
                 treeOutput += nodeOutput
@@ -4641,7 +4654,18 @@ class PDFConsole(cmd.Cmd):
         output = ''
         if nodesInfo.has_key(node):
             if node not in expandedNodes or (node in expandedNodes and depth > 0):
-                output += '\t' * depth + nodesInfo[node][0] + ' (' + str(node) + ')' + newLine
+                isMonitored = False
+                #Check whether type of an object is in the monitoring list
+                types=nodesInfo[node][0].split(" ")
+                for t in types:
+                    if t in monitoring:
+                        isMonitored = True
+                if isMonitored:
+                    output += '\t' * depth + self.warningColor + nodesInfo[node][0] + self.resetColor + ' (' + str(node) + ')' + newLine
+                else:
+                    output += '\t' * depth  + nodesInfo[node][0] + ' (' + str(node) + ')' + newLine
+
+
             if node not in expandedNodes:
                 expandedNodes.append(node)
                 children = nodesInfo[node][1]
