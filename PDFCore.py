@@ -4448,7 +4448,6 @@ class PDFBody :
         return (0,'')                        
     
 
-
 class PDFTrailer :
     def __init__(self, dict, lastCrossRefSection = '0', streamPresent = False):
         self.errors = []
@@ -6210,6 +6209,7 @@ class PDFFile :
             containingURIs = self.body[version].getContainingURIs()
             if len(containingURIs) > 0:
                 statsVersion['URIs'] = [str(len(containingURIs)), containingURIs]
+                statsVersion['URIDisplay'] = set(self.getURIs(version=version)[0]) #only get unique URIs
             else:
                 statsVersion['URIs'] = None
             containingJS = self.body[version].getContainingJS()
@@ -6840,6 +6840,7 @@ class PDFParser :
             @param fileName The name of the file to be parsed
             @param forceMode Boolean to specify if ignore errors or not. Default value: False.
             @param looseMode Boolean to set the loose mode when parsing objects. Default value: False.
+            @param manualAnalysis Boolean to specify whether JS analysis is performed. Default value: False.
             @return A PDFFile instance
         '''
         global isForceMode, pdfFile, isManualAnalysis
@@ -6928,6 +6929,7 @@ class PDFParser :
         
         # Getting the number of updates in the file
         while fileContent.find('%%EOF') != -1:
+
             self.readUntilSymbol(fileContent, '%%EOF')
             self.readUntilEndOfLine(fileContent)
             self.fileParts.append(fileContent[:self.charCounter])
@@ -6995,12 +6997,15 @@ class PDFParser :
                     
             # Converting the body content in PDFObjects
             body = PDFBody()
+            # search for objects e.g. 10 0 obj
             rawIndirectObjects = self.getIndirectObjects(bodyContent, looseMode)
             if rawIndirectObjects != []:
                 for j in range(len(rawIndirectObjects)):
                     relativeOffset = 0
                     auxContent = str(bodyContent)
+                    #raw content of object
                     rawObject = rawIndirectObjects[j][0]
+                    #object header e.g. 10 0 obj
                     objectHeader = rawIndirectObjects[j][1]
                     while True:
                         index = auxContent.find(objectHeader)
@@ -7014,6 +7019,7 @@ class PDFParser :
                         else:
                             auxContent = auxContent[index+len(objectHeader):]
                             relativeOffset += len(objectHeader)
+                    #find object in rawObject
                     ret = self.createPDFIndirectObject(rawObject, forceMode, looseMode)
                     if ret[0] != -1:
                         pdfIndirectObject = ret[1]
@@ -7345,6 +7351,7 @@ class PDFParser :
         elements = {}
         rawNames = {}
         ret = self.readObject(dict[self.charCounter:], 'name')
+
         if ret[0] == -1:
             if ret[1] != 'Empty content reading object':
                 if isForceMode:
@@ -7356,6 +7363,7 @@ class PDFParser :
                 name = None
         else:
             name = ret[1]    
+
         while name != None:
             key = name.getValue()
             rawNames[key] = name
@@ -7384,6 +7392,7 @@ class PDFParser :
                     name = None
             else:
                 name = ret[1]
+
         if elements.has_key('/Type') and elements['/Type'].getValue() == '/ObjStm':
             try:
                 pdfStream = PDFObjectStream(dict, stream, elements, rawNames, {})
@@ -7400,6 +7409,7 @@ class PDFParser :
                 if e.message != '':
                     errorMessage += ': '+e.message
                 return (-1, errorMessage)
+
         self.charCounter = realCounter
         return (0,pdfStream)
 

@@ -176,14 +176,13 @@ def isJavascript(content):
         @param content: A string
         @return: A boolean, True if it seems to contain Javascript code or False in the other case
     '''
-    jsStrings = ['var ', ';', ')', '(', 'function ', '=', '{', '}', 'if ', 'else', 'return', 'while ', 'for ',
+    jsStrings = ['var ', ';', ')', '(', 'function ', '=', '{', '}', 'if(', 'if (', 'else{', 'else {','else if', 'return', 'while(', 'while (', 'for(', 'for (',
                  ',', 'eval']
     keyStrings = [';', '(', ')']
-    reVarInit = 'var [\w0-9]+\s*?='
-    reFunctionCall = '[\w0-9]+\s*?\(.*?\)\s*?;'
     stringsFound = []
     limit = 15
-    minDistinctStringsFound = 4
+    #JS should at least contain ';', ')', '(', 'var', '='
+    minDistinctStringsFound = 5
     minRatio = 10
     results = 0
     length = len(content)
