@@ -4448,7 +4448,6 @@ class PDFBody :
         return (0,'')                        
     
 
-
 class PDFTrailer :
     def __init__(self, dict, lastCrossRefSection = '0', streamPresent = False):
         self.errors = []
@@ -6998,12 +6997,15 @@ class PDFParser :
                     
             # Converting the body content in PDFObjects
             body = PDFBody()
+            # search for objects e.g. 10 0 obj
             rawIndirectObjects = self.getIndirectObjects(bodyContent, looseMode)
             if rawIndirectObjects != []:
                 for j in range(len(rawIndirectObjects)):
                     relativeOffset = 0
                     auxContent = str(bodyContent)
+                    #raw content of object
                     rawObject = rawIndirectObjects[j][0]
+                    #object header e.g. 10 0 obj
                     objectHeader = rawIndirectObjects[j][1]
                     while True:
                         index = auxContent.find(objectHeader)
@@ -7349,6 +7351,7 @@ class PDFParser :
         elements = {}
         rawNames = {}
         ret = self.readObject(dict[self.charCounter:], 'name')
+
         if ret[0] == -1:
             if ret[1] != 'Empty content reading object':
                 if isForceMode:
@@ -7360,6 +7363,7 @@ class PDFParser :
                 name = None
         else:
             name = ret[1]    
+
         while name != None:
             key = name.getValue()
             rawNames[key] = name
@@ -7388,6 +7392,7 @@ class PDFParser :
                     name = None
             else:
                 name = ret[1]
+
         if elements.has_key('/Type') and elements['/Type'].getValue() == '/ObjStm':
             try:
                 pdfStream = PDFObjectStream(dict, stream, elements, rawNames, {})
@@ -7404,6 +7409,7 @@ class PDFParser :
                 if e.message != '':
                     errorMessage += ': '+e.message
                 return (-1, errorMessage)
+
         self.charCounter = realCounter
         return (0,pdfStream)
 
