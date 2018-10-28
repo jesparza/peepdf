@@ -4656,14 +4656,19 @@ class PDFConsole(cmd.Cmd):
             if node not in expandedNodes or (node in expandedNodes and depth > 0):
                 isMonitored = False
                 #Check whether type of an object is in the monitoring list
-                types=nodesInfo[node][0].split(" ")
+                nodesInformation=nodesInfo[node][0]
+                types=nodesInformation.split(" ")
                 for t in types:
                     if t in monitoring:
                         isMonitored = True
+                if  self.pdfFile.getObject(node).containsJS():
+                    nodesInformation += " containsJS" 
+                    isMonitored = True
+
                 if isMonitored:
-                    output += '\t' * depth + self.warningColor + nodesInfo[node][0] + self.resetColor + ' (' + str(node) + ')' + newLine
+                    output += '\t' * depth + self.warningColor + nodesInformation + self.resetColor + ' (' + str(node) + ')' + newLine
                 else:
-                    output += '\t' * depth  + nodesInfo[node][0] + ' (' + str(node) + ')' + newLine
+                    output += '\t' * depth  + nodesInformation + ' (' + str(node) + ')' + newLine
 
 
             if node not in expandedNodes:
