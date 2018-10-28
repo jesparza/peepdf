@@ -664,6 +664,11 @@ try:
                         if statsVersion['URIs'] is not None:
                             stats += newLine + beforeStaticLabel + '\tObjects with URIs (' + \
                                      statsVersion['URIs'][0] + '): ' + resetColor + str(statsVersion['URIs'][1])
+                            stats += newLine + beforeStaticLabel + '\tFound URIs : ' + resetColor
+                            for display in statsVersion['URIDisplay']:
+                                display=str(display)
+                                if "http" in display.lower():
+                                    stats += newLine + beforeStaticLabel + '\t\t' + resetColor + display
                         if COLORIZED_OUTPUT and not options.avoidColors:
                             beforeStaticLabel = warningColor
                         if statsVersion['Objects with JS code'] != None:
