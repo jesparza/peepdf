@@ -54,6 +54,74 @@ newLine = os.linesep
 reJSscript = '<script[^>]*?contentType\s*?=\s*?[\'"]application/x-javascript[\'"][^>]*?>(.*?)</script>'
 preDefinedCode = 'var app = this;'
 
+def JSUnpack(code,infoObject,manualAnalysis=False):
+    '''
+    Hooks the eval function with multiple app versions and search for obfuscated elements in the Javascript code.
+    Also take data from XFA, object info and getAnnot(s) in a PDF to an original code. The idea is mainly taken from JSUnpack
+    
+    @param code: The Javascript code (string)
+    @param infoObject: is infoObject of a PDF
+    @param manualAnalysis: analyse manually or automatic (boolean)
+    @return: List with analysis information of the Javascript code: [JSCode,unescapedBytes,urlsFound,errors], where 
+            JSCode is a list with the several stages Javascript code,
+            unescapedBytes is a list with the parameters of unescape functions, 
+            urlsFound is a list with the URLs found in the unescaped bytes,
+            errors is a list of errors,
+    '''
+    errors = []
+    jsCode = []
+    unescapedBytes = []
+    urlsFound = []
+    #pre-code with data from inforamtion object
+    preInfo=''
+    #Take variable name(s) of xml elements in XFA
+    preXFAVar=''
+    #Build page tree and annotation data
+    preAnnot=''
+
+    #get preInfo from InfoObject
+    infoObject=pdf.getInfoObject()
+    for obj in infoObject:
+        elements=obj.getElements()
+        if elements.has_key("/Creator"):
+            creatorValue=elements["/Creator"].getValue()
+            preInfo +="info.creator = String(%s);" % (str(creatorValue))
+            preInfo +="this.creator = info.creator;"
+            preInfo +="info.Creator = info.creator;"
+            preInfo +="app.doc.creator = info.creator;"
+            preInfo +="app.doc.Creator = info.creator;"
+        if elements.has_key("/Title"):
+            titleValue=elements["/Creator"].getValue()
+            preInfo +="info.title = string(%s);" % (str(titleValue))
+            preInfo +="this.title = info.title;"
+            preInfo +="info.Title = info.title;"
+            preInfo +="app.doc.title = info.title;"
+            preInfo +="app.doc.Title = info.title;"
+        if elements.has_key("/Subject"):
+            subjectValue=elements["/Subject"].getValue()
+            preInfo +="info.subject = String(%s);" % (str(subjectValue))
+            preInfo +="this.subject = info.subject;"
+            preInfo +="info.Subject = info.subject;"
+            preInfo +="app.doc.subject = info.subject;"
+            preInfo +="app.doc.Subject = info.subject;"
+        if elements.has_key("/Author"):
+            authorValue=elements["/Author"].getValue()
+            preInfo +="info.author = String(%s);" % (str(authorValue))
+            preInfo +="this.author = info.author;"
+            preInfo +="info.Author = info.author;"
+            preInfo +="app.doc.author = info.author;"
+            preInfo +="app.doc.Author = info.author;"
+        if elements.has_key("/CreationDate"):
+            dateValue=elements["/CreationDate"].getValue()
+            preInfo +="info.creationdate = String(%s);" % (str(dateValue))
+            preInfo +="this.creationdate = info.creationdate;"
+            preInfo +="info.CreationDate = info.creationdate;"
+            preInfo +="app.doc.creationdate = info.creationdate;"
+            preInfo +="app.doc.CreationDate = info.creationdate;"
+            preInfo +="app.doc.creationDate = info.creationdate;"
+            preInfo +="info.creationDate = info.creationdate;"
+    
+    #Get xml variable name
 
 def analyseJS(code, context=None, manualAnalysis=False):
     '''
