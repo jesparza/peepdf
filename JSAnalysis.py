@@ -160,7 +160,7 @@ def JSUnpack(code,rawCode,infoObjects,manualAnalysis=False):
                     originalCode = code
                     code = viewerVersion + preInfo + XMLVar + code
 
-                    
+                    #Detect shellcode in code
                     if code != '':
                         #Detect shellcode and embedded URL(s) in case of using unescape function. e.g. x = unescape(%u0A0A%0B0B)
                         escapedVars = re.findall('(\w*?)\s*?=\s*?(unescape\((.*?)\))', code, re.DOTALL)
@@ -208,7 +208,8 @@ def JSUnpack(code,rawCode,infoObjects,manualAnalysis=False):
 
 
                     #Hook eval and run Javascript
-                    evalCode,error = evalJs(code)
+                    print evalJS(code)
+                    status,evalCode,error = evalJS(code)
                     evalCode = jsbeautifier.beautify(evalCode)
                     if error != "":
                         errors.append(error)
@@ -228,28 +229,28 @@ def JSUnpack(code,rawCode,infoObjects,manualAnalysis=False):
             if js is None or js == '':
                  jsCode.remove(js)
  
-    return [jsCode, unescapedBytes, urlsFound, errors, context]
+    return [jsCode, unescapedBytes, urlsFound, errors]
 
 def evalJS(code):
     """
     @param code: the Javascript code
-    @return: a set of eval code, error
+    @return: a set of status, eval code, error
     """
     try: 
-        fileJS = randomString(10)
-        with open(fileJS,'w') as fileJS:
+        fileNameJS = randomString(10) + ".js.tmp"
+        with open(fileNameJS,'w') as fileJS:
             fileJS.write(code)
 
-        po = subprocess.Popen(['v8', '-f', "pre.js", '-f', fileJS + '.js', '-f', "post.js"],shell=False, stdout=PIPE, stderr=PIPE)
-        return (po.stdout.read(),po.stderr.read())
+        po = subprocess.Popen(['v8', '-f', 'pre.js', '-f', fileNameJS , '-f', 'post.js'],shell=False, stdout=PIPE, stderr=PIPE)
+        return (0,po.stdout.read(),po.stderr.read())
     except:
         error = str(sys.exc_info()[1])
         open('jserror.log', 'ab').write(error + newLine)
-        errors.append(error)
-        return ("",error)
-        
-    
-    
+        return (1,"",error)
+    finally:
+        #remove temporary file
+        os.remove(fileNameJS)
+            
 def randomString(stringLength=10):
     """Generate a random string of fixed length """
     letters = string.ascii_lowercase
