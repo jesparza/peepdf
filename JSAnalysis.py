@@ -73,19 +73,17 @@ def JSUnpack(code,rawCode,infoObjects,manualAnalysis=False):
             urlsFound is a list with the URLs found in the unescaped bytes,
             errors is a list of errors,
     '''
-    errors = []
-    jsCode = []
-    unescapedBytes = []
-    urlsFound = []
+ 
+    # a dictionary for each app.viewerversion. Each element contains 4 lists: jsCode, unescapedBytes, urlsFound
+    valuesFoundByViewerVersion={}
     #pre-code with data from inforamtion object
     preInfo=''
     #Take variable name(s) of xml elements (.e.g in XFA, Acroform)
-    preXMLVar=[]
     XMLVar=''
     #Build page tree and annotation data
     preAnnot=''
     #version strings
-    pdfVersions = ['','7.0','8.0','9.1']
+    pdfVersions = ['7.0','8.0','9.1']
 
     #get preInfo from InfoObject
     for obj in infoObjects:
@@ -126,7 +124,7 @@ def JSUnpack(code,rawCode,infoObjects,manualAnalysis=False):
             preInfo +="app.doc.creationdate = info.creationdate;\n"
             preInfo +="app.doc.CreationDate = info.creationdate;\n"
             preInfo +="app.doc.creationDate = info.creationdate;\n"
-            preInfo +="info.creationDate = info.creationdate;\n:"
+            preInfo +="info.creationDate = info.creationdate;\n"
 
     #Get xml variable name
     try:
@@ -150,15 +148,24 @@ def JSUnpack(code,rawCode,infoObjects,manualAnalysis=False):
             for scriptElement in scriptElements:
                 code += scriptElement + '\n\n'
         code = jsbeautifier.beautify(code)
-        jsCode.append(code)
-
-
+        
         if code is not None and not manualAnalysis:
+            originalCode = code
             for version in pdfVersions:
+                # initialize 4 lists for each PDF version
+                errors = []
+                jsCode = []
+                unescapedBytes = []
+                urlsFound = []
+                
+                code = originalCode
+                jsCode.append(code)
                 viewerVersion='app.viewerVersion = Number(%s);\n' % (version)
                 while True:
-                    originalCode = code
-                    code = viewerVersion + preInfo + XMLVar + code
+                    # test where processing code is a Javascript
+                    isJS = isJavascript(code)
+                    if isJS:
+                        code = viewerVersion + preInfo + XMLVar + code
 
                     #Detect shellcode in code
                     if code != '':
@@ -194,7 +201,7 @@ def JSUnpack(code,rawCode,infoObjects,manualAnalysis=False):
                         # post.js produce a signature. e.g. #//shellcode len 767 (including any NOPs) payload = %u0A0A%u0A0A%u0A0A%uE1D9%u34D9%u5824%u5858
                         escapedVars = re.findall('//shellcode (pdf|len) (\d+) .*? = (.*)$', code,re.DOTALL)
                         for var in escapedVars:
-                            bytes = var[2]
+                            bytes = str(var[2])
                             if len(bytes) > 150:
                                 ret = unescape(bytes)
                                 if ret[0] != -1:
@@ -208,28 +215,28 @@ def JSUnpack(code,rawCode,infoObjects,manualAnalysis=False):
 
 
                     #Hook eval and run Javascript
-                    print evalJS(code)
-                    status,evalCode,error = evalJS(code)
-                    evalCode = jsbeautifier.beautify(evalCode)
-                    if error != "":
-                        errors.append(error)
+                    if isJS:
+                        status,evalCode,error = evalJS(code)
+                        evalCode = jsbeautifier.beautify(evalCode)
+                        if error != "":
+                            errors.append(error)
 
-                    #if next stage of the JS exists, re-eval the next stage
-                    if evalCode != '' and evalCode != code:
-                        code = evalCode
-                        jsCode.append(code)
+                        #if next stage of the JS exists, re-eval the next stage
+                        if (evalCode is not None or evalCode != '') and evalCode != code:
+                            # Assign code to the next stage
+                            code = evalCode
+                            if isJavascript(code):
+                                jsCode.append(code)
+                        else:
+                            break
                     else:
                         break
-            
+                valuesFoundByViewerVersion[version]=[jsCode,unescapedBytes,urlsFound,errors]
     except:
         traceback.print_exc(file=open(errorsFile, 'a'))
         errors.append('Unexpected error in the JSUnpack module!!')
-    finally:
-        for js in jsCode:
-            if js is None or js == '':
-                 jsCode.remove(js)
- 
-    return [jsCode, unescapedBytes, urlsFound, errors]
+
+    return valuesFoundByViewerVersion
 
 def evalJS(code):
     """
@@ -238,9 +245,10 @@ def evalJS(code):
     """
     try: 
         fileNameJS = randomString(10) + ".js.tmp"
+        # Create temporal JS file
         with open(fileNameJS,'w') as fileJS:
             fileJS.write(code)
-
+        # Use Google V8 Java interpreter, however, SpiderMoney should generate same results
         po = subprocess.Popen(['v8', '-f', 'pre.js', '-f', fileNameJS , '-f', 'post.js'],shell=False, stdout=PIPE, stderr=PIPE)
         return (0,po.stdout.read(),po.stderr.read())
     except:
@@ -248,7 +256,7 @@ def evalJS(code):
         open('jserror.log', 'ab').write(error + newLine)
         return (1,"",error)
     finally:
-        #remove temporary file
+        # Remove temporal JS file
         os.remove(fileNameJS)
             
 def randomString(stringLength=10):
@@ -500,4 +508,4 @@ if __name__ == "__main__":
     else:
             rawCode=rawCode.getValue()
 
-    JSUnpack(rawCode,code,infoObjects)
+    print JSUnpack(code,rawCode,infoObjects)
