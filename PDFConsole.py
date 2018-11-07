@@ -1871,6 +1871,162 @@ class PDFConsole(cmd.Cmd):
         print 'Usage: js_analyse string $javascript_code'
         print newLine + 'Analyses the Javascript code stored in the specified string, variable, file or object' + newLine
 
+    def do_js_unpack(self, argv):
+        # store actual JS code to analyse
+        content = ''
+       
+        validTypes = ['variable', 'file', 'object', 'string']
+        if not JS_MODULE:
+            message = '*** Error: PyV8 is not installed!!'
+            self.log_output('js_analyse ' + argv, message)
+            return False
+        args = self.parseArgs(argv)
+        if args is None:
+            message = '*** Error: The command line arguments have not been parsed successfully!!'
+            self.log_output('js_analyse ' + argv, message)
+            return False
+        if len(args) == 2:
+            version = None
+        elif len(args) == 3 and args[0] == 'object':
+            version = args[2]
+        else:
+            self.help_js_analyse()
+            return False
+        type = args[0]
+        src = args[1]
+        if type not in validTypes:
+            self.help_js_analyse()
+            return False
+        if type == 'variable':
+            if not self.variables.has_key(src):
+                message = '*** Error: The variable does not exist!!'
+                self.log_output('js_analyse ' + argv, message)
+                return False
+            else:
+                content = self.variables[src][0]
+                if not isJavascript(content):
+                    if self.use_rawinput:
+                        res = raw_input('The variable may not contain Javascript code, do you want to continue? (y/n) ')
+                        if res.lower() == 'n':
+                            message = '*** Error: The variable does not contain Javascript code!!'
+                            self.log_output('js_analyse ' + argv, message)
+                            return False
+                    else:
+                        print 'Warning: the object may not contain Javascript code...' + newLine
+        elif type == 'file':
+            if not os.path.exists(src):
+                message = '*** Error: The file does not exist!!'
+                self.log_output('js_analyse ' + argv, message)
+                return False
+            else:
+                content = open(src, 'rb').read()
+                if not isJavascript(content):
+                    if self.use_rawinput:
+                        res = raw_input('The file may not contain Javascript code, do you want to continue? (y/n) ')
+                        if res.lower() == 'n':
+                            message = '*** Error: The file does not contain Javascript code!!'
+                            self.log_output('js_analyse ' + argv, message)
+                            return False
+                    else:
+                        print 'Warning: the object may not contain Javascript code...' + newLine
+        elif type == 'object':
+            if self.pdfFile is None:
+                message = '*** Error: You must open a file!!'
+                self.log_output('js_analyse ' + argv, message)
+                return False
+            if not src.isdigit() or (version is not None and not version.isdigit()):
+                self.help_js_analyse()
+                return False
+            src = int(src)
+            if version is not None:
+                version = int(version)
+                if version > self.pdfFile.getNumUpdates():
+                    message = '*** Error: The version number is not valid!!'
+                    self.log_output('js_analyse ' + argv, message)
+                    return False
+            object = self.pdfFile.getObject(src, version)
+            if object is not None:
+                # in case of analysing an object within the analysed PDF, addiional info are added: infoObject, annotData and field name in XML (if having)
+                # the raw XML data that contains JS code
+                rawContent= ''
+                # infoObject to enrich JS code
+                infoObjects=self.pdfFile.getInfoObject()
+                #get annotation data to give data fort getAnnot() and getAnnots()
+                annotsInPagesMaster,annotsNameInPagesMaster = self.pdfFile.getAnnotsData()
+                if object.containsJS():
+                    content = object.getJSCode()[0]
+                    if object.getType() == "stream":
+                        rawContent=object.getStream()
+                    else:
+                        rawCode=object.getValue()
+                else:
+                    if self.use_rawinput:
+                        res = raw_input('The object may not contain Javascript code, do you want to continue? (y/n) ')
+                        if res.lower() == 'n':
+                            message = '*** Error: The object does not contain Javascript code!!'
+                            self.log_output('js_analyse ' + argv, message)
+                            return False
+                    else:
+                        print 'Warning: the object may not contain Javascript code...' + newLine
+                    objectType = object.getType()
+                    if objectType == 'stream':
+                        content = object.getStream()
+                    elif type == 'dictionary' or type == 'array':
+                        element = object.getElementByName('/JS')
+                        if element is not None:
+                            content = element.getValue()
+                        else:
+                            message = '*** Error: Target not found!!'
+                            self.log_output('js_analyse ' + argv, message)
+                            return False
+                    elif type == 'string' or type == 'hexstring':
+                        content = object.getValue()
+                    else:
+                        message = '*** Error: Target not found!!'
+                        self.log_output('js_analyse ' + argv, message)
+                        return False
+            else:
+                message = '*** Error: Object not found!!'
+                self.log_output('js_analyse ' + argv, message)
+                return False
+        else:
+            content = src
+        content = content.strip()
+        jsCode, unescapedBytes, urlsFound, jsErrors = JSUnpack(content,rawContent,infoObjects,annotsInPagesMaster,annotsNameInPagesMaster)
+        if content not in jsCode:
+            jsCode = [content] + jsCode
+        jsanalyseOutput = ''
+        if jsCode != []:
+            jsanalyseOutput += newLine + 'Javascript code:' + newLine
+            for js in jsCode:
+                if js == jsCode[0]:
+                    jsanalyseOutput += newLine + '==================== Original Javascript code ====================' + newLine * 2
+                else:
+                    jsanalyseOutput += newLine + '================== Next stage of Javascript code ==================' + newLine * 2
+                jsanalyseOutput += js
+                jsanalyseOutput += newLine * 2 + '===================================================================' + newLine
+        if unescapedBytes != []:
+            jsanalyseOutput += newLine * 2 + 'Unescaped bytes:' + newLine * 2
+            for bytes in unescapedBytes:
+                jsanalyseOutput += self.printBytes(bytes) + newLine * 2
+        if urlsFound != []:
+            jsanalyseOutput += newLine * 2 + 'URLs in shellcode:' + newLine * 2
+            for url in urlsFound:
+                jsanalyseOutput += '\t' + url + newLine
+        if jsErrors != []:
+            jsanalyseOutput += newLine * 2
+            for jsError in jsErrors:
+                jsanalyseOutput += '*** Error analysing Javascript: ' + jsError + newLine
+
+        self.log_output('js_analyse ' + argv, jsanalyseOutput, unescapedBytes)
+
+    def help_js_unpack(self):
+        print newLine + 'Usage: js_unpack variable $var_name'
+        print 'Usage: js_unpack file $file_name'
+        print 'Usage: js_unpack object $object_id [$version]'
+        print 'Usage: js_unpack string $javascript_code'
+        print newLine + 'Analyses the Javascript code stored in the specified string, variable, file or object' + newLine
+        
     def do_js_beautify(self, argv):
         content = ''
         bytes = ''

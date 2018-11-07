@@ -58,7 +58,7 @@ newLine = os.linesep
 reJSscript = '<script[^>]*?contentType\s*?=\s*?[\'"]application/x-javascript[\'"][^>]*?>(.*?)</script>'
 preDefinedCode = 'var app = this;'
 
-def JSUnpack(code,rawCode,infoObjects,manualAnalysis=False):
+def JSUnpack(code, rawCode=None, infoObjects=None, annotsInPagesMaster='', annotsNameInPagesMaster='', manualAnalysis=False):
     '''
     Hooks the eval function with multiple app versions and search for obfuscated elements in the Javascript code.
     Also take data from XFA, object info and getAnnot(s) in a PDF to an original code. The idea is mainly taken from JSUnpack
@@ -66,6 +66,8 @@ def JSUnpack(code,rawCode,infoObjects,manualAnalysis=False):
     @param code: the Javascript code (string)
     @param rawCode: The raw Javascript code, may contains HTML, XML elements (string)
     @param infoObjects: is list of infoObjects of a PDF
+    @param annotsInPagesMaster: is a list of annotation per page
+    @param annotsNameInPagesMaster: is a list of annotation by name
     @param manualAnalysis: analyse manually or automatic (boolean)
     @return: List with analysis information of the Javascript code: [JSCode,unescapedBytes,urlsFound,errors], where 
             JSCode is a list with the several stages Javascript code,
@@ -80,64 +82,68 @@ def JSUnpack(code,rawCode,infoObjects,manualAnalysis=False):
     preInfo=''
     #Take variable name(s) of xml elements (.e.g in XFA, Acroform)
     XMLVar=''
-    #Build page tree and annotation data
-    preAnnot=''
+    #Take annotation data
+    annotsInPagesMaster = "var annotsInPagesMaster = %s" % (str(annotsInPagesMaster))
+    annotsNameInPagesMaster = "var annotsNameInPagesMaster = %s" (str(annotsNameInPagesMaster))
+
     #version strings
     pdfVersions = ['7.0','8.0','9.1']
 
     #get preInfo from InfoObject
-    for obj in infoObjects:
-        elements=obj.getElements()
-        if elements.has_key("/Creator"):
-            creatorValue=elements["/Creator"].getValue()
-            preInfo +='info.creator = String("%s");\n' % (str(creatorValue))
-            preInfo +="this.creator = info.creator;\n"
-            preInfo +="info.Creator = info.creator;\n"
-            preInfo +="app.doc.creator = info.creator;\n"
-            preInfo +="app.doc.Creator = info.creator;\n"
-        if elements.has_key("/Title"):
-            titleValue=elements["/Title"].getValue()
-            preInfo +='info.title = string("%s");\n' % (str(titleValue))
-            preInfo +="this.title = info.title;\n"
-            preInfo +="info.Title = info.title;\n"
-            preInfo +="app.doc.title = info.title;\n"
-            preInfo +="app.doc.Title = info.title;\n"
-        if elements.has_key("/Subject"):
-            subjectValue=elements["/Subject"].getValue()
-            preInfo +='info.subject = String("%s");\n' % (str(subjectValue))
-            preInfo +="this.subject = info.subject;\n"
-            preInfo +="info.Subject = info.subject;\n"
-            preInfo +="app.doc.subject = info.subject;\n"
-            preInfo +="app.doc.Subject = info.subject;\n"
-        if elements.has_key("/Author"):
-            authorValue=elements["/Author"].getValue()
-            preInfo +='info.author = String("%s");\n' % (str(authorValue))
-            preInfo +="this.author = info.author;\n"
-            preInfo +="info.Author = info.author;\n"
-            preInfo +="app.doc.author = info.author;\n"
-            preInfo +="app.doc.Author = info.author;\n"
-        if elements.has_key("/CreationDate"):
-            dateValue=elements["/CreationDate"].getValue()
-            preInfo +='info.creationdate = String("%s");\n' % (str(dateValue))
-            preInfo +="this.creationdate = info.creationdate;\n"
-            preInfo +="info.CreationDate = info.creationdate;\n"
-            preInfo +="app.doc.creationdate = info.creationdate;\n"
-            preInfo +="app.doc.CreationDate = info.creationdate;\n"
-            preInfo +="app.doc.creationDate = info.creationdate;\n"
-            preInfo +="info.creationDate = info.creationdate;\n"
+    if infoObject is not None:
+        for obj in infoObjects:
+            elements=obj.getElements()
+            if elements.has_key("/Creator"):
+                creatorValue=elements["/Creator"].getValue()
+                preInfo +='info.creator = String("%s");\n' % (str(creatorValue))
+                preInfo +="this.creator = info.creator;\n"
+                preInfo +="info.Creator = info.creator;\n"
+                preInfo +="app.doc.creator = info.creator;\n"
+                preInfo +="app.doc.Creator = info.creator;\n"
+            if elements.has_key("/Title"):
+                titleValue=elements["/Title"].getValue()
+                preInfo +='info.title = string("%s");\n' % (str(titleValue))
+                preInfo +="this.title = info.title;\n"
+                preInfo +="info.Title = info.title;\n"
+                preInfo +="app.doc.title = info.title;\n"
+                preInfo +="app.doc.Title = info.title;\n"
+            if elements.has_key("/Subject"):
+                subjectValue=elements["/Subject"].getValue()
+                preInfo +='info.subject = String("%s");\n' % (str(subjectValue))
+                preInfo +="this.subject = info.subject;\n"
+                preInfo +="info.Subject = info.subject;\n"
+                preInfo +="app.doc.subject = info.subject;\n"
+                preInfo +="app.doc.Subject = info.subject;\n"
+            if elements.has_key("/Author"):
+                authorValue=elements["/Author"].getValue()
+                preInfo +='info.author = String("%s");\n' % (str(authorValue))
+                preInfo +="this.author = info.author;\n"
+                preInfo +="info.Author = info.author;\n"
+                preInfo +="app.doc.author = info.author;\n"
+                preInfo +="app.doc.Author = info.author;\n"
+            if elements.has_key("/CreationDate"):
+                dateValue=elements["/CreationDate"].getValue()
+                preInfo +='info.creationdate = String("%s");\n' % (str(dateValue))
+                preInfo +="this.creationdate = info.creationdate;\n"
+                preInfo +="info.CreationDate = info.creationdate;\n"
+                preInfo +="app.doc.creationdate = info.creationdate;\n"
+                preInfo +="app.doc.CreationDate = info.creationdate;\n"
+                preInfo +="app.doc.creationDate = info.creationdate;\n"
+                preInfo +="info.creationDate = info.creationdate;\n"
 
     #Get xml variable name
-    try:
-        doc = xml.dom.minidom.parseString(rawCode)
-        scriptElements = doc.getElementsByTagNameNS("*", "script")
-        if scriptElements:
-            for script in scriptElements:
-                nameVar= script.parentNode.parentNode.getAttribute('name')
-                if nameVar:
-                    XMLVar += nameVar + " = this;\n"
-    
-    except Exception as e:
-        pass
+    if rawCode is not None:
+        try:
+            doc = xml.dom.minidom.parseString(rawCode)
+            scriptElements = doc.getElementsByTagNameNS("*", "script")
+            if scriptElements:
+                for script in scriptElements:
+                    nameVar= script.parentNode.parentNode.getAttribute('name')
+                    if nameVar:
+                        XMLVar += nameVar + " = this;\n"
+        
+        except Exception as e:
+            pass
     
     #Pre-process input code, same as in analyseJS
     try:
@@ -165,7 +171,7 @@ def JSUnpack(code,rawCode,infoObjects,manualAnalysis=False):
                     # test where processing code is a Javascript
                     isJS = isJavascript(code)
                     if isJS:
-                        code = viewerVersion + preInfo + XMLVar + code
+                        code = viewerVersion + preInfo + annotsInPagesMaster + annotsNameInPagesMaster + XMLVar + code
 
                     #Detect shellcode in code
                     if code != '':

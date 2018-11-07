@@ -280,16 +280,16 @@ var media = {
 		print("//warning CVE-2009-4324 media.newPlayer access");
 	},
 };
-var zzzannot = [];
-var zzzannot2 = {};
+var annotsInPagesMaster = [];
+var annotsNameInPagesMaster = {};
 app.doc = {
 	syncAnnotScan : function(){},
     getAnnot : function(pageNo,name){
-        if (name in zzzannot2){
-            return zzzannot2[name];
+        if (name in annotsNameInPagesMaster){
+            return annotsNameInPagesMaster[name];
         }
-        if (zzzannot.length > pageNo){
-           return zzzannot[pageNo][0]; 
+        if (annotsInPagesMaster.length > pageNo){
+           return annotsInPagesMaster[pageNo][0]; 
         }
     },
 	getAnnots : function(){ 
@@ -302,14 +302,14 @@ app.doc = {
                 npage = arguments[i].nPage;
             }
             if (npage > -1){
-				if (zzzannot.length > npage){
-					return zzzannot[npage];
+				if (annotsInPagesMaster.length > npage){
+					return annotsInPagesMaster[npage];
 				}
 			}
 		}
         if (arguments.length == 0){
-            if (zzzannot.length > 0){
-                return zzzannot[0];
+            if (annotsInPagesMaster.length > 0){
+                return annotsInPagesMaster[0];
             }
         }
 	},
