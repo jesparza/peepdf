@@ -2008,7 +2008,7 @@ class PDFConsole(cmd.Cmd):
                         jsanalyseOutput += newLine + '==================== Stage %s Javascript code ====================' % (str(stage)) + newLine * 2
                     else:
                         jsanalyseOutput += newLine + '==================== Stage %s Javascript code ====================' % (str(stage)) + newLine * 2
-                    jsanalyseOutput += js
+                    jsanalyseOutput += str(js)
                     jsanalyseOutput += newLine * 2 + '===================================================================' + newLine
             if unescapedBytes != []:
                 jsanalyseOutput += newLine * 2 + 'Unescaped bytes:' + newLine * 2

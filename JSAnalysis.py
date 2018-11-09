@@ -168,7 +168,6 @@ def JSUnpack(code, rawCode=None, infoObjects=None, annotsInPagesMaster='[]', ann
                 jsCode.append(code)
                 viewerVersion='app.viewerVersion = Number(%s);\n' % (version)
                 while True:
-                   
                     #Detect shellcode in code
                     if code != '':
                         #Detect shellcode and embedded URL(s) in case of using unescape function. e.g. x = unescape(%u0A0A%0B0B)
@@ -186,7 +185,7 @@ def JSUnpack(code, rawCode=None, infoObjects=None, annotsInPagesMaster='[]', ann
                                             unescapedBytes.append(bytes)
                                         for url in urls:
                                             if url not in urlsFound:
-                                                urlsFound.append(str(url)
+                                                urlsFound.append(str(url))
                             else:
                                 bytes = bytes[1:-1]
                                 if len(bytes) > 150:
@@ -198,7 +197,7 @@ def JSUnpack(code, rawCode=None, infoObjects=None, annotsInPagesMaster='[]', ann
                                             unescapedBytes.append(bytes)
                                         for url in urls:
                                             if url not in urlsFound:
-                                                urlsFound.append(str(url)
+                                                urlsFound.append(str(url))
                         # Detect shellcode in case of finding variable assigned to an escaped string
                         # post.js produce a signature. e.g. #//shellcode len 767 (including any NOPs) payload = %u0A0A%u0A0A%u0A0A%uE1D9%u34D9%u5824%u5858
                         escapedVars = re.findall('//shellcode (pdf|len) (\d+) .*? = (.*)$', code,re.DOTALL)
