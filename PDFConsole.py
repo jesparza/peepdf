@@ -1951,6 +1951,8 @@ class PDFConsole(cmd.Cmd):
                 rawContent= ''
                 # infoObject to enrich JS code
                 infoObjects=self.pdfFile.getInfoObject()
+                infoObjects=[obj for obj in infoObjects if obj is not None]
+
                 #get annotation data to give data fort getAnnot() and getAnnots()
                 annotsInPagesMaster,annotsNameInPagesMaster = self.pdfFile.getAnnotsData()
                 if object.containsJS():
@@ -1998,11 +2000,9 @@ class PDFConsole(cmd.Cmd):
             unescapedBytes = resultPerPDFVersion[pdfVersion][1]
             urlsFound = resultPerPDFVersion[pdfVersion][2]
             jsErrors = resultPerPDFVersion[pdfVersion][3]
-            # if content not in jsCode:
-            #     jsCode = [content] + jsCode
             jsanalyseOutput = ''
             if jsCode != []:
-                jsanalyseOutput += newLine + 'Javascript code:' + newLine
+                jsanalyseOutput += newLine + self.staticColor + 'Javascript code: PDF version %s' % (str(pdfVersion))+ self.resetColor + newLine
                 for stage,js in enumerate(jsCode):
                     if js == jsCode[0]:
                         jsanalyseOutput += newLine + '==================== Stage %s Javascript code ====================' % (str(stage)) + newLine * 2
@@ -2013,15 +2013,15 @@ class PDFConsole(cmd.Cmd):
             if unescapedBytes != []:
                 jsanalyseOutput += newLine * 2 + 'Unescaped bytes:' + newLine * 2
                 for bytes in unescapedBytes:
-                    jsanalyseOutput += self.printBytes(bytes) + newLine * 2
+                    jsanalyseOutput += str(self.printBytes(bytes)) + newLine * 2
             if urlsFound != []:
                 jsanalyseOutput += newLine * 2 + 'URLs in shellcode:' + newLine * 2
                 for url in urlsFound:
-                    jsanalyseOutput += '\t' + url + newLine
+                    jsanalyseOutput += '\t' + str(url) + newLine
             if jsErrors != []:
                 jsanalyseOutput += newLine * 2
                 for jsError in jsErrors:
-                    jsanalyseOutput += '*** Error analysing Javascript: ' + jsError + newLine
+                    jsanalyseOutput += '*** Error analysing Javascript: ' + str(jsError) + newLine
 
             self.log_output('js_analyse ' + argv, jsanalyseOutput, unescapedBytes)
 

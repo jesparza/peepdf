@@ -90,46 +90,46 @@ def JSUnpack(code, rawCode=None, infoObjects=None, annotsInPagesMaster='[]', ann
     pdfVersions = ['9.1']
 
     #get preInfo from InfoObject
-    if infoObjects is not None:
-        for obj in infoObjects:
-            elements=obj.getElements()
-            if elements.has_key("/Creator"):
-                creatorValue=elements["/Creator"].getValue()
-                preInfo +='info.creator = String("%s");\n' % (str(creatorValue))
-                preInfo +="this.creator = info.creator;\n"
-                preInfo +="info.Creator = info.creator;\n"
-                preInfo +="app.doc.creator = info.creator;\n"
-                preInfo +="app.doc.Creator = info.creator;\n"
-            if elements.has_key("/Title"):
-                titleValue=elements["/Title"].getValue()
-                preInfo +='info.title = string("%s");\n' % (str(titleValue))
-                preInfo +="this.title = info.title;\n"
-                preInfo +="info.Title = info.title;\n"
-                preInfo +="app.doc.title = info.title;\n"
-                preInfo +="app.doc.Title = info.title;\n"
-            if elements.has_key("/Subject"):
-                subjectValue=elements["/Subject"].getValue()
-                preInfo +='info.subject = String("%s");\n' % (str(subjectValue))
-                preInfo +="this.subject = info.subject;\n"
-                preInfo +="info.Subject = info.subject;\n"
-                preInfo +="app.doc.subject = info.subject;\n"
-                preInfo +="app.doc.Subject = info.subject;\n"
-            if elements.has_key("/Author"):
-                authorValue=elements["/Author"].getValue()
-                preInfo +='info.author = String("%s");\n' % (str(authorValue))
-                preInfo +="this.author = info.author;\n"
-                preInfo +="info.Author = info.author;\n"
-                preInfo +="app.doc.author = info.author;\n"
-                preInfo +="app.doc.Author = info.author;\n"
-            if elements.has_key("/CreationDate"):
-                dateValue=elements["/CreationDate"].getValue()
-                preInfo +='info.creationdate = String("%s");\n' % (str(dateValue))
-                preInfo +="this.creationdate = info.creationdate;\n"
-                preInfo +="info.CreationDate = info.creationdate;\n"
-                preInfo +="app.doc.creationdate = info.creationdate;\n"
-                preInfo +="app.doc.CreationDate = info.creationdate;\n"
-                preInfo +="app.doc.creationDate = info.creationdate;\n"
-                preInfo +="info.creationDate = info.creationdate;\n"
+
+    for obj in infoObjects:
+        elements=obj.getElements()
+        if elements.has_key("/Creator"):
+            creatorValue=elements["/Creator"].getValue()
+            preInfo +='info.creator = String("%s");\n' % (str(creatorValue))
+            preInfo +="this.creator = info.creator;\n"
+            preInfo +="info.Creator = info.creator;\n"
+            preInfo +="app.doc.creator = info.creator;\n"
+            preInfo +="app.doc.Creator = info.creator;\n"
+        if elements.has_key("/Title"):
+            titleValue=elements["/Title"].getValue()
+            preInfo +='info.title = string("%s");\n' % (str(titleValue))
+            preInfo +="this.title = info.title;\n"
+            preInfo +="info.Title = info.title;\n"
+            preInfo +="app.doc.title = info.title;\n"
+            preInfo +="app.doc.Title = info.title;\n"
+        if elements.has_key("/Subject"):
+            subjectValue=elements["/Subject"].getValue()
+            preInfo +='info.subject = String("%s");\n' % (str(subjectValue))
+            preInfo +="this.subject = info.subject;\n"
+            preInfo +="info.Subject = info.subject;\n"
+            preInfo +="app.doc.subject = info.subject;\n"
+            preInfo +="app.doc.Subject = info.subject;\n"
+        if elements.has_key("/Author"):
+            authorValue=elements["/Author"].getValue()
+            preInfo +='info.author = String("%s");\n' % (str(authorValue))
+            preInfo +="this.author = info.author;\n"
+            preInfo +="info.Author = info.author;\n"
+            preInfo +="app.doc.author = info.author;\n"
+            preInfo +="app.doc.Author = info.author;\n"
+        if elements.has_key("/CreationDate"):
+            dateValue=elements["/CreationDate"].getValue()
+            preInfo +='info.creationdate = String("%s");\n' % (str(dateValue))
+            preInfo +="this.creationdate = info.creationdate;\n"
+            preInfo +="info.CreationDate = info.creationdate;\n"
+            preInfo +="app.doc.creationdate = info.creationdate;\n"
+            preInfo +="app.doc.CreationDate = info.creationdate;\n"
+            preInfo +="app.doc.creationDate = info.creationdate;\n"
+            preInfo +="info.creationDate = info.creationdate;\n"
 
     #Get xml variable name
     if rawCode is not None:
@@ -168,11 +168,7 @@ def JSUnpack(code, rawCode=None, infoObjects=None, annotsInPagesMaster='[]', ann
                 jsCode.append(code)
                 viewerVersion='app.viewerVersion = Number(%s);\n' % (version)
                 while True:
-                    # test where processing code is a Javascript
-                    isJS = isJavascript(code)
-                    if isJS:
-                        code = viewerVersion + preInfo + annotsInPagesMaster + annotsNameInPagesMaster + XMLVar + code
-
+                   
                     #Detect shellcode in code
                     if code != '':
                         #Detect shellcode and embedded URL(s) in case of using unescape function. e.g. x = unescape(%u0A0A%0B0B)
@@ -190,7 +186,7 @@ def JSUnpack(code, rawCode=None, infoObjects=None, annotsInPagesMaster='[]', ann
                                             unescapedBytes.append(bytes)
                                         for url in urls:
                                             if url not in urlsFound:
-                                                urlsFound.append(url)
+                                                urlsFound.append(str(url)
                             else:
                                 bytes = bytes[1:-1]
                                 if len(bytes) > 150:
@@ -202,7 +198,7 @@ def JSUnpack(code, rawCode=None, infoObjects=None, annotsInPagesMaster='[]', ann
                                             unescapedBytes.append(bytes)
                                         for url in urls:
                                             if url not in urlsFound:
-                                                urlsFound.append(url)
+                                                urlsFound.append(str(url)
                         # Detect shellcode in case of finding variable assigned to an escaped string
                         # post.js produce a signature. e.g. #//shellcode len 767 (including any NOPs) payload = %u0A0A%u0A0A%u0A0A%uE1D9%u34D9%u5824%u5858
                         escapedVars = re.findall('//shellcode (pdf|len) (\d+) .*? = (.*)$', code,re.DOTALL)
@@ -218,8 +214,11 @@ def JSUnpack(code, rawCode=None, infoObjects=None, annotsInPagesMaster='[]', ann
                                     for url in urls:
                                         if url not in urlsFound:
                                             urlsFound.append(url)
-
-
+                    
+                    #Prepare JS code
+                    isJS = isJavascript(code)
+                    if isJS:
+                        code = viewerVersion + preInfo + annotsInPagesMaster + annotsNameInPagesMaster + XMLVar + code
                     #Hook eval and run Javascript
                     if isJS:
                         status,evalCode,error = evalJS(code)
