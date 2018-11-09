@@ -6406,87 +6406,87 @@ class PDFFile :
                 else:
                         
                         if page.getElements().has_key("/Annots"):
-                                annotArray = page.getElement("/Annots").getElementValues()
-                                annotsInPage = []
-                                annotsNameInPage = {}
-                                for element in annotArray:
+                            
+                            annotArray = page.getElement("/Annots").getElementValues()
+                            annotsInPage = []
+                            annotsNameInPage = {}
+                            for element in annotArray:
 
-                                        annotData={}
-                                        nameValue = ""
-                                        elementID = int(element.split(" ")[0])
-                                        annotObject = self.getObject(elementID)
-                                        if annotObject.getElements().has_key("/Subj"):
+                                annotData={}
+                                nameValue = ""
+                                elementID = int(element.split(" ")[0])
+                                annotObject = self.getObject(elementID)
+                                if annotObject.getElements().has_key("/Subj"):
 
-                                                #get subject value can be either /Subj 8 0 R or /Subj some text
+                                    #get subject value can be either /Subj 8 0 R or /Subj some text
 
-                                                subj=annotObject.getElement("/Subj")
-                                                if subj.getType() == 'reference':
-                                                        subjID = int(subj.getValue().split(" ")[0])
-                                                        subjData = self.getObject(subjID)
-                                                        if subjData.getType() == 'stream':
-                                                                data = subjData.getStream()
-                                                                annotData["Subject"] = data
-                                                                annotData["subject"] = data
-                                                                annotData["Subj"] = data
-                                                                annotData["subj"] = data
-                                                        else:
-                                                                data = subjData.getValue()
-                                                                annotData["Subject"] = data
-                                                                annotData["subject"] = data
-                                                                annotData["Subj"] = data
-                                                                annotData["subj"] = data
-                                                else:
-                                                        data = subj.getValue()
-                                                        annotData["Subject"] = data
-                                                        annotData["subject"] = data
-                                                        annotData["Subj"] = data
-                                                        annotData["subj"] = data
-                                                        
-                                        if annotObject.getElements().has_key("/Contents"):
-                                                contents=annotObject.getElement("/Contents")
-                                                if contents.getType() == 'reference':
-                                                        contentsID = int(contents.getValue().split(" ")[0])
-                                                        contentsData = self.getObject(contentsID)
-                                                        if contentsData.getType() == 'stream':
-                                                                data = contentsData.getStream()
-                                                                annotData["Contents"] = data
-                                                                annotData["contents"] = data
-                                                         
-                                                        else:
-                                                                data = contentsData.getValue()
-                                                                annotData["Contents"] = data
-                                                                annotData["contents"] = data
-                                                else:
-                                                        data = contents.getValue()
-                                                        annotData["Contents"] = data
-                                                        annotData["contents"] = data
+                                    subj=annotObject.getElement("/Subj")
+                                    if subj.getType() == 'reference':
+                                        subjID = int(subj.getValue().split(" ")[0])
+                                        subjData = self.getObject(subjID)
+                                        if subjData.getType() == 'stream':
+                                            data = subjData.getStream()
+                                            annotData["Subject"] = data
+                                            annotData["subject"] = data
+                                            annotData["Subj"] = data
+                                            annotData["subj"] = data
+                                        else:
+                                            data = subjData.getValue()
+                                            annotData["Subject"] = data
+                                            annotData["subject"] = data
+                                            annotData["Subj"] = data
+                                            annotData["subj"] = data
+                                    else:
+                                        data = subj.getValue()
+                                        annotData["Subject"] = data
+                                        annotData["subject"] = data
+                                        annotData["Subj"] = data
+                                        annotData["subj"] = data
+                                                
+                                if annotObject.getElements().has_key("/Contents"):
+                                    contents=annotObject.getElement("/Contents")
+                                    if contents.getType() == 'reference':
+                                        contentsID = int(contents.getValue().split(" ")[0])
+                                        contentsData = self.getObject(contentsID)
+                                        if contentsData.getType() == 'stream':
+                                            data = contentsData.getStream()
+                                            annotData["Contents"] = data
+                                            annotData["contents"] = data
+                                                
+                                        else:
+                                            data = contentsData.getValue()
+                                            annotData["Contents"] = data
+                                            annotData["contents"] = data
+                                    else:
+                                        data = contents.getValue()
+                                        annotData["Contents"] = data
+                                        annotData["contents"] = data
 
-
-                                        if annotObject.getElements().has_key("/Name"):
-                                                name=annotObject.getElement("/Name")
-                                                if name.getType() == 'reference':
-                                                        nameID = int(name.getValue().split(" ")[0])
-                                                        nameData = self.getObject(nameID)
-                                                        if nameData.getType() == 'stream':
-                                                                nameValue = nameData.getStream()
-                                                                annotData["name"] = nameValue
-                                                                annotData["Name"] = nameValue
-                                                         
-                                                        else:
-                                                                nameValue = nameData.getValue()
-                                                                annotData["Name"] = nameValue
-                                                                annotData["name"] = nameValue
-                                                else:
-                                                        nameValue = name.getValue()
-                                                        if nameValue != "":
-                                                                annotData["Name"] = nameValue
-                                                                annotData["name"] = nameValue
-                                        if len(annotData.keys()) > 0 :
-                                                annotsInPage.append(annotData)
-                                                if nameValue != "":
-                                                        annotsNameInPagesMaster[nameValue] = annotData
-                        if len(annotsInPage) > 0:
-                                annotsInPagesMaster.append(annotsInPage)
+                                if annotObject.getElements().has_key("/Name"):
+                                    name=annotObject.getElement("/Name")
+                                    if name.getType() == 'reference':
+                                        nameID = int(name.getValue().split(" ")[0])
+                                        nameData = self.getObject(nameID)
+                                        if nameData.getType() == 'stream':
+                                            nameValue = nameData.getStream()
+                                            annotData["name"] = nameValue
+                                            annotData["Name"] = nameValue
+                                            
+                                        else:
+                                            nameValue = nameData.getValue()
+                                            annotData["Name"] = nameValue
+                                            annotData["name"] = nameValue
+                                    else:
+                                        nameValue = name.getValue()
+                                        if nameValue != "":
+                                            annotData["Name"] = nameValue
+                                            annotData["name"] = nameValue
+                                if len(annotData.keys()) > 0 :
+                                    annotsInPage.append(annotData)
+                                    if nameValue != "":
+                                        annotsNameInPagesMaster[nameValue] = annotData
+                            if len(annotsInPage) > 0:
+                                    annotsInPagesMaster.append(annotsInPage)
         
         isPageLeaf(page_tree_id)
         return annotsInPagesMaster,annotsNameInPagesMaster          

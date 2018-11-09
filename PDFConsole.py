@@ -1992,33 +1992,38 @@ class PDFConsole(cmd.Cmd):
         else:
             content = src
         content = content.strip()
-        jsCode, unescapedBytes, urlsFound, jsErrors = JSUnpack(content,rawContent,infoObjects,annotsInPagesMaster,annotsNameInPagesMaster)
-        if content not in jsCode:
-            jsCode = [content] + jsCode
-        jsanalyseOutput = ''
-        if jsCode != []:
-            jsanalyseOutput += newLine + 'Javascript code:' + newLine
-            for js in jsCode:
-                if js == jsCode[0]:
-                    jsanalyseOutput += newLine + '==================== Original Javascript code ====================' + newLine * 2
-                else:
-                    jsanalyseOutput += newLine + '================== Next stage of Javascript code ==================' + newLine * 2
-                jsanalyseOutput += js
-                jsanalyseOutput += newLine * 2 + '===================================================================' + newLine
-        if unescapedBytes != []:
-            jsanalyseOutput += newLine * 2 + 'Unescaped bytes:' + newLine * 2
-            for bytes in unescapedBytes:
-                jsanalyseOutput += self.printBytes(bytes) + newLine * 2
-        if urlsFound != []:
-            jsanalyseOutput += newLine * 2 + 'URLs in shellcode:' + newLine * 2
-            for url in urlsFound:
-                jsanalyseOutput += '\t' + url + newLine
-        if jsErrors != []:
-            jsanalyseOutput += newLine * 2
-            for jsError in jsErrors:
-                jsanalyseOutput += '*** Error analysing Javascript: ' + jsError + newLine
+        resultPerPDFVersion = JSUnpack(content,rawContent,infoObjects,annotsInPagesMaster,annotsNameInPagesMaster)
+        for pdfVersion in resultPerPDFVersion.keys():
+            jsCode = resultPerPDFVersion[pdfVersion][0]
+            unescapedBytes = resultPerPDFVersion[pdfVersion][1]
+            urlsFound = resultPerPDFVersion[pdfVersion][2]
+            jsErrors = resultPerPDFVersion[pdfVersion][3]
+            # if content not in jsCode:
+            #     jsCode = [content] + jsCode
+            jsanalyseOutput = ''
+            if jsCode != []:
+                jsanalyseOutput += newLine + 'Javascript code:' + newLine
+                for stage,js in enumerate(jsCode):
+                    if js == jsCode[0]:
+                        jsanalyseOutput += newLine + '==================== Stage %s Javascript code ====================' % (str(stage)) + newLine * 2
+                    else:
+                        jsanalyseOutput += newLine + '==================== Stage %s Javascript code ====================' % (str(stage)) + newLine * 2
+                    jsanalyseOutput += js
+                    jsanalyseOutput += newLine * 2 + '===================================================================' + newLine
+            if unescapedBytes != []:
+                jsanalyseOutput += newLine * 2 + 'Unescaped bytes:' + newLine * 2
+                for bytes in unescapedBytes:
+                    jsanalyseOutput += self.printBytes(bytes) + newLine * 2
+            if urlsFound != []:
+                jsanalyseOutput += newLine * 2 + 'URLs in shellcode:' + newLine * 2
+                for url in urlsFound:
+                    jsanalyseOutput += '\t' + url + newLine
+            if jsErrors != []:
+                jsanalyseOutput += newLine * 2
+                for jsError in jsErrors:
+                    jsanalyseOutput += '*** Error analysing Javascript: ' + jsError + newLine
 
-        self.log_output('js_analyse ' + argv, jsanalyseOutput, unescapedBytes)
+            self.log_output('js_analyse ' + argv, jsanalyseOutput, unescapedBytes)
 
     def help_js_unpack(self):
         print newLine + 'Usage: js_unpack variable $var_name'

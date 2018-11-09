@@ -1,3 +1,5 @@
+/*This is the modified version of the pre.js found at https://github.com/urule99/jsunpack-n*/
+
 var zzzactivex = [];
 function Plugin(name,fname,desc){
     this.name = name;
@@ -25,31 +27,12 @@ my_plugins.push(new Plugin('Windows Live® Photo Gallery','NPWLPG.dll','NPWLPG')
 my_plugins.push(new Plugin('Java Deployment Toolkit 6.0.140.8','npdeploytk.dll','NPRuntime Script Plug-in Library for Java(TM) Deploy'));
 my_plugins.push(new Plugin('Java(TM) Platform SE 6 U14','npjp2.dll','Next Generation Java Plug-in 1.6.0_14 for Mozilla browsers'));
 
-function my_navigator(){
-	this.appCodeName = String("Mozilla");
-	this.appMinorVersion = String(";SP2;");
-	this.appName = String("Microsoft Internet Explorer");
-	this.appVersion = String("4.0 (compatible; MSIE 7.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-	this.browserLanguage = String("en");
-	this.cookieEnabled = String("true");
-	this.cpuClass = String("x86");
-	this.onLine = String("true");
-	this.platform = String("Win32");
-	this.systemLanguage = String("en");
-	this.userAgent = String("Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-	this.userLanguage = String("en ");
-	this.javaEnabled = function(){ return true; }
-    this.taintEnabled = function(){ return 0; }
-    this.mimeTypes = {};
-    this.plugins = my_plugins;
-}
-var navigator= new my_navigator();
 var screen = {};
 
 var app = {
 	viewerVersion:Number(8.0),
     viewerType:String('Reader'),
-	setTimeOut:function(txt,wait){ eval(txt); print ("; //jsunpack.called setTimeOut with "+txt + ', ' + wait);},
+	setTimeOut:function(txt,wait){ eval(txt); print ("; //app called setTimeOut with " + txt + ', ' + wait);},
 	clearTimeOut:function(a){},
 	eval:function(a){eval(a);},
     alert:function(a){ print ("/*** app.alert " + a + "*/"); },
@@ -58,21 +41,19 @@ var app = {
 function my_activex(){
     zzzactivex.push(this);
 	this.donePath = 0;
-	this.SaveToFile = this.savetofile = function (txt){ print("//jsunpack.save " + txt) }
+	this.SaveToFile = this.savetofile = function (txt){ print("//activex save file with content: " + txt) }
 	this.close = function(){ }
 	this.ChatRoom = function (txt){ print("//alert CVE-2007-5722 ChatRoom len(" + txt+ ")") }
 	this.LinkSBIcons = function (txt) { print("//alert CVE-2006-5820 LinkSBIcons len("+ txt.length + ")"); }
-	this.Write = this.write = function (txt){ print("//jsunpack.write " + txt) }
+	this.Write = this.write = function (txt){ print("//activex write " + txt) }
 	this.Send = this.send = function (){}
     this.OpenWebFile = function(url){
-        print("//jsunpack.url OpenWebFile = " + url)
+        print("//url OpenWebFile = " + url)
     }
 	this.Open = this.open = function (method,url,t_f){ 
 		if (arguments.length >= 2){
-			//var method = arguments[0];
 			var url = arguments[1];
-			//var t_or_f = arguments[2];
-			print("//jsunpack.url open = " + url) 
+			print("//url open = " + url) 
 		}
 	}
 	this.shellexecute = this.ShellExecute = function(cmd){ print("//alert CVE-2006-0003 shellexecute with " + cmd); }
@@ -82,16 +63,16 @@ function my_activex(){
 		if (arguments.length >= 2){
 			file = arguments[0];
 			dest = arguments[1];
-			print("//jsunpack.url PrintSnapshot = " + file);
+			print("//url PrintSnapshot = " + file);
 		}
 		if(this.SnapshotPath || this.CompressedPath || this.donePath){
 			print("//alert CVE-2008-2463 PrintSnapshot");
 		}
 		else {
-			print("//jsunpack.called PrintSnapshot") 
+			print("//called PrintSnapshot") 
 		}
 	}
-	this.GetSpecialFolder = this.getspecialfolder = function (a){ /*print("//alert CVE-2006-0003 GetSpecialFolder");*/ }
+	this.GetSpecialFolder = this.getspecialfolder = function (a){ print("//alert CVE-2006-0003 GetSpecialFolder"); }
 	this.hgs_startNotify = function (tmp){ print("//alert CVE-2008-0647 hgs_startNotify len("+tmp.length+")") }
 	this.TransferFile = this.transferfile = function (url,host,local,sploit,md5){ print("//alert CVE-2008-1724 Tumbleweed FileTransferActiveX len(" + sploit.length + ")"); }
 	this.setRequestHeader = function (a,b){ if(typeof a == 'object'){ print ("//alert CVE-2006-5745 MSXMLCoreServices setRequestHeader with [Object]"); } }
@@ -106,7 +87,7 @@ var the_activex = new my_activex();
 function my_element(){
     this.setAttribute=function (name,value){
 	if(name=='src'){
-		print("//jsunpack.url setAttribute src = " + value);
+		print("//url setAttribute src = " + value);
 	}
     }	
     this.CreateObject=function (){
@@ -122,7 +103,7 @@ function my_element(){
 		}
 	}
 
-	text = "//jsunpack.CreateObject " + name + " " + other;
+	text = "//CreateObject " + name + " " + other;
 	if(exploits.indexOf(text) == -1){
 		print (text);
 		exploits.push(text);
@@ -161,7 +142,7 @@ function my_value(i){
     this.appendChild = function(obj1){
         try{
             if (obj1.src){
-                print ('//jsunpack.url var appendChildsrc = ' + obj1.src);
+                print ('//url var appendChildsrc = ' + obj1.src);
             }
         }
         catch(e){}
@@ -186,7 +167,7 @@ var document= 	{
 			documenttxt = documenttxt + unescape(thisWrite.replace(/%00/g,''));
 		},
 
-		createElement : function(ele){print ('//jsunpack.called CreateElement ' +ele); elementn = elementn + 1; elements[elementn] = new my_element(); return elements[elementn]},
+		createElement : function(ele){print ('//Call CreateElement ' +ele); elementn = elementn + 1; elements[elementn] = new my_element(); return elements[elementn]},
 		getElementById : function(i){ return new my_value(idzzz.indexOf(i)); },
 		getElementsByTagName : function(name){ if (name in namezzz){return namezzz[name];} return []; },
 		createEventObject : function(evt){ /* object returned has srcElement property */},
@@ -222,7 +203,7 @@ window.execScript = eval;
 window.eval = eval;
 window.Option = 1;
 window.open = function (url){
-    print("//jsunpack.url open = " + url) 
+    print("//url open = " + url) 
 };
 
 String.eval = eval;
@@ -239,10 +220,10 @@ document.parentWindow = parentWindow;
 var self = this;
 self.self = this;
 
-//If you don't plan to modify and compile spidermonkey, enable this!
+
 var my_eval = this.eval;
 this.eval=function (str){
-	print('\n//eval\n'+str);
+	print('\n//Print text input to eval()\n'+str);
 	return my_eval(str);
 }
 
@@ -322,8 +303,8 @@ app.doc = {
 };
 
 function my_collab(){
-	this.collectEmailInfo = function (txt){ print ("//jsunpack.called Collab.collectEmailInfo"); }
-	this.getIcon = function (i){ print("//jsunpack.called collab.getIcon ") }
+	this.collectEmailInfo = function (txt){ print ("//Call Collab.collectEmailInfo"); }
+	this.getIcon = function (i){ print("//Call collab.getIcon ") }
 }
 var Collab = new my_collab();
 var getAnnot = app.doc.getAnnot;
@@ -389,7 +370,7 @@ function my_location(one,two){
 	this.href = String(one); 
 	this.host = String(two); 
     this.assign = function (newurl){
-        print ('//jsunpack.url locationAssign = ' + newurl);
+        print ('//url locationAssign = ' + newurl);
     };
     document.location = this;
     window.location = this;

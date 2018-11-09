@@ -58,7 +58,7 @@ newLine = os.linesep
 reJSscript = '<script[^>]*?contentType\s*?=\s*?[\'"]application/x-javascript[\'"][^>]*?>(.*?)</script>'
 preDefinedCode = 'var app = this;'
 
-def JSUnpack(code, rawCode=None, infoObjects=None, annotsInPagesMaster='', annotsNameInPagesMaster='', manualAnalysis=False):
+def JSUnpack(code, rawCode=None, infoObjects=None, annotsInPagesMaster='[]', annotsNameInPagesMaster='[]', manualAnalysis=False):
     '''
     Hooks the eval function with multiple app versions and search for obfuscated elements in the Javascript code.
     Also take data from XFA, object info and getAnnot(s) in a PDF to an original code. The idea is mainly taken from JSUnpack
@@ -67,7 +67,7 @@ def JSUnpack(code, rawCode=None, infoObjects=None, annotsInPagesMaster='', annot
     @param rawCode: The raw Javascript code, may contains HTML, XML elements (string)
     @param infoObjects: is list of infoObjects of a PDF
     @param annotsInPagesMaster: is a list of annotation per page
-    @param annotsNameInPagesMaster: is a list of annotation by name
+    @param annotsNameInPagesMaster: is a dictionary of annotation by name
     @param manualAnalysis: analyse manually or automatic (boolean)
     @return: List with analysis information of the Javascript code: [JSCode,unescapedBytes,urlsFound,errors], where 
             JSCode is a list with the several stages Javascript code,
@@ -83,14 +83,14 @@ def JSUnpack(code, rawCode=None, infoObjects=None, annotsInPagesMaster='', annot
     #Take variable name(s) of xml elements (.e.g in XFA, Acroform)
     XMLVar=''
     #Take annotation data
-    annotsInPagesMaster = "var annotsInPagesMaster = %s" % (str(annotsInPagesMaster))
-    annotsNameInPagesMaster = "var annotsNameInPagesMaster = %s" (str(annotsNameInPagesMaster))
+    annotsInPagesMaster = "var annotsInPagesMaster = %s;\n" % (str(annotsInPagesMaster))
+    annotsNameInPagesMaster = "var annotsNameInPagesMaster = %s;\n" % (str(annotsNameInPagesMaster))
 
     #version strings
-    pdfVersions = ['7.0','8.0','9.1']
+    pdfVersions = ['9.1']
 
     #get preInfo from InfoObject
-    if infoObject is not None:
+    if infoObjects is not None:
         for obj in infoObjects:
             elements=obj.getElements()
             if elements.has_key("/Creator"):
@@ -254,7 +254,9 @@ def evalJS(code):
         # Create temporal JS file
         with open(fileNameJS,'w') as fileJS:
             fileJS.write(code)
-        # Use Google V8 Java interpreter, however, SpiderMoney should generate same results
+        # Use Google V8 Javascript interpreter, but SpiderMoney should generate same results. However, V8 is an active project and release regular update.
+        # It is also considered to use the Python wrapper library PyV8 instead of spawning a V8 process. However, there are limitations in PyV8, therefore, using V8 directly is a better option for now.
+        # One tested example of limitation in PyV8: context.eval('x = unescaped("escapedString_%u0909%0909...")') will return a JSArray with same hex string in all elements.
         po = subprocess.Popen(['v8', '-f', 'pre.js', '-f', fileNameJS , '-f', 'post.js'],shell=False, stdout=PIPE, stderr=PIPE)
         return (0,po.stdout.read(),po.stderr.read())
     except:
@@ -266,7 +268,10 @@ def evalJS(code):
         os.remove(fileNameJS)
             
 def randomString(stringLength=10):
-    """Generate a random string of fixed length """
+    """Generate a random string of fixed length 
+    @param stringLength: define the length of the generated random string
+    @return: a random string with the defined length
+    """
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(stringLength))
 

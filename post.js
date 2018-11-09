@@ -1,6 +1,8 @@
-// post processing, run this file after the main js file is interpreted.
-// print out results
-//document.myd_data();
+/*
+This is the modified version of the post.js found at https://github.com/urule99/jsunpack-n
+post processing stage - run this file after the main js file is interpreted and print out results
+*/
+
 
 if (window.onload){
 	window.onload();
@@ -14,24 +16,23 @@ if ( elementn > 100){
 }
 if ( elementn > -1 ){
 	for (var i = 0; i <= elementn; i++){
-		print ('\n//jsunpack.url '+ elements[i].src);
+		print ('\n//url '+ elements[i].src);
 	}
 }
-if ( windowlocation != window.location){
-	print ("\n//jsunpack.location '" + window.location + "' where windowlocation = '" + windowlocation + "'");
-}
+
 if(documenttxt){
 	print ('\n//document.write (s)\n');
 	print (documenttxt);
 }
-//finalvars = [];
-//finalcount = 0;
+
 for (var i in this){
 	var objlen = 0;
 	if (typeof this[i] == 'object'){
-		tmp = String(this[i]); //this[i] = String(this[i]);
+		tmp = String(this[i]); 
 		objlen = tmp.length;
-		if (objlen > 10000){ //Memory/performance intensive beyond this
+        if (objlen > 10000)
+        { 
+            //Memory/performance intensive beyond this
 			this[i] = tmp.substring(0,10000);
 		}
 	}
