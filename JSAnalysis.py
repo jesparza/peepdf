@@ -87,7 +87,7 @@ def JSUnpack(code, rawCode=None, infoObjects=None, annotsInPagesMaster='[]', ann
     annotsNameInPagesMaster = "var annotsNameInPagesMaster = %s;\n" % (str(annotsNameInPagesMaster))
 
     #version strings
-    pdfVersions = ['9.1']
+    pdfVersions = ['9.0','10.0','11.0']
 
     #get preInfo from InfoObject
 
