@@ -58,7 +58,7 @@ newLine = os.linesep
 reJSscript = '<script[^>]*?contentType\s*?=\s*?[\'"]application/x-javascript[\'"][^>]*?>(.*?)</script>'
 preDefinedCode = 'var app = this;'
 
-def JSUnpack(code, rawCode=None, infoObjects=None, annotsInPagesMaster='[]', annotsNameInPagesMaster='[]', manualAnalysis=False):
+def JSUnpack(code, rawCode=None, infoObjects=[], annotsInPagesMaster='[]', annotsNameInPagesMaster='[]', manualAnalysis=False):
     '''
     Hooks the eval function with multiple app versions and search for obfuscated elements in the Javascript code.
     Also take data from XFA, object info and getAnnot(s) in a PDF to an original code. The idea is mainly taken from JSUnpack

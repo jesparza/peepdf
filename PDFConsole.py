@@ -1872,9 +1872,14 @@ class PDFConsole(cmd.Cmd):
         print newLine + 'Analyses the Javascript code stored in the specified string, variable, file or object' + newLine
 
     def do_js_unpack(self, argv):
-        # store actual JS code to analyse
+        # actual JS code to analyse
         content = ''
-       
+        # get raw form of JS code
+        rawContent = ''
+        infoObjects = []
+        # prepare annotation data to respond for getAnnot() and getAnnots()
+        annotsInPagesMaster = []
+        annotsNameInPagesMaster = []
         validTypes = ['variable', 'file', 'object', 'string']
         if not JS_MODULE:
             message = '*** Error: PyV8 is not installed!!'
