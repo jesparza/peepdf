@@ -1875,7 +1875,7 @@ class PDFConsole(cmd.Cmd):
         # actual JS code to analyse
         content = ''
         # get raw form of JS code
-        rawContent = ''
+        rawContent = None
         infoObjects = []
         # prepare annotation data to respond for getAnnot() and getAnnots()
         annotsInPagesMaster = []
