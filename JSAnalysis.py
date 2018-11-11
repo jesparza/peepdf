@@ -497,24 +497,3 @@ def unescape(escapedBytes, unicode = True):
     except:
         return (-1, 'Error while unescaping the bytes')
     return (0, unescapedBytes)
-
-
-if __name__ == "__main__":
-    from PDFCore import *
-    from JSAnalysis import *
-    #create object pdf
-    from PDFCore import *
-
-    fileName="/home/thole/Documents/samples/pdf_samples/AAAA/sample3/ffe8db8803d5ead7a7c4d4dfd393e4601a91b867"
-    pdfParser = PDFParser()
-    ret, pdf = pdfParser.parse(fileName, True,True,False)
-    infoObjects=pdf.getInfoObject()
-
-    rawCode=pdf.getObject(1)
-    code=rawCode.getJSCode()[0]
-    if rawCode.getType() == "stream":
-            rawCode=rawCode.getStream()
-    else:
-            rawCode=rawCode.getValue()
-
-    print JSUnpack(code,rawCode,infoObjects)
