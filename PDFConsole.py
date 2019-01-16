@@ -66,7 +66,7 @@ try:
 except:
     RL_PROMPT_START_IGNORE = RL_PROMPT_END_IGNORE = ''
 
-# File and variable redirections 
+# File and variable redirections
 FILE_WRITE = 1
 FILE_ADD = 2
 VAR_WRITE = 3
@@ -1425,6 +1425,8 @@ class PDFConsole(cmd.Cmd):
             stats += beforeStaticLabel + 'SHA1: ' + self.resetColor + statsDict['SHA1'] + newLine
             #stats += beforeStaticLabel + 'SHA256: ' + self.resetColor + statsDict['SHA256'] + newLine
             stats += beforeStaticLabel + 'Size: ' + self.resetColor + statsDict['Size'] + ' bytes' + newLine
+            if statsDict['Diario prediction'] != '':
+                stats += beforeStaticLabel + 'Diario prediction: ' + self.resetColor + statsDict['Diario prediction'] + ' bytes' + newLine
             if statsDict['Detection'] != []:
                 detectionReportInfo = ''
                 if statsDict['Detection'] is not None:
@@ -3776,6 +3778,21 @@ class PDFConsole(cmd.Cmd):
         print '*** NOTE: NO CONTENT IS SENT TO VIRUSTOTAL, JUST HASHES!!' + newLine
         print '*** NOTE: You need a VirusTotal API key to use this command.' + newLine
 
+    def do_diariocheck(self, argv):
+        if type(argv) == type(""):
+            prediction = diariocheck(argv)
+            if not prediction.startswith("Error"):
+                print("Diario prediction is: " + diariocheck(argv))
+            else:
+                print(prediction)
+        else:
+            help_diariocheck()
+
+    def help_diariocheck(self):
+        print(newLine + 'Usage: diariocheck file $file_name')
+        print(newLine + 'Check the file againsts DIARIO malware prediction system.')
+        print(newLine + '*** NOTE: Be aware that the entire file will be uploaded to DIARIO.')
+
     def do_xor(self, argv):
         content = ''
         found = False
@@ -4076,7 +4093,7 @@ class PDFConsole(cmd.Cmd):
     def additionRequest(self, dict=False):
         '''
             Method to ask the user if he wants to add more entries to the object or not
-            
+
             @param dict: Boolean to specify if the added object is a dictionary or not. Default value: False.
             @return: The response chosen by the user
         '''
@@ -4093,7 +4110,7 @@ class PDFConsole(cmd.Cmd):
     def addObject(self, iteration, maxDepth=10):
         '''
             Method to add a new object to an array or dictionary
-            
+
             @param iteration: Integer which specifies the depth of the recursion in the same object
             @param maxDepth: The maximum depth for nested objects. Default value: 10.
             @return: The new object
@@ -4175,7 +4192,7 @@ class PDFConsole(cmd.Cmd):
     def checkInputContent(self, objectType, objectContent):
         '''
             Check if the specified content is valid for the specified object type and modify it\'s possible
-            
+
             @param objectType: The type of object: number, string, hexstring, name, reference, null
             @param objectContent: The object content
             @return: The content of the object or None if any problems occur
@@ -4237,12 +4254,12 @@ class PDFConsole(cmd.Cmd):
     def log_output(self, command, output, bytesToSave=None, printOutput=True, bytesOutput=False):
         '''
             Method to check the commands output and write it to the console and/or files / variables
-            
+
             @param command: The command launched
             @param output: The output of the command
             @param bytesToSave: A list with the raw bytes which will be stored in a file or variable if a redirection has been set (>,>>,$>,$>>).
             @param printOutput: Boolean to specify if the output will be written to the console or not. Default value: True.
-            @param bytesOutput: Boolean to specify if we want to print raw bytes or not. Default value: False. 
+            @param bytesOutput: Boolean to specify if we want to print raw bytes or not. Default value: False.
         '''
         errorIndex = output.find('*** Error')
         if errorIndex != -1:
@@ -4306,7 +4323,7 @@ class PDFConsole(cmd.Cmd):
     def modifyObject(self, object, iteration=0, contentFile=None, maxDepth=10):
         '''
             Method to modify an existent object
-            
+
             @param object: The object to be modified
             @param iteration: Integer which specifies the depth of the recursion in the same object
             @param contentFile: The content of the file storing the stream
@@ -4433,7 +4450,7 @@ class PDFConsole(cmd.Cmd):
     def modifyRequest(self, value, rawValue, key=None, stream=False):
         '''
             Method to ask the user what he wants to do with the object: modify, delete or nothing.
-            
+
             @param value: The value of the object.
             @param rawValue: The raw value of the object.
             @param key: The key of a dictionary entry.
@@ -4463,7 +4480,7 @@ class PDFConsole(cmd.Cmd):
     def parseArgs(self, args):
         '''
             Method to split up the command arguments by quotes: \'\'\', " or \'
-            
+
             @param args: The command arguments
             @return: An array with the separated arguments
         '''
@@ -4582,7 +4599,7 @@ class PDFConsole(cmd.Cmd):
     def printBytes(self, bytes):
         '''
             Given a byte string shows the hexadecimal and ascii output in a nice way
-            
+
             @param bytes: A string
             @return: String with mixed hexadecimal and ascii strings, like the 'hexdump -C' output
         '''
@@ -4616,7 +4633,7 @@ class PDFConsole(cmd.Cmd):
     def printResult(self, result):
         '''
             Given an string returns a mixed hexadecimal-ascci output if there are many non printable characters or the same string in other case
-            
+
             @param result: A string
             @return: A mixed hexadecimal-ascii output if there are many non printable characters or the input string in other case
         '''
@@ -4630,7 +4647,7 @@ class PDFConsole(cmd.Cmd):
     def printTreeNode(self, node, nodesInfo, expandedNodes=[], depth=0, recursive=True):
         '''
             Given a tree prints the whole tree and its dependencies
-            
+
             @param node: Root of the tree
             @param nodesInfo: Information abour the nodes of the tree
             @param expandedNodes: Already expanded nodes

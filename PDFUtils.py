@@ -41,7 +41,7 @@ def clearScreen():
 def countArrayElements(array):
     '''
         Simple method to count the repetitions of elements in an array
-        
+
 		@param array: An array of elements
 		@return: A tuple (elements,counters), where elements is a list with the distinct elements and counters is the list with the number of times they appear in the array
 	'''
@@ -59,7 +59,7 @@ def countArrayElements(array):
 def countNonPrintableChars(string):
     '''
         Simple method to return the non printable characters found in an string
-        
+
 		@param string: A string
 		@return: Number of non printable characters in the string
 	'''
@@ -72,7 +72,7 @@ def countNonPrintableChars(string):
 def decodeName(name):
 	'''
         Decode the given PDF name
-        
+
 		@param name: A PDFName string to decode
 		@return: A tuple (status,statusContent), where statusContent is the decoded PDF name in case status = 0 or an error in case status = -1
 	'''
@@ -88,7 +88,7 @@ def decodeName(name):
 def decodeString(string):
 	'''
         Decode the given PDF string
-        
+
 		@param string: A PDFString to decode
 		@return A tuple (status,statusContent), where statusContent is the decoded PDF string in case status = 0 or an error in case status = -1
 	'''
@@ -104,7 +104,7 @@ def decodeString(string):
 def encodeName(name):
 	'''
         Encode the given PDF name
-        
+
 		@param name: A PDFName string to encode
 		@return: A tuple (status,statusContent), where statusContent is the encoded PDF name in case status = 0 or an error in case status = -1
 	'''
@@ -125,7 +125,7 @@ def encodeName(name):
 def encodeString(string):
 	'''
         Encode the given PDF string
-        
+
 		@param string: A PDFString to encode
 		@return: A tuple (status,statusContent), where statusContent is the encoded PDF string in case status = 0 or an error in case status = -1
 	'''
@@ -141,7 +141,7 @@ def encodeString(string):
 def escapeRegExpString(string):
     '''
         Escape the given string to include it as a regular expression
-        
+
         @param string: A regular expression to be escaped
         @return: Escaped string
     '''
@@ -153,11 +153,11 @@ def escapeRegExpString(string):
         else:
             escapedValue += string[i]
     return escapedValue
-    
+
 def escapeString(string):
 	'''
         Escape the given string
-        
+
 		@param string: A string to be escaped
 		@return: Escaped string
 	'''
@@ -189,7 +189,7 @@ def escapeString(string):
 def getBitsFromNum(num, bitsPerComponent = 8):
     '''
         Makes the conversion between number and bits
-        
+
         @param num: Number to be converted
         @param bitsPerComponent: Number of bits needed to represent a component
         @return: A tuple (status,statusContent), where statusContent is the string containing the resulting bits in case status = 0 or an error in case status = -1
@@ -213,7 +213,7 @@ def getBitsFromNum(num, bitsPerComponent = 8):
 def getNumsFromBytes(bytes, bitsPerComponent = 8):
     '''
         Makes the conversion between bytes and numbers, depending on the number of bits used per component.
-        
+
         @param bytes: String representing the bytes to be converted
         @param bitsPerComponent: Number of bits needed to represent a component
         @return: A tuple (status,statusContent), where statusContent is a list of numbers in case status = 0 or an error in case status = -1
@@ -232,7 +232,7 @@ def getNumsFromBytes(bytes, bitsPerComponent = 8):
             bitsStream += bitsRepresentation
         except:
             return (-1,'Error in conversion from bytes to bits')
-    
+
     try:
         for i in range(0,len(bitsStream),bitsPerComponent):
             bytes = ''
@@ -241,12 +241,12 @@ def getNumsFromBytes(bytes, bitsPerComponent = 8):
             outputComponents.append(num)
     except:
         return (-1,'Error in conversion from bits to bytes')
-    return (0,outputComponents)       
+    return (0,outputComponents)
 
 def getBytesFromBits(bitsStream):
     '''
         Makes the conversion between bits and bytes.
-        
+
         @param bitsStream: String representing a chain of bits
         @return: A tuple (status,statusContent), where statusContent is the string containing the resulting bytes in case status = 0 or an error in case status = -1
     '''
@@ -263,12 +263,12 @@ def getBytesFromBits(bitsStream):
             return (-1,'Error in conversion from bits to bytes')
         return (0,bytes)
     else:
-        return (-1,'The format of the bit stream is not correct') 
+        return (-1,'The format of the bit stream is not correct')
 
 def getBytesFromFile(filename, offset, numBytes):
     '''
         Returns the number of bytes specified from a file, starting from the offset specified
-        
+
 		@param filename: Name of the file
 		@param offset: Bytes offset
 		@param numBytes: Number of bytes to retrieve
@@ -292,7 +292,7 @@ def getBytesFromFile(filename, offset, numBytes):
 def hexToString(hexString):
 	'''
 		Simple method to convert an hexadecimal string to ascii string
-		
+
 		@param hexString: A string in hexadecimal format
 		@return: A tuple (status,statusContent), where statusContent is an ascii string in case status = 0 or an error in case status = -1
 	'''
@@ -309,7 +309,7 @@ def hexToString(hexString):
 def numToHex(num, numBytes):
     '''
         Given a number returns its hexadecimal format with the specified length, adding '\0' if necessary
-		
+
 		@param num: A number (int)
 		@param numBytes: Length of the output (int)
 		@return: A tuple (status,statusContent), where statusContent is a number in hexadecimal format in case status = 0 or an error in case status = -1
@@ -327,11 +327,11 @@ def numToHex(num, numBytes):
     except:
 		return (-1,'Error in hexadecimal conversion')
     return (0,hexString)
-                  		
+
 def numToString(num, numDigits):
 	'''
         Given a number returns its string format with the specified length, adding '0' if necessary
-		
+
 		@param num: A number (int)
 		@param numDigits: Length of the output string (int)
 		@return: A tuple (status,statusContent), where statusContent is a number in string format in case status = 0 or an error in case status = -1
@@ -348,10 +348,10 @@ def numToString(num, numDigits):
 def unescapeHTMLEntities(text):
     '''
         Removes HTML or XML character references and entities from a text string.
-        
+
         @param text The HTML (or XML) source text.
         @return The plain text, as a Unicode string, if necessary.
-        
+
         Author: Fredrik Lundh
         Source: http://effbot.org/zone/re-sub.htm#unescape-html
     '''
@@ -374,11 +374,11 @@ def unescapeHTMLEntities(text):
                 pass
         return text # leave as is
     return re.sub("&#?\w+;", fixup, text)
-   
+
 def unescapeString(string):
 	'''
         Unescape the given string
-        
+
 		@param string: An escaped string
 		@return: Unescaped string
 	'''
@@ -414,11 +414,11 @@ def unescapeString(string):
 			unescapedValue += string[i]
 		i += 1
 	return unescapedValue
-    
+
 def vtcheck(md5, vtKey):
     '''
         Function to check a hash on VirusTotal and get the report summary
-        
+
         @param md5: The MD5 to check (hexdigest)
         @param vtKey: The VirusTotal API key needed to perform the request
         @return: A dictionary with the result of the request
@@ -437,3 +437,27 @@ def vtcheck(md5, vtKey):
     except:
         return (-1, 'An error has occurred while parsing the JSON response from VirusTotal')
     return (0, jsonDict)
+
+def diariocheck(filename):
+    response = None
+
+    try:
+        import requests
+    except:
+        return "(Python module 'requests' not available)"
+
+    try:
+        with open(filename, 'rb') as f:
+            data = f.read()
+            url = 'https://diario-elevenlabs.e-paths.com/open/api/check_document'
+            files = {'fileToUpload': data}
+            response = requests.post(url, files=files).json()
+        if response and 'last_prediction' in response.keys():
+            return response['last_prediction']
+        else:
+            return "Prediction unavailable."
+    except IOError:
+        return "Error opening file."
+    except Exception as e:
+        return "Error uploading file to DIARIO servers"
+

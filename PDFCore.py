@@ -4739,6 +4739,7 @@ class PDFFile :
         self.md5 = ''
         self.sha1 = ''
         self.sha256 = ''
+        self.diarioPrediction = ''
         self.detectionRate = []
         self.detectionReport = ''
         self.body = [] # PDFBody[]
@@ -5842,6 +5843,9 @@ class PDFFile :
     def getDetectionReport(self):
         return self.detectionReport
 
+    def getDiarioPrediction(self):
+        return self.diarioPrediction
+
     def getEndLine(self):
         return self.endLine
         
@@ -6142,6 +6146,7 @@ class PDFFile :
         stats['Size'] = str(self.size)
         stats['Detection'] = self.detectionRate
         stats['Detection report'] = self.detectionReport
+        stats['Diario prediction'] = self.diarioPrediction
         stats['Version'] = self.version
         stats['Binary'] = str(self.binary)
         stats['Linearized'] = str(self.linearized)
@@ -6673,6 +6678,9 @@ class PDFFile :
 
     def setDetectionReport(self, detectionReportLink):
         self.detectionReport = detectionReportLink
+
+    def setDiarioPrediction(self, diarioPrediction):
+        self.diarioPrediction = diarioPrediction
         
     def setEncryptDict(self, dict):
         self.encryptDict = dict

@@ -37,7 +37,7 @@ import traceback
 import json
 from datetime import datetime
 from PDFCore import PDFParser, vulnsDict
-from PDFUtils import vtcheck
+from PDFUtils import vtcheck, diariocheck
 
 
 VT_KEY = 'fc90df3f5ac749a94a94cb8bf87e05a681a2eb001aef34b6a0084b8c22c97a64'
@@ -387,6 +387,8 @@ argsParser.add_option('-s', '--load-script', action='store', type='string', dest
                       help='Loads the commands stored in the specified file and execute them.')
 argsParser.add_option('-c', '--check-vt', action='store_true', dest='checkOnVT', default=False,
                       help='Checks the hash of the PDF file on VirusTotal.')
+argsParser.add_option('-d', '--check-diario', action='store_true', dest='checkOnDiario', default=False,
+                      help='Sends document to DIARIO and retrieve its result.')
 argsParser.add_option('-f', '--force-mode', action='store_true', dest='isForceMode', default=False,
                       help='Sets force parsing mode to ignore errors.')
 argsParser.add_option('-l', '--loose-mode', action='store_true', dest='isLooseMode', default=False,
@@ -512,6 +514,12 @@ try:
                             pdf.setDetectionRate(None)
                     else:
                         pdf.addError('Bad response from VirusTotal!!')
+
+            # Get the DIARIO prediction
+            if options.checkOnDiario:
+                prediction = diariocheck(fileName)
+                pdf.setDiarioPrediction(prediction)
+
             statsDict = pdf.getStats()
 
         if options.xmlOutput:
@@ -610,6 +618,8 @@ try:
                                 detectionRate = 'File not found on VirusTotal'
                             stats += beforeStaticLabel + 'Detection: ' + resetColor + detectionRate + newLine
                             stats += detectionReportInfo
+                    if options.checkOnDiario:
+                        stats += beforeStaticLabel + 'Diario prediction: ' + resetColor + statsDict['Diario prediction'] + newLine
                     stats += beforeStaticLabel + 'Version: ' + resetColor + statsDict['Version'] + newLine
                     stats += beforeStaticLabel + 'Binary: ' + resetColor + statsDict['Binary'] + newLine
                     stats += beforeStaticLabel + 'Linearized: ' + resetColor + statsDict['Linearized'] + newLine
