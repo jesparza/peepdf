@@ -83,14 +83,14 @@ def getRepPaths(url, path=''):
 
 def getLocalFilesInfo(filesList):
     localFilesInfo = {}
-    print '[-] Getting local files information...'
+    print('[-] Getting local files information...')
     for path in filesList:
         absFilePath = os.path.join(absPeepdfRoot, path)
         if os.path.exists(absFilePath):
             content = open(absFilePath, 'rb').read()
             shaHash = hashlib.sha256(content).hexdigest()
             localFilesInfo[path] = [shaHash, absFilePath]
-    print '[+] Done'
+    print('[+] Done')
     return localFilesInfo
 
 
