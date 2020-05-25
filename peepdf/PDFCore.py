@@ -7161,7 +7161,7 @@ class PDFParser :
         xrefContent = None
         trailerContent = None
         
-        global pdfFile
+        #global pdfFile
         indexTrailer = content.find('trailer')
         if indexTrailer != -1:
             restContent = content[:indexTrailer]
@@ -7203,7 +7203,7 @@ class PDFParser :
             @param looseMode specifies if the parsing process should search for the endobj tag or not (boolean).
             @return A tuple (status,statusContent), where statusContent is the PDFIndirectObject in case status = 0 or an error in case status = -1
         '''
-        global pdfFile
+        #global pdfFile
         try:
             self.charCounter = 0
             pdfIndirectObject = PDFIndirectObject()
@@ -7235,7 +7235,7 @@ class PDFParser :
             @param rawContent string with the raw content of the PDF body.
             @return A tuple (status,statusContent), where statusContent is the PDFArray in case status = 0 or an error in case status = -1
         '''
-        global pdfFile
+        #global pdfFile
         realCounter = self.charCounter
         self.charCounter = 0
         elements = []
@@ -7422,7 +7422,7 @@ class PDFParser :
             @param offset Offset of the cross reference section in the PDF file (int)
             @return A tuple (status,statusContent), where statusContent is the PDFCrossRefSection in case status = 0 or an error in case status = -1
         '''
-        global isForceMode, pdfFile
+        #global isForceMode, pdfFile
         if not isinstance(rawContent, str):
             return (-1,'Empty xref content')
         entries = []
@@ -7636,7 +7636,7 @@ class PDFParser :
             @param streamPresent It specifies if an object stream exists in the PDF body
             @return A tuple (status,statusContent), where statusContent is the PDFTrailer in case status = 0 or an error in case status = -1
         '''
-        global pdfFile,isForceMode
+        #global pdfFile,isForceMode
         trailer = None
         self.charCounter = 0
         if not isinstance(rawContent,str):
@@ -7751,7 +7751,7 @@ class PDFParser :
             @param looseMode: boolean specifies if the parsing process should search for the endobj tag or not.
             @return matchingObjects: array of tuples (object_content,object_header).
         '''
-        global pdfFile
+        #global pdfFile
         matchingObjects = []
         if not isinstance(content,str):
             return matchingObjects
@@ -7808,7 +7808,7 @@ class PDFParser :
             @param looseMode
             @return A tuple (status,statusContent), where statusContent is a PDFObject instance in case status = 0 or an error in case status = -1
         '''
-        global pdfFile
+        #global pdfFile
         if len(content) == 0 or content[:6] == 'endobj':
             return (-1,'Empty content reading object')
         pdfObject = None
@@ -7962,7 +7962,7 @@ class PDFParser :
             @param deleteSpaces
             @return A tuple (status,statusContent), where statusContent is the number of characters read in case status = 0 or an error in case status = -1
         '''
-        global pdfFile
+        #global pdfFile
         if not isinstance(string,str):
             return (-1,'Bad string')
         oldCharCounter = self.charCounter
@@ -7993,7 +7993,7 @@ class PDFParser :
             @param delim
             @return A tuple (status,statusContent), where statusContent is the characters read in case status = 0 or an error in case status = -1
         '''
-        global pdfFile
+        #global pdfFile
         output = ''
         if not isinstance(content,str):
             return (-1,'Bad string')
@@ -8064,7 +8064,7 @@ class PDFParser :
             @param content
             @return A tuple (status,statusContent), where statusContent is the characters read in case status = 0 or an error in case status = -1
         '''
-        global pdfFile
+        #global pdfFile
         if not isinstance(content,str):
             return (-1,'Bad string')
         errorMessage = []
@@ -8072,7 +8072,7 @@ class PDFParser :
         tmpContent = content[self.charCounter:]
         for char in tmpContent:
             if char == '\r' or char == '\n':
-                return (0,content[oldCharCounter:self.charCounter])
+                return (0, content[oldCharCounter:self.charCounter])
             self.charCounter += 1
         else:
             errorMessage = 'EOL not found'
@@ -8086,7 +8086,7 @@ class PDFParser :
             @param symbol
             @return A tuple (status,statusContent), where statusContent is the characters read in case status = 0 or an error in case status = -1
         '''
-        global pdfFile
+        #global pdfFile
         if not isinstance(string,str):
             return (-1,'Bad string')
         newString = string[self.charCounter:]
@@ -8123,7 +8123,7 @@ class PDFParser :
             @param symbol
             @return A tuple (status,statusContent), where statusContent is the characters read in case status = 0 or an error in case status = -1
         '''
-        global pdfFile
+        #global pdfFile
         if not isinstance(string,str):
             return (-1,'Bad string')
         newString = string[self.charCounter:]
