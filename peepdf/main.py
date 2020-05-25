@@ -43,7 +43,7 @@ from PDFUtils import vtcheck
 VT_KEY = 'fc90df3f5ac749a94a94cb8bf87e05a681a2eb001aef34b6a0084b8c22c97a64'
 
 try:
-    import PyV8
+    import STPyV8
     JS_MODULE = True
 except:
     JS_MODULE = False
@@ -569,7 +569,7 @@ try:
                         beforeStaticLabel = ''
 
                     if not JS_MODULE:
-                        warningMessage = 'Warning: PyV8 is not installed!!'
+                        warningMessage = 'Warning: STPyV8 is not installed!!'
                         stats += warningColor + warningMessage + resetColor + newLine
                     if not EMU_MODULE:
                         warningMessage = 'Warning: pylibemu is not installed!!'

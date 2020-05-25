@@ -34,11 +34,11 @@ import traceback
 from PDFUtils import unescapeHTMLEntities, escapeString
 
 try:
-    import PyV8
+    import STPyV8
     
     JS_MODULE = True
     
-    class Global(PyV8.JSClass):
+    class Global(STPyV8.JSClass):
         evalCode = ''
         
         def evalOverride(self, expression):
@@ -84,7 +84,7 @@ def analyseJS(code, context=None, manualAnalysis=False):
     
         if code is not None and JS_MODULE and not manualAnalysis:
             if context is None:
-                context = PyV8.JSContext(Global())
+                context = STPyV8.JSContext(Global())
             context.enter()
             # Hooking the eval function
             context.eval('eval=evalOverride')
