@@ -318,14 +318,14 @@ def numToHex(num, numBytes):
     if not isinstance(num,int):
     	return (-1,'Bad number')
     try:
-	hexNumber = hex(num)[2:]
-	if len(hexNumber) % 2 != 0:
-	    hexNumber = '0'+hexNumber
-	for i in range(0,len(hexNumber)-1,2):
-	    hexString += chr(int(hexNumber[i]+hexNumber[i+1],16))
-	hexString = '\0'*(numBytes-len(hexString))+hexString
+        hexNumber = hex(num)[2:]
+        if len(hexNumber) % 2 != 0:
+            hexNumber = '0'+hexNumber
+        for i in range(0,len(hexNumber)-1,2):
+            hexString += chr(int(hexNumber[i]+hexNumber[i+1],16))
+        hexString = '\0'*(numBytes-len(hexString))+hexString
     except:
-	return (-1,'Error in hexadecimal conversion')
+        return (-1,'Error in hexadecimal conversion')
     return (0,hexString)
 
 def numToString(num, numDigits):
