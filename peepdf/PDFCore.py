@@ -743,7 +743,7 @@ class PDFHexString (PDFObject) :
             if isForceMode:
                 self.addError(ret[1])
             else:
-                raise Exception(ret[1])        
+                raise Exception(ret[1])
             
     def update(self, decrypt = False, newHexValue = True):
         '''

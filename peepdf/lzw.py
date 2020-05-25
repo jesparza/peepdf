@@ -87,7 +87,7 @@ __url__ = "http://www.joe-bowers.com/static/lzw"
 
 import struct
 import itertools
-
+from __future__ import print_function
 
 CLEAR_CODE = 256
 END_OF_INFO_CODE = 257
