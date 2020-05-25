@@ -26,6 +26,7 @@
 '''
 
 import sys, os, re, hashlib, struct
+import codecs
 import peepdf.aes as AES
 from peepdf.PDFUtils import *
 from peepdf.PDFCrypto import *
@@ -765,10 +766,11 @@ class PDFHexString (PDFObject) :
                     tmpValue = self.rawValue
                     if len(tmpValue) % 2 != 0:
                         tmpValue += '0'
-                    self.value = tmpValue.decode('hex')
+                    self.value = codecs.decode(tmpValue, 'hex')
+                    self.value = self.value.decode('latin-1')
                 else:
                     # New decoded value
-                    self.rawValue = self.value.encode('hex')
+                    self.rawValue = codecs.encode(self.value, 'hex')
                 self.encryptedValue = self.value
             except:
                 errorMessage = 'Error in hexadecimal conversion'
@@ -5422,6 +5424,11 @@ class PDFFile :
                     return (-1, errorMessage)
         else:
             encryptMetadata = True
+        if isinstance(password, str):
+            password = password.encode('latin-1')
+            dict0 = dict0.encode('latin-1')
+            fileId = fileId.encode('latin-1')
+
         if not fatalError:
             # Checking user password
             if revision != 5:
@@ -6929,10 +6936,10 @@ class PDFParser :
         pdfFile.setSHA256(hashlib.sha256(fileContent).hexdigest())
         
         # Getting the number of updates in the file
-        while fileContent.find('%%EOF') != -1:
-            self.readUntilSymbol(fileContent, '%%EOF')
-            self.readUntilEndOfLine(fileContent)
-            self.fileParts.append(fileContent[:self.charCounter])
+        while fileContent.find(b'%%EOF') != -1:
+            self.readUntilSymbol(fileContent, b'%%EOF')
+            self.readUntilEndOfLine(fileContent.decode('latin-1'))
+            self.fileParts.append(fileContent[:self.charCounter].decode('latin-1'))
             fileContent = fileContent[self.charCounter:]
             self.charCounter = 0
         else:
@@ -6943,6 +6950,7 @@ class PDFParser :
                     self.fileParts.append(fileContent)
                 else:
                     sys.exit(errorMessage)
+        fileContent = fileContent.decode('latin-1')
         pdfFile.setUpdates(len(self.fileParts) - 1)
         
         # Getting the body, cross reference table and trailer of each part of the file
@@ -6972,6 +6980,8 @@ class PDFParser :
                 bodyOffset = len(self.fileParts[i-1])
                 
             # Getting the content for each section
+            if isinstance(content, bytes):
+                content = content.decode('latin-1')
             bodyContent,xrefContent,trailerContent = self.parsePDFSections(content,forceMode,looseMode)
             if xrefContent != None:    
                 xrefOffset = bodyOffset + len(bodyContent)
