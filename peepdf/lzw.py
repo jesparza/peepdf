@@ -24,6 +24,7 @@
 '''
     Library to encode/decode streams using the LZW algorithm. Mix of third party libraries (python-lzw and pdfminer) with some modifications.
 '''
+from __future__ import print_function
 
 """
 A stream friendly, simple compression library, built around
@@ -84,7 +85,6 @@ __url__ = "http://www.joe-bowers.com/static/lzw"
 
 """
 
-from __future__ import print_function
 import struct
 import itertools
 
