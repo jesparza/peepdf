@@ -25,12 +25,12 @@
     This module contains classes and methods to analyse and modify PDF files
 '''
 
-import sys,os,re,hashlib,struct
+import sys, os, re, hashlib, struct
 import peepdf.aes as AES
 from peepdf.PDFUtils import *
 from peepdf.PDFCrypto import *
 from peepdf.JSAnalysis import *
-from peepdf.PDFFilters import decodeStream,encodeStream
+from peepdf.PDFFilters import decodeStream, encodeStream
 
 MAL_ALL = 1
 MAL_HEAD = 2
@@ -6860,6 +6860,7 @@ class PDFParser :
         # Reading the file header
         file = open(fileName,'rb')
         for line in file:
+            line = line.decode('latin-1')
             if versionLine == '':
                 pdfHeaderIndex = line.find('%PDF-')
                 psHeaderIndex = line.find('%!PS-Adobe-')
@@ -6888,7 +6889,7 @@ class PDFParser :
         # Getting the specification version
         versionLine = versionLine.replace('\r','')
         versionLine = versionLine.replace('\n','')
-        matchVersion = re.findall('%(PDF-|!PS-Adobe-\d{1,2}\.\d{1,2}\sPDF-)(\d{1,2}\.\d{1,2})',versionLine)
+        matchVersion = re.findall('%(PDF-|!PS-Adobe-\d{1,2}\.\d{1,2}\sPDF-)(\d{1,2}\.\d{1,2})', versionLine)
         if matchVersion == []:
             if forceMode:
                 pdfFile.setVersion(versionLine)

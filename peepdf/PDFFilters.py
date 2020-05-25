@@ -799,7 +799,7 @@ def dctDecode(stream, parameters):
     decodedStream = ''
     try:
         from PIL import Image
-        import StringIO
+        from io import StringIO
     except:
         return (-1, 'Python Imaging Library (PIL) not installed')
     # Quick implementation, assuming the library can detect the parameters
