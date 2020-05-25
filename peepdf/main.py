@@ -35,6 +35,7 @@ import urllib
 import hashlib
 import traceback
 import json
+from lxml import etree
 from datetime import datetime
 from peepdf.PDFCore import PDFParser, vulnsDict
 from peepdf.PDFUtils import vtcheck
@@ -57,13 +58,11 @@ try:
     COLORIZED_OUTPUT = True
 except:
     COLORIZED_OUTPUT = False
-
 try:
     from PIL import Image
     PIL_MODULE = True
 except:
     PIL_MODULE = False
-
 
 def getRepPaths(url, path=''):
     paths = []
@@ -363,11 +362,6 @@ twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
 version = '0.3'
 revision = '275'
-stats = ''
-pdf = None
-fileName = None
-statsDict = None
-vtJsonDict = None
 newLine = os.linesep
 absPeepdfRoot = os.path.dirname(os.path.realpath(sys.argv[0]))
 errorsFile = os.path.join(absPeepdfRoot, 'errors.txt')
@@ -395,8 +389,6 @@ def main():
                           help='Sets loose parsing mode to catch malformed objects.')
     argsParser.add_option('-m', '--manual-analysis', action='store_true', dest='isManualAnalysis', default=False,
                           help='Avoids automatic Javascript analysis. Useful with eternal loops like heap spraying.')
-    argsParser.add_option('-u', '--update', action='store_true', dest='update', default=False,
-                          help='Updates peepdf with the latest files from the repository.')
     argsParser.add_option('-g', '--grinch-mode', action='store_true', dest='avoidColors', default=False,
                           help='Avoids colorized output in the interactive console.')
     argsParser.add_option('-v', '--version', action='store_true', dest='version', default=False,
@@ -408,7 +400,13 @@ def main():
     argsParser.add_option('-C', '--command', action='append', type='string', dest='commands',
                           help='Specifies a command from the interactive console to be executed.')
     (options, args) = argsParser.parse_args()
-    
+
+    stats = ''
+    pdf = None
+    fileName = None
+    statsDict = None
+    vtJsonDict = None
+
     try:
         # Avoid colors in the output
         if not COLORIZED_OUTPUT or options.avoidColors:
@@ -425,60 +423,6 @@ def main():
             resetColor = Style.RESET_ALL
         if options.version:
             print(peepdfHeader)
-        elif options.update:
-            updated = False
-            newVersion = ''
-            localVersion = 'v' + version + ' r' + revision
-            reVersion = 'version = \'(\d\.\d)\'\s*?revision = \'(\d+)\''
-            repURL = 'https://api.github.com/repos/jesparza/peepdf/contents/'
-            rawRepURL = 'https://raw.githubusercontent.com/jesparza/peepdf/master/'
-            print('[-] Checking if there are new updates...')
-            try:
-                remotePeepContent = urllib.request.urlopen(rawRepURL + 'peepdf.py').read()
-            except:
-                sys.exit('[x] Connection error while trying to connect with the repository')
-            repVer = re.findall(reVersion, remotePeepContent)
-            if repVer:
-                newVersion = 'v' + repVer[0][0] + ' r' + repVer[0][1]
-            else:
-                sys.exit('[x] Error getting the version number from the repository')
-            if localVersion == newVersion:
-                print('[+] No changes! ;)')
-            else:
-                print('[+] There are new updates!!')
-                print('[-] Getting paths from the repository...')
-                pathNames = getRepPaths(repURL, '')
-                print('[+] Done')
-                localFilesInfo = getLocalFilesInfo(pathNames)
-                print('[-] Checking files...')
-                for path in pathNames:
-                    try:
-                        fileContent = urllib.request.urlopen(rawRepURL + path).read()
-                    except:
-                        sys.exit('[x] Connection error while getting file "' + path + '"')
-                    if path in localFilesInfo:
-                        # File exists
-                        # Checking hash
-                        shaHash = hashlib.sha256(fileContent).hexdigest()
-                        if shaHash != localFilesInfo[path][0]:
-                            open(localFilesInfo[path][1], 'wb').write(fileContent)
-                            print('[+] File "' + path + '" updated successfully')
-                    else:
-                        # File does not exist
-                        index = path.rfind('/')
-                        if index != -1:
-                            dirsPath = path[:index]
-                            absDirsPath = os.path.join(absPeepdfRoot, dirsPath)
-                            if not os.path.exists(absDirsPath):
-                                print('[+] New directory "' + dirsPath + '" created successfully')
-                                os.makedirs(absDirsPath)
-                        open(os.path.join(absPeepdfRoot, path), 'wb').write(fileContent)
-                        print('[+] New file "' + path + '" created successfully')
-                message = '[+] peepdf updated successfully'
-                if newVersion != '':
-                    message += ' to ' + newVersion
-                print(message)
-    
         else:
             if len(args) == 1:
                 fileName = args[0]
@@ -515,11 +459,9 @@ def main():
                         else:
                             pdf.addError('Bad response from VirusTotal!!')
                 statsDict = pdf.getStats()
-    
+
             if options.xmlOutput:
                 try:
-                    from lxml import etree
-    
                     xml = getPeepXML(statsDict, version, revision)
                     sys.stdout.write(xml)
                 except:
@@ -541,7 +483,7 @@ def main():
                     except:
                         COLORIZED_OUTPUT = False
                 if options.scriptFile is not None:
-                    from PDFConsole import PDFConsole
+                    from peepdf.PDFConsole import PDFConsole
     
                     scriptFileObject = open(options.scriptFile, 'rb')
                     console = PDFConsole(pdf, VT_KEY, options.avoidColors, stdin=scriptFileObject)
@@ -553,7 +495,7 @@ def main():
                         traceback.print_exc(file=open(errorsFile, 'a'))
                         raise Exception('PeepException', 'Send me an email ;)')
                 elif options.commands is not None:
-                    from PDFConsole import PDFConsole
+                    from peepdf.PDFConsole import PDFConsole
     
                     console = PDFConsole(pdf, VT_KEY, options.avoidColors)
                     try:
@@ -721,7 +663,7 @@ def main():
                     if fileName != None:
                         print(stats)
                     if options.isInteractive:
-                        from PDFConsole import PDFConsole
+                        from peepdf.PDFConsole import PDFConsole
     
                         console = PDFConsole(pdf, VT_KEY, options.avoidColors)
                         while not console.leaving:
@@ -745,8 +687,7 @@ def main():
     finally:
         if os.path.exists(errorsFile):
             message = newLine + 'Please, don\'t forget to report the errors found:' + newLine * 2
-            message += '\t- Sending the file "%s" to the author (mailto:peepdfREMOVETHIS@eternal-todo.com)%s' % (
-                errorsFile, newLine)
+            message += '\t- Sending the file "%s" to the author (mailto:peepdfREMOVETHIS@eternal-todo.com)%s' % (errorsFile, newLine)
             message += '\t- And/Or creating an issue on the project webpage (https://github.com/jesparza/peepdf/issues)' + newLine
             message = errorColor + message + resetColor
             sys.exit(message)

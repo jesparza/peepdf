@@ -10,6 +10,7 @@ setup(
         "jsbeautifier",
         "colorama",
         "Pillow",
+        "lxml",
         "pythonaes==1.0",
     ],
     entry_points={
