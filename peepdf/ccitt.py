@@ -228,7 +228,7 @@ class CCITTFax(object):
         63  : codeword('00110100')
         }
 
-    WHITE_TERMINAL_DECODE_TABLE = dict( (v, k) for k, v in WHITE_TERMINAL_ENCODE_TABLE.iteritems() )
+    WHITE_TERMINAL_DECODE_TABLE = dict( (v, k) for k, v in WHITE_TERMINAL_ENCODE_TABLE.items() )
 
     BLACK_TERMINAL_ENCODE_TABLE = {
         0   : codeword('0000110111'),
@@ -297,7 +297,7 @@ class CCITTFax(object):
         63  : codeword('000001100111')
         }
 
-    BLACK_TERMINAL_DECODE_TABLE = dict( (v, k) for k, v in BLACK_TERMINAL_ENCODE_TABLE.iteritems() )
+    BLACK_TERMINAL_DECODE_TABLE = dict( (v, k) for k, v in BLACK_TERMINAL_ENCODE_TABLE.items() )
 
     WHITE_CONFIGURATION_ENCODE_TABLE = {
         64    : codeword('11011'),
@@ -343,7 +343,7 @@ class CCITTFax(object):
         2560  : codeword('000000011111')
         }
 
-    WHITE_CONFIGURATION_DECODE_TABLE = dict( (v, k) for k, v in WHITE_CONFIGURATION_ENCODE_TABLE.iteritems() )
+    WHITE_CONFIGURATION_DECODE_TABLE = dict( (v, k) for k, v in WHITE_CONFIGURATION_ENCODE_TABLE.items() )
 
     BLACK_CONFIGURATION_ENCODE_TABLE = {
         64    : codeword('0000001111'),
@@ -389,7 +389,7 @@ class CCITTFax(object):
         2560  : codeword('000000011111')
         }
 
-    BLACK_CONFIGURATION_DECODE_TABLE = dict( (v, k) for k, v in BLACK_CONFIGURATION_ENCODE_TABLE.iteritems() )
+    BLACK_CONFIGURATION_DECODE_TABLE = dict( (v, k) for k, v in BLACK_CONFIGURATION_ENCODE_TABLE.items() )
 
     def __init__(self, ):
         """
