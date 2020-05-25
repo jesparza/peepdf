@@ -31,7 +31,7 @@ import sys
 import os
 import optparse
 import re
-import urllib2
+import urllib
 import hashlib
 import traceback
 import json
@@ -68,7 +68,7 @@ except:
 def getRepPaths(url, path=''):
     paths = []
     try:
-        browsingPage = urllib2.urlopen(url + path).read()
+        browsingPage = urllib.request.urlopen(url + path).read()
     except:
         sys.exit('[x] Connection error while getting browsing page "' + url + path + '"')
     browsingPageObject = json.loads(browsingPage)
@@ -434,7 +434,7 @@ def main():
             rawRepURL = 'https://raw.githubusercontent.com/jesparza/peepdf/master/'
             print('[-] Checking if there are new updates...')
             try:
-                remotePeepContent = urllib2.urlopen(rawRepURL + 'peepdf.py').read()
+                remotePeepContent = urllib.request.urlopen(rawRepURL + 'peepdf.py').read()
             except:
                 sys.exit('[x] Connection error while trying to connect with the repository')
             repVer = re.findall(reVersion, remotePeepContent)
@@ -453,7 +453,7 @@ def main():
                 print('[-] Checking files...')
                 for path in pathNames:
                     try:
-                        fileContent = urllib2.urlopen(rawRepURL + path).read()
+                        fileContent = urllib.request.urlopen(rawRepURL + path).read()
                     except:
                         sys.exit('[x] Connection error while getting file "' + path + '"')
                     if path in localFilesInfo:

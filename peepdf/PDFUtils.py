@@ -25,7 +25,7 @@
     Module with some misc functions
 '''
 
-import os, re, json, urllib, urllib2, html.entities
+import os, re, json, urllib, html.entities
 
 def clearScreen():
 	'''
@@ -426,9 +426,9 @@ def vtcheck(md5, vtKey):
     vtUrl = 'https://www.virustotal.com/vtapi/v2/file/report'
     parameters = {'resource':md5,'apikey':vtKey}
     try:
-        data = urllib.urlencode(parameters)
-        req = urllib2.Request(vtUrl, data)
-        response = urllib2.urlopen(req)
+        data = urllib.parse.urlencode(parameters)
+        req = urllib.request.Request(vtUrl, data)
+        response = urllib.request.urlopen(req)
         jsonResponse = response.read()
     except:
         return (-1, 'The request to VirusTotal has not been successful')
