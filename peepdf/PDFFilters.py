@@ -56,7 +56,8 @@
     Module to manage encoding/decoding in PDF files
 '''
 
-import sys, zlib, lzw, struct
+import sys, zlib, struct
+import peepdf.lzw
 from peepdf.PDFUtils import getNumsFromBytes, getBytesFromBits, getBitsFromNum
 from peepdf.ccitt import CCITTFax
 
