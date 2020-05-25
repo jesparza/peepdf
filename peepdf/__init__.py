@@ -20,3 +20,4 @@
 #        along with peepdf.    If not, see <http://www.gnu.org/licenses/>.
 
 from peepdf import PDFConsole, PDFCore, PDFCrypto, PDFFilters, PDFUtils, JSAnalysis
+from __future__ import print_function
