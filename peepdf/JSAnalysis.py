@@ -31,7 +31,7 @@ import re
 import sys
 import traceback
 
-from PDFUtils import unescapeHTMLEntities, escapeString
+from peepdf.PDFUtils import unescapeHTMLEntities, escapeString
 
 try:
     import STPyV8

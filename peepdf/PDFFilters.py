@@ -57,8 +57,8 @@
 '''
 
 import sys, zlib, lzw, struct
-from PDFUtils import getNumsFromBytes, getBytesFromBits, getBitsFromNum
-from ccitt import CCITTFax
+from peepdf.PDFUtils import getNumsFromBytes, getBytesFromBits, getBitsFromNum
+from peepdf.ccitt import CCITTFax
 
 
 def decodeStream(stream, filter, parameters={}):

@@ -34,13 +34,13 @@ import optparse
 import hashlib
 import jsbeautifier
 import traceback
-from PDFUtils import *
-from PDFCrypto import *
-from JSAnalysis import *
-from PDFCore import *
+from peepdf.PDFUtils import *
+from peepdf.PDFCrypto import *
+from peepdf.JSAnalysis import *
+from peepdf.PDFCore import *
 from base64 import b64encode, b64decode
-from PDFFilters import decodeStream, encodeStream
-from jjdecode import JJDecoder
+from peepdf.PDFFilters import decodeStream, encodeStream
+from peepdf.jjdecode import JJDecoder
 
 try:
     from colorama import init, Fore, Back, Style

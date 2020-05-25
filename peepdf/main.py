@@ -36,8 +36,8 @@ import hashlib
 import traceback
 import json
 from datetime import datetime
-from PDFCore import PDFParser, vulnsDict
-from PDFUtils import vtcheck
+from peepdf.PDFCore import PDFParser, vulnsDict
+from peepdf.PDFUtils import vtcheck
 
 
 VT_KEY = 'fc90df3f5ac749a94a94cb8bf87e05a681a2eb001aef34b6a0084b8c22c97a64'
