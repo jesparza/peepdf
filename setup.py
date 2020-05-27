@@ -13,6 +13,7 @@ setup(
         "Pillow",
         "pythonaes",
         "pylibemu",
+        "lxml",
     ],
     entry_points={
         "console_scripts": [
