@@ -359,7 +359,7 @@ def getPeepJSON(statsDict, version, revision):
 def main():
     global COLORIZED_OUTPUT
     version = '0.3'
-    revision = '275'
+    revision = '8'
     versionHeader = 'Version: peepdf ' + version + ' r' + revision
     author = 'Jose Miguel Esparza'
     email = 'peepdf AT eternal-todo.com'
@@ -367,8 +367,9 @@ def main():
     twitter = 'http://twitter.com/EternalTodo'
     peepTwitter = 'http://twitter.com/peepdf'
     newLine = os.linesep
-    absPeepdfRoot = os.path.dirname(os.path.realpath(sys.argv[1]))
-    errorsFile = os.path.join(absPeepdfRoot, 'peepdf_errors.txt')
+    currentDir = os.getcwd()
+    absPeepdfRoot = os.path.dirname(os.path.realpath(sys.argv[0]))
+    errorsFile = os.path.join(currentDir, 'peepdf_errors.txt')
     peepdfHeader = versionHeader + newLine * 2 + url + newLine + peepTwitter + newLine + email + newLine * 2 + author + newLine + twitter + newLine
     argsParser = optparse.OptionParser(usage='Usage: peepdf.py [options] PDF_file', description=versionHeader)
     argsParser.add_option('-i', '--interactive', action='store_true', dest='isInteractive', default=False, help='Sets console mode.')
