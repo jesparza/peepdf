@@ -35,6 +35,7 @@ import urllib2
 import hashlib
 import traceback
 import json
+from lxml import etree
 from datetime import datetime
 from PDFCore import PDFParser, vulnsDict
 from PDFUtils import vtcheck
@@ -355,29 +356,20 @@ def getPeepJSON(statsDict, version, revision):
                 }
     return json.dumps(jsonDict, indent=4, sort_keys=True)
 
-
-author = 'Jose Miguel Esparza'
-email = 'peepdf AT eternal-todo.com'
-url = 'http://peepdf.eternal-todo.com'
-twitter = 'http://twitter.com/EternalTodo'
-peepTwitter = 'http://twitter.com/peepdf'
-version = '0.3'
-revision = '275'
-newLine = os.linesep
-absPeepdfRoot = os.path.dirname(os.path.realpath(sys.argv[0]))
-errorsFile = os.path.join(absPeepdfRoot, 'errors.txt')
-
-versionHeader = 'Version: peepdf ' + version + ' r' + revision
-peepdfHeader = versionHeader + newLine * 2 + \
-               url + newLine + \
-               peepTwitter + newLine + \
-               email + newLine * 2 + \
-               author + newLine + \
-               twitter + newLine
-
 def main():
     global COLORIZED_OUTPUT
-    
+    version = '0.3'
+    revision = '275'
+    versionHeader = 'Version: peepdf ' + version + ' r' + revision
+    author = 'Jose Miguel Esparza'
+    email = 'peepdf AT eternal-todo.com'
+    url = 'http://peepdf.eternal-todo.com'
+    twitter = 'http://twitter.com/EternalTodo'
+    peepTwitter = 'http://twitter.com/peepdf'
+    newLine = os.linesep
+    absPeepdfRoot = os.path.dirname(os.path.realpath(sys.argv[1]))
+    errorsFile = os.path.join(absPeepdfRoot, 'peepdf_errors.txt')
+    peepdfHeader = versionHeader + newLine * 2 + url + newLine + peepTwitter + newLine + email + newLine * 2 + author + newLine + twitter + newLine
     argsParser = optparse.OptionParser(usage='Usage: peepdf.py [options] PDF_file', description=versionHeader)
     argsParser.add_option('-i', '--interactive', action='store_true', dest='isInteractive', default=False, help='Sets console mode.')
     argsParser.add_option('-s', '--load-script', action='store', type='string', dest='scriptFile', help='Loads the commands stored in the specified file and execute them.')
@@ -391,13 +383,13 @@ def main():
     argsParser.add_option('-j', '--json', action='store_true', dest='jsonOutput', default=False, help='Shows the document information in JSON format.')
     argsParser.add_option('-C', '--command', action='append', type='string', dest='commands', help='Specifies a command from the interactive console to be executed.')
     (options, args) = argsParser.parse_args()
-    
+
     stats = ''
     pdf = None
     fileName = None
     statsDict = None
     vtJsonDict = None
-    
+
     try:
         # Avoid colors in the output
         if not COLORIZED_OUTPUT or options.avoidColors:
@@ -454,8 +446,6 @@ def main():
     
             if options.xmlOutput:
                 try:
-                    from lxml import etree
-    
                     xml = getPeepXML(statsDict, version, revision)
                     sys.stdout.write(xml)
                 except:
