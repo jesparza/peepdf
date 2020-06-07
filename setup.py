@@ -17,7 +17,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "peepdf = peepdf.peepdf:main",
+            "peepdf = peepdf.main:main",
         ],
     },
     packages=[
