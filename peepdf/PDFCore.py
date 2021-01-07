@@ -1217,6 +1217,13 @@ class PDFArray(PDFObject):
         ret = self.update()
         return ret
 
+    def getJSCode(self):
+        '''
+            Gets the Javascript code of the object
+            @return: An array of Javascript code sections
+        '''
+        return self.JSCode
+
 
 class PDFDictionary(PDFObject):
     def __init__(self, rawContent='', elements={}, rawNames={}):
@@ -3000,29 +3007,31 @@ class PDFObjectStream (PDFStream):
                                     if self.isEncodedStream:
                                         self.decode()
                                 self.size = len(self.rawStream)
-                        offsetsSection = self.decodedStream[:self.firstObjectOffset]
-                        objectsSection = self.decodedStream[self.firstObjectOffset:]
-                        numbers = re.findall('\d{1,10}', offsetsSection)
-                        if numbers != [] and len(numbers) % 2 == 0:
-                            for i in range(0, len(numbers), 2):
-                                id = int(numbers[i])
-                                offset = int(numbers[i+1])
-                                ret = PDFParser().readObject(objectsSection[offset:])
-                                if ret[0] == -1:
-                                    if isForceMode:
-                                        object = None
-                                        self.addError(ret[1])
+
+                        if not self.updateNeeded:
+                            offsetsSection = self.decodedStream[:self.firstObjectOffset]
+                            objectsSection = self.decodedStream[self.firstObjectOffset:]
+                            numbers = re.findall('\d{1,10}', offsetsSection)
+                            if numbers != [] and len(numbers) % 2 == 0:
+                                for i in range(0, len(numbers), 2):
+                                    id = int(numbers[i])
+                                    offset = int(numbers[i+1])
+                                    ret = PDFParser().readObject(objectsSection[offset:])
+                                    if ret[0] == -1:
+                                        if isForceMode:
+                                            object = None
+                                            self.addError(ret[1])
+                                        else:
+                                            return ret
                                     else:
-                                        return ret
-                                else:
-                                    object = ret[1]
-                                self.compressedObjectsDict[id] = [offset, object]
-                                self.indexes.append(id)
-                        else:
-                            if isForceMode:
-                                self.addError('Missing offsets in object stream')
+                                        object = ret[1]
+                                    self.compressedObjectsDict[id] = [offset, object]
+                                    self.indexes.append(id)
                             else:
-                                return (-1, 'Missing offsets in object stream')
+                                if isForceMode:
+                                    self.addError('Missing offsets in object stream')
+                                else:
+                                    return (-1, 'Missing offsets in object stream')
                     elif modifiedCompressedObjects:
                         tmpStreamObjects = ''
                         tmpStreamObjectsInfo = ''
@@ -3249,8 +3258,9 @@ class PDFObjectStream (PDFStream):
                 numbers = re.findall('\d{1,10}', offsetsSection)
                 if numbers != [] and len(numbers) % 2 == 0:
                     for i in range(0, len(numbers), 2):
-                        offset = numbers[i+1]
-                        ret = PDFParser.readObject(objectsSection[offset:])
+                        id = int(numbers[i])
+                        offset = int(numbers[i+1])
+                        ret = PDFParser().readObject(objectsSection[offset:])
                         if ret[0] == -1:
                             if isForceMode:
                                 object = None
@@ -3259,7 +3269,8 @@ class PDFObjectStream (PDFStream):
                                 return ret
                         else:
                             object = ret[1]
-                        self.compressedObjectsDict[numbers[i]] = [offset, object]
+                        self.compressedObjectsDict[id] = [offset, object]
+                        self.indexes.append(id)
                 else:
                     errorMessage = 'Missing offsets in object stream'
                     if isForceMode:
@@ -7845,6 +7856,11 @@ class PDFParser:
         pdfObject = None
         oldCounter = self.charCounter
         self.charCounter = 0
+        # skip leading whitespace in case of sloppy reference offsets
+        self.readSpaces(content)
+        if self.charCounter > 0:
+            content = content[self.charCounter:]
+            self.charCounter = 0
         if objectType is not None:
             objectsTypeArray = [self.delimiters[i][2] for i in range(len(self.delimiters))]
             index = objectsTypeArray.index(objectType)
@@ -8153,7 +8169,6 @@ class PDFParser:
 
         newString = string[self.charCounter:]
 
-        self.charCounter = 0
         index = newString.find(symbol)
         if index == -1:
             errorMessage = 'Symbol "'+symbol+'" not found'
