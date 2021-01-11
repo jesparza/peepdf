@@ -7647,13 +7647,13 @@ class PDFParser:
                             return (-1, errorMessage)
                     try:
                         pdfCrossRefEntry = PDFCrossRefEntry(f2, f3, f1)
+                        entries.append(pdfCrossRefEntry)
                     except:
                         errorMessage = 'Error creating PDFCrossRefEntry'
                         if isForceMode:
                             pdfCrossRefSection.addError(errorMessage)
                         else:
                             return (-1, errorMessage)
-                    entries.append(pdfCrossRefEntry)
                 for i in range(int(numSubsections)):
                     firstObject = subsectionIndexes[index]
                     numObjectsInSubsection = subsectionIndexes[index+1]
