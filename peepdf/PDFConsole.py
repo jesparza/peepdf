@@ -57,7 +57,7 @@ try:
 except:
     COLORIZED_OUTPUT = False
 try:
-    import PyV8
+    import STPyV8 as PyV8
     JS_MODULE = True
 except ImportError as e:
     JS_MODULE = False

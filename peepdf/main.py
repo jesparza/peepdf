@@ -40,7 +40,7 @@ from peepdf.PDFUtils import vtcheck
 VT_KEY = 'fc90df3f5ac749a94a94cb8bf87e05a681a2eb001aef34b6a0084b8c22c97a64'
 
 try:
-    import PyV8
+    import STPyV8 as PyV8
     JS_MODULE = True
 
     PyV8
@@ -432,7 +432,7 @@ def main():
             if options.xmlOutput:
                 try:
                     xml = getPeepXML(statsDict, _version, revision)
-                    sys.stdout.write(xml)
+                    sys.stdout.write("".join( chr(x) for x in bytearray(xml))
                 except:
                     errorMessage = '*** Error: Exception while generating the XML file!!'
                     traceback.print_exc(file=open(errorsFile, 'a'))

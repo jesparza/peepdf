@@ -34,7 +34,7 @@ import traceback
 from peepdf.PDFUtils import unescapeHTMLEntities, escapeString
 
 try:
-    import PyV8
+    import STPyV8 as PyV8
 
     class Global(PyV8.JSClass):
         evalCode = ''
