@@ -432,7 +432,7 @@ def main():
             if options.xmlOutput:
                 try:
                     xml = getPeepXML(statsDict, _version, revision)
-                    sys.stdout.write("".join( chr(x) for x in bytearray(xml))
+                    sys.stdout.write("".join( chr(x) for x in bytearray(xml)))
                 except:
                     errorMessage = '*** Error: Exception while generating the XML file!!'
                     traceback.print_exc(file=open(errorsFile, 'a'))
@@ -674,9 +674,6 @@ def main():
         print(errorColor + errorMessage + resetColor + newLine)
     finally:
         if os.path.exists(errorsFile):
-            message = newLine + 'Please, don\'t forget to report errors if found:' + newLine * 2
-            message += '\t- Sending the file "%s" to the author (mailto:peepdfREMOVETHIS@eternal-todo.com)%s' % (
-                errorsFile, newLine)
-            message += '\t- And/Or creating an issue on the project webpage (https://github.com/jesparza/peepdf/issues)' + newLine
+            message = newLine + 'Any errors are logged to file "%s"' % (errorsFile)
             message = errorColor + message + resetColor
             sys.exit(message)
