@@ -6,11 +6,16 @@ http://twitter.com/peepdf
 
 ** Dependencies **
 
+Here's what I did to make the extra libraries work  
 
-- In order to analyse Javascript code "PyV8" is needed:
+`git clone https://github.com/harakan/peepdf`  
+`cd peepdf && python3 setup.py install`  
+`git clone git@github.com:area1/stpyv8.git`  
+`sudo bash install-ubuntu.sh`  
+`sudo python3 setup.py install`  
+`pip3 install pylibemu`  
 
-    http://code.google.com/p/pyv8/
-
+... Hopefully that works
 
 - The "sctest" command is a wrapper of "sctest" (libemu). Besides libemu pylibemu is used and must be installed:
 
