@@ -10,6 +10,21 @@ of [PyV8](https://code.google.com/p/pyv8) and [Pylibemu](https://github.com/buff
 
 The main functionalities of peepdf are the following:
 
+**Installation:** Here's what I did to make the extra libraries work  
+ - Note: This installs peepdf system wide.
+
+  * This repo:  
+`git clone https://github.com/harakan/peepdf`  
+`cd peepdf && sudo python3 setup.py install`  
+  * Infamous PyV8 Library. This uses the new stpyv8 fork:  
+`git clone git@github.com:area1/stpyv8.git`  
+`sudo bash install-ubuntu.sh`  
+`sudo python3 setup.py install`  
+  * Install the libemu:  
+`pip3 install pylibemu`  
+
+... and hopefully that works!
+
 **Analysis:**
 
   * Decodings: hexadecimal, octal, name objects
