@@ -341,12 +341,12 @@ email = 'peepdf AT eternal-todo.com'
 url = 'http://peepdf.eternal-todo.com'
 twitter = 'http://twitter.com/EternalTodo'
 peepTwitter = 'http://twitter.com/peepdf'
-_version = '0.3'
-revision = '275'
+_version = '0.42'
+revision = '420'
 newLine = os.linesep
 errorsFile = os.path.expanduser("~/.peepdf-error.txt")
 
-versionHeader = 'Version: peepdf ' + _version + ' r' + revision
+versionHeader = 'Will\'s peepdf ' + _version + ' r' + revision
 peepdfHeader = (
     versionHeader + newLine * 2 + url + newLine + peepTwitter + newLine +
     email + newLine * 2 + author + newLine + twitter + newLine
