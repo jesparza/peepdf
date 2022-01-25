@@ -16,17 +16,18 @@ The main functionalities of peepdf are the following:
   * This repo:  
 `git clone https://github.com/harakan/peepdf`  
 `cd peepdf && python3 setup.py install --user` 
-  * Infamous PyV8 Library. This uses the new stpyv8 fork:  
+  * Required python libraries:  
+`pip3 install -r requirements`
+  * (OPTIONAL) Infamous PyV8 Library for executing javascript. This uses the new stpyv8 fork and installs system wide for now.:  
 `git clone git@github.com:area1/stpyv8.git`  
 `sudo bash install-ubuntu.sh`  
 `sudo python3 setup.py install`  
-  * Install the libemu:  
-`pip3 install pylibemu`--user
+  * (OPTIONAL) Install the libemu:  
+`pip3 install pylibemu --user`  
 
-... and hopefully that works!
- * Extra things to try if stuff doesn't:
- ** pip3 doesn't work with Windows 10's linux subsystem python3.5 version. Here's a fix: curl -fsSL https://bootstrap.pypa.io/pip/3.5/get-pip.py | python3.5  
- ** 
+... and hopefully that works! Here's a few extra things to try if stuff doesn't:
+ * pip3 doesn't work with Windows 10's linux subsystem python3.5 version. Here's a fix:  
+ 1st: `sudo apt install python3-pip` 2nd if 1st doesn't work: `curl -fsSL https://bootstrap.pypa.io/pip/3.5/get-pip.py | python3.5`  
 
 **Analysis:**
 
