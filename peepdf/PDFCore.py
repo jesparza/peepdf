@@ -7363,7 +7363,10 @@ class PDFParser:
                     return (-1, 'Bad object for '+str(key)+' key')
             else:
                 value = ret[1]
-                elements[key] = value
+                if value.value == "<< >>":
+                    elements[key] = PDFString(rawValue)
+                else:
+                    elements[key] = value
             ret = self.readObject(rawContent[self.charCounter:], 'name')
             if ret[0] == -1:
                 if ret[1] != 'Empty content reading object':
@@ -7950,7 +7953,8 @@ class PDFParser:
                     break
                 elif delim[2] == 'name':
                     ret, raw = self.readUntilNotRegularChar(content)
-                    pdfObject = PDFName(raw)
+                    if raw:
+                        pdfObject = PDFName(raw)
                     break
                 elif delim[2] == 'comment':
                     ret = self.readUntilEndOfLine(content)
