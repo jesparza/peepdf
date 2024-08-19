@@ -49,7 +49,7 @@ No installation is needed apart of the commented dependencies, just execute it!
 
 There are two important options when peepdf is executed:
 
--f: Ignores the parsing errors. Analysing malicious files propably leads to parsing errors, so this parameter should be set.
+-f: Ignores the parsing errors. Analysing malicious files probably leads to parsing errors, so this parameter should be set.
 -l: Sets the loose mode, so does not search for the endobj tag because it's not obligatory. Helpful with malformed files.
 
 
