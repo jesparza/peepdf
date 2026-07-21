@@ -228,7 +228,7 @@ class BitPacker(object):
         """
         Given an iterator of integer codepoints, returns an iterator
         over bytes containing the codepoints packed into varying
-        lengths, with bit width growing to accomodate an input code
+        lengths, with bit width growing to accommodate an input code
         that it assumes will grow by one entry per codepoint seen.
 
         Widths will be reset to the given initial_code_size when the
